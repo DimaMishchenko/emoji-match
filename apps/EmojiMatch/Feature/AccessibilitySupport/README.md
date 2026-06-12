@@ -1,6 +1,6 @@
 # AccessibilitySupport
 
-Small app-local helper module for Accessibility-driven launcher behavior in `EmojiMatch`.
+Small app-local helper module for Accessibility-driven behavior in `EmojiMatch`.
 
 ## Purpose
 

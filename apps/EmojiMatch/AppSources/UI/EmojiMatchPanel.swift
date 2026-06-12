@@ -2,7 +2,7 @@ import AppKit
 import DesignSystem
 import SwiftUI
 
-private enum EmojiMatchPanelMetrics {
+private enum Constants {
   static let panelInset: CGFloat = .ds.spacing.xxs
 }
 
@@ -16,7 +16,7 @@ final class EmojiMatchPanel<Content: View>: NSPanel {
   private let initialContentSize: CGSize
   private let maximumContentSize: CGSize
   private let onClose: () -> Void
-  // Keeps the caret-facing edge fixed when the launcher expands into the emoji library.
+  // Keeps the caret-facing edge fixed when the search expands into the emoji browser.
   private var resizeAnchor = ResizeAnchor.bottom
 
   init(
@@ -53,7 +53,7 @@ final class EmojiMatchPanel<Content: View>: NSPanel {
       rootView: EmojiMatchPanelSurface(
         contentWidth: initialContentSize.width,
         minimumContentHeight: initialContentSize.height,
-        panelInset: EmojiMatchPanelMetrics.panelInset
+        panelInset: Constants.panelInset
       ) {
         content(
           { [weak self] in
@@ -179,8 +179,8 @@ final class EmojiMatchPanel<Content: View>: NSPanel {
 
   private static func defaultPanelSize(for contentSize: CGSize) -> CGSize {
     CGSize(
-      width: contentSize.width + (EmojiMatchPanelMetrics.panelInset * 2),
-      height: contentSize.height + (EmojiMatchPanelMetrics.panelInset * 2)
+      width: contentSize.width + (Constants.panelInset * 2),
+      height: contentSize.height + (Constants.panelInset * 2)
     )
   }
 
