@@ -61,10 +61,11 @@ Expected behavior:
 
 The app supports:
 
-- direct keyword search with fuzzy typo tolerance
+- direct keyword search with normalized matching
 - category and group search
 - multilingual search across all bundled locales
-- natural-language intent search
+- deterministic ranking of exact, prefix, and contains matches
+- local keyword extensions bundled with the app
 
 Examples:
 
@@ -73,6 +74,16 @@ Examples:
 - `emoji for an "Architecture" section header`
 - `anime`
 - `subtle celebration`
+
+Concrete search behavior:
+
+- normalize case, accents, and width before matching
+- tokenize queries and emoji keywords on punctuation and whitespace
+- search against every bundled locale loaded through `Emojis.searchIndex(locales: .all)`
+- include the app-bundled `emoji-keyword-extensions.json` keywords in the same search index
+- rank exact matches ahead of prefix matches, prefix matches ahead of contains matches, and use
+  stable sort-order ties after that
+- ignore unsupported Apple-only emoji in the same way the app’s browser already does
 
 #### 3. Selected-text prefill
 
@@ -366,7 +377,7 @@ product and UI mature.
 
 ## Search Model
 
-The search stack should be hybrid.
+The search stack is deterministic and local for this pass.
 
 ### Baseline search
 
@@ -375,37 +386,16 @@ Use the bundled emoji dataset for:
 - emoji value matching
 - localized name matching
 - localized keyword matching
-- group and subgroup matching
-- fuzzy matching for misspellings, typos, and near matches
+- app-bundled keyword extensions
+- exact, prefix, and contains ranking
 
 This path should be deterministic and fast.
 
-### Intent-aware search
-
-Use Foundation Models when available to improve queries that are naturally phrased or vague.
-
-Possible uses:
-
-- query rewriting
-- concept expansion
-- tone interpretation
-- reranking candidate emoji
-
-Examples:
-
-- `anime` might surface results like `✨`, `🌸`, `💮`, `🫧`
-- `an "Architecture" section header` might favor `🏛️`, `📐`, `🧱`
-
 ### Query interpretation
 
-The app should recognize that some phrases are framing text rather than meaningful keywords, for
-example:
-
-- `emoji for`
-- `emoji for a`
-- `emoji for an`
-
-These prefixes should not dominate ranking.
+The app should treat the query as a normalized keyword lookup rather than a natural-language
+inference problem for this pass. Framing text such as `emoji for` should not outrank real matches,
+but it does not require model-based rewriting.
 
 ## Technical Notes
 
@@ -429,6 +419,7 @@ This gives:
 - multilingual keywords
 - group and subgroup metadata
 - deterministic local search behavior
+- app-side keyword extensions for extra aliases
 
 ### AI integration
 

@@ -21,6 +21,8 @@ struct BrowserView: View {
 
   let contentWidth: CGFloat
   let horizontalContentInset: CGFloat
+  let searchStore: EmojiSearchStore
+  let searchQuery: String
   let onSelectEmoji: (String) -> Void
 
   private static let sections = Section.load()
@@ -36,43 +38,42 @@ struct BrowserView: View {
       count: Constants.columnCount
     )
   }
-  
-  @State var visibleSectionIDs = [String]()
+
+  @State private var visibleSectionIDs: [String] = []
 
   init(
     contentWidth: CGFloat = 324,
     horizontalContentInset: CGFloat = .ds.spacing.xs,
+    searchStore: EmojiSearchStore,
+    searchQuery: String,
     onSelectEmoji: @escaping (String) -> Void
   ) {
     self.contentWidth = contentWidth
     self.horizontalContentInset = horizontalContentInset
+    self.searchStore = searchStore
+    self.searchQuery = searchQuery
     self.onSelectEmoji = onSelectEmoji
   }
 
   var body: some View {
     ScrollViewReader { proxy in
       ZStack(alignment: .bottom) {
-        ScrollView(.vertical, showsIndicators: false) {
-          LazyVStack(alignment: .leading, spacing: .ds.spacing.md) {
-            ForEach(Self.sections) { section in
-              sectionView(section)
-                .id(section.id)
-            }
-          }
-          .scrollTargetLayout()
-          .padding(.horizontal, horizontalContentInset)
-          .padding(.top, .ds.spacing.sm)
-          .padding(.bottom, Constants.bottomContentInset)
+        if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          categoriesView(proxy: proxy)
+        } else {
+          searchResultsView
         }
-        
-        BlurEdge(
-          height: .ds.spacing.xxl,
-          direction: .up
-        )
 
-        categoryBar(proxy: proxy)
-          .padding(.horizontal, horizontalContentInset)
-          .padding(.bottom, .ds.spacing.xxs)
+        if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          BlurEdge(
+            height: .ds.spacing.xxl,
+            direction: .up
+          )
+
+          categoryBar(proxy: proxy)
+            .padding(.horizontal, horizontalContentInset)
+            .padding(.bottom, .ds.spacing.xxs)
+        }
       }
       .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
         self.visibleSectionIDs = ids
@@ -80,6 +81,56 @@ struct BrowserView: View {
     }
     .frame(width: contentWidth)
     .frame(maxHeight: .infinity)
+  }
+
+  private func categoriesView(proxy: ScrollViewProxy) -> some View {
+    ScrollView(.vertical, showsIndicators: false) {
+      LazyVStack(alignment: .leading, spacing: .ds.spacing.md) {
+        ForEach(Self.sections) { section in
+          sectionView(section)
+            .id(section.id)
+        }
+      }
+      .scrollTargetLayout()
+      .padding(.horizontal, horizontalContentInset)
+      .padding(.top, .ds.spacing.sm)
+      .padding(.bottom, Constants.bottomContentInset)
+    }
+  }
+
+  private var searchResultsView: some View {
+    let results = searchStore.results(for: searchQuery)
+
+    return ScrollView(.vertical, showsIndicators: false) {
+      VStack(alignment: .leading, spacing: .ds.spacing.md) {
+        if results.isEmpty {
+          Text(String(localized: .emNoResults))
+            .font(.ds.caption.weight(.semibold))
+            .foregroundStyle(Color.ds.textSecondary)
+            .frame(maxWidth: .infinity, minHeight: Constants.height - .ds.spacing.lg)
+        } else {
+          LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
+            ForEach(results) { result in
+              Button {
+                onSelectEmoji(result.value)
+              } label: {
+                Text(result.value)
+                  .font(.system(size: Constants.emojiFontSize))
+                  .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
+                  .contentShape(
+                    RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+                  )
+              }
+              .buttonStyle(.plain)
+              .accessibilityLabel(result.accessibilityLabel)
+            }
+          }
+        }
+      }
+      .padding(.horizontal, horizontalContentInset)
+      .padding(.top, .ds.spacing.sm)
+      .padding(.bottom, .ds.spacing.md)
+    }
   }
 
   private func sectionView(_ section: Section) -> some View {
@@ -119,7 +170,7 @@ struct BrowserView: View {
             .font(.ds.body.weight(.medium))
             .foregroundStyle(Color.ds.textPrimary)
         }
-        .if(visibleSectionIDs.first == section.id){
+        .if(visibleSectionIDs.first == section.id) {
           $0.buttonStyle(.glass)
         } else: {
           $0.buttonStyle(.plain)
@@ -210,6 +261,10 @@ private struct Group {
 }
 
 #Preview {
-  BrowserView(onSelectEmoji: { _ in })
-    .frame(width: 324, height: 376)
+  BrowserView(
+    searchStore: EmojiSearchStore(),
+    searchQuery: "",
+    onSelectEmoji: { _ in }
+  )
+  .frame(width: 324, height: 376)
 }

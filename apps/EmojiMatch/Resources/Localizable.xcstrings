@@ -45,6 +45,17 @@
         }
       }
     },
+    "emNoResults" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results"
+          }
+        }
+      }
+    },
     "emojiCategoryActivities" : {
       "extractionState" : "manual",
       "localizations" : {

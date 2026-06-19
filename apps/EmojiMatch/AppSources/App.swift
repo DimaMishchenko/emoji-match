@@ -13,6 +13,7 @@ struct App: SwiftUI.App {
 
   @State private var settings = AppSettings()
   @State private var panel: NSPanel?
+  private let searchStore = EmojiSearchStore()
   private let systemShortcutMonitor = SystemShortcutMonitor()
 
   var body: some Scene {
@@ -54,11 +55,8 @@ struct App: SwiftUI.App {
     ) { close, setExpanded in
       EmojiMatchView(
         contentWidth: Constants.emInitialContentSize.width,
-        onSubmit: {
-          guard let emoji = MockRandomEmojiSource.randomEmoji() else {
-            return
-          }
-
+        searchStore: searchStore,
+        onSubmit: { emoji in
           closeAndPaste(emoji, close: close)
         },
         onSelectEmoji: { emoji in

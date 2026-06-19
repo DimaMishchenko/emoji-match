@@ -21,7 +21,8 @@ struct EmojiMatchView: View {
   }
 
   let contentWidth: CGFloat
-  let onSubmit: () -> Void
+  let searchStore: EmojiSearchStore
+  let onSubmit: (String) -> Void
   let onSelectEmoji: (String) -> Void
   let onOpenBrowser: () -> Void
 
@@ -34,18 +35,20 @@ struct EmojiMatchView: View {
         BrowserView(
           contentWidth: contentWidth,
           horizontalContentInset: Constants.horizontalContentInset,
+          searchStore: searchStore,
+          searchQuery: query,
           onSelectEmoji: onSelectEmoji
         )
         .scrollClipDisabled()
         .padding(.top, Constants.barHeight + Constants.browserSpacing)
         .frame(height: Constants.expandedHeight)
-        
+
         BlurEdge(
           height: Constants.barHeight + Constants.browserSpacing,
           direction: .down
         )
       }
-      
+
       topBar
     }
     .frame(
@@ -53,6 +56,13 @@ struct EmojiMatchView: View {
       height: isBrowserPresented ? Constants.expandedHeight : Constants.barHeight,
       alignment: .top
     )
+    .onChange(of: query, initial: true) { _, value in
+      guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        return
+      }
+
+      openBrowser()
+    }
   }
 
   private var topBar: some View {
@@ -84,9 +94,13 @@ struct EmojiMatchView: View {
         .font(.ds.body.weight(.medium))
         .foregroundStyle(Color.ds.textPrimary)
         .onSubmit {
-          onSubmit()
+          submit()
         }
         .onKeyPress(.tab) {
+          guard !isBrowserPresented else {
+            return .ignored
+          }
+
           openBrowser()
           return .handled
         }
@@ -133,6 +147,14 @@ struct EmojiMatchView: View {
     isBrowserPresented = true
     onOpenBrowser()
   }
+
+  private func submit() {
+    guard let emoji = searchStore.topResult(for: query)?.value else {
+      return
+    }
+
+    onSubmit(emoji)
+  }
 }
 
 #Preview {
@@ -141,7 +163,8 @@ struct EmojiMatchView: View {
       .frame(height: .ds.spacing.xs)
     EmojiMatchView(
       contentWidth: 324,
-      onSubmit: {},
+      searchStore: EmojiSearchStore(),
+      onSubmit: { _ in },
       onSelectEmoji: { _ in },
       onOpenBrowser: {}
     )
