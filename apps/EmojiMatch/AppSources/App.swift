@@ -14,6 +14,7 @@ struct App: SwiftUI.App {
   @State private var settings = AppSettings()
   @State private var panel: NSPanel?
   private let searchStore = EmojiSearchStore()
+  private let usageStore = EmojiUsageStore()
   private let systemShortcutMonitor = SystemShortcutMonitor()
 
   var body: some Scene {
@@ -56,11 +57,12 @@ struct App: SwiftUI.App {
       EmojiMatchView(
         contentWidth: Constants.emInitialContentSize.width,
         searchStore: searchStore,
-        onSubmit: { emoji in
-          closeAndPaste(emoji, close: close)
+        usageStore: usageStore,
+        onSubmit: { selection in
+          closeAndPaste(selection, close: close)
         },
-        onSelectEmoji: { emoji in
-          closeAndPaste(emoji, close: close)
+        onSelectEmoji: { selection in
+          closeAndPaste(selection, close: close)
         },
         onOpenBrowser: {
           setExpanded(true)
@@ -81,10 +83,12 @@ struct App: SwiftUI.App {
     panel.close()
   }
 
-  private func closeAndPaste(_ emoji: String, close: () -> Void) {
+  private func closeAndPaste(_ selection: EmojiSelection, close: () -> Void) {
     close()
     DispatchQueue.main.async {
-      TextPasteController.paste(emoji)
+      if TextPasteController.paste(selection.value) {
+        usageStore.record(selection)
+      }
     }
   }
 }

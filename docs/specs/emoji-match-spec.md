@@ -131,6 +131,18 @@ V1 behavior:
 - recent selections
 - frequently used selections
 - local only
+- deterministic ranking that favors recency first and frequency second
+- stable tie-breaking by emoji id and displayed value
+- empty-query browsing can surface history above the catalog without replacing catalog browsing
+- persist to `UserDefaults` or an equivalent local store
+- record only after the app successfully creates and posts the paste shortcut events
+- merge repeated emoji selections by stable ID/value
+- retain count and last-used timestamp for each emoji
+- bound the retained history to a small fixed window
+- sort empty-query suggestions by recency first, then frequency as a tie-breaker, then stable emoji key
+
+The empty-query default state should surface these results above the catalog browser when history
+exists, but it should not replace catalog browsing itself.
 
 #### 7. Secondary copy actions
 
@@ -187,8 +199,8 @@ still open.
 
 1. User triggers the global shortcut with no selected text.
 2. Launcher appears and focuses the search field.
-3. If the query is empty, the launcher may show recents, most used, or another lightweight default
-   state.
+3. If the query is empty and history exists, the launcher may show recent/frequent suggestions as a
+   lightweight default state above the catalog browser.
 4. User can begin typing immediately.
 
 #### Flow 2: Search and insert
@@ -214,7 +226,8 @@ Notes:
 #### Flow 4: Recents and most used
 
 1. User opens the launcher with an empty query.
-2. Launcher may show recent selections and frequently used emoji.
+2. Launcher may show recent selections and frequently used emoji while keeping the catalog browser
+   available below them.
 3. User can choose one directly without typing.
 4. Once typing starts, search results become the primary view.
 
@@ -263,8 +276,9 @@ Current implementation requests Accessibility access from app code when caret-ba
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
 Current implementation enables `AXManualAccessibility` on the frontmost app before reading the
 accessibility tree, to better support Electron and WebView wrappers.
-Current implementation pastes a random bundled emoji on Return as a temporary submit action and
-restores the previous clipboard contents shortly after the paste event.
+Current implementation pastes the top search match on Return when a query is present, or the top
+recent/frequent selection when the query is empty and usage history exists. It restores the
+previous clipboard contents shortly after the paste event.
 
 #### Flow 7: Dismiss without side effects
 
@@ -378,6 +392,22 @@ product and UI mature.
 ## Search Model
 
 The search stack is deterministic and local for this pass.
+
+## Usage History Model
+
+The usage-history stack is deterministic and local for this pass.
+
+History entries are stored on device and merged by stable emoji selection identity. The primary
+ordering is:
+
+1. `lastUsedAt` descending
+2. `count` descending
+3. `emoji id` ascending
+4. `emoji value` ascending
+
+This keeps recency dominant while still letting frequency break ties in a deterministic way. The
+empty-query browser can surface the top history entries above the full catalog sections, but it
+does not replace catalog browsing.
 
 ### Baseline search
 

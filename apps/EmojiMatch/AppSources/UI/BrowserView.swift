@@ -22,8 +22,9 @@ struct BrowserView: View {
   let contentWidth: CGFloat
   let horizontalContentInset: CGFloat
   let searchStore: EmojiSearchStore
+  let usageStore: EmojiUsageStore
   let searchQuery: String
-  let onSelectEmoji: (String) -> Void
+  let onSelectEmoji: (EmojiSelection) -> Void
 
   private static let sections = Section.load()
 
@@ -45,12 +46,14 @@ struct BrowserView: View {
     contentWidth: CGFloat = 324,
     horizontalContentInset: CGFloat = .ds.spacing.xs,
     searchStore: EmojiSearchStore,
+    usageStore: EmojiUsageStore,
     searchQuery: String,
-    onSelectEmoji: @escaping (String) -> Void
+    onSelectEmoji: @escaping (EmojiSelection) -> Void
   ) {
     self.contentWidth = contentWidth
     self.horizontalContentInset = horizontalContentInset
     self.searchStore = searchStore
+    self.usageStore = usageStore
     self.searchQuery = searchQuery
     self.onSelectEmoji = onSelectEmoji
   }
@@ -59,7 +62,7 @@ struct BrowserView: View {
     ScrollViewReader { proxy in
       ZStack(alignment: .bottom) {
         if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-          categoriesView(proxy: proxy)
+          browseView(proxy: proxy)
         } else {
           searchResultsView
         }
@@ -83,9 +86,15 @@ struct BrowserView: View {
     .frame(maxHeight: .infinity)
   }
 
-  private func categoriesView(proxy: ScrollViewProxy) -> some View {
-    ScrollView(.vertical, showsIndicators: false) {
+  private func browseView(proxy: ScrollViewProxy) -> some View {
+    let suggestions = usageStore.suggestions()
+
+    return ScrollView(.vertical, showsIndicators: false) {
       LazyVStack(alignment: .leading, spacing: .ds.spacing.md) {
+        if !suggestions.isEmpty {
+          usageSectionView(suggestions)
+        }
+
         ForEach(Self.sections) { section in
           sectionView(section)
             .id(section.id)
@@ -112,7 +121,7 @@ struct BrowserView: View {
           LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
             ForEach(results) { result in
               Button {
-                onSelectEmoji(result.value)
+                onSelectEmoji(result.selection)
               } label: {
                 Text(result.value)
                   .font(.system(size: Constants.emojiFontSize))
@@ -142,7 +151,7 @@ struct BrowserView: View {
       LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
         ForEach(section.emojis) { emoji in
           Button {
-            onSelectEmoji(emoji.value)
+            onSelectEmoji(emoji.selection)
           } label: {
             Text(emoji.value)
               .font(.system(size: Constants.emojiFontSize))
@@ -153,6 +162,31 @@ struct BrowserView: View {
           }
           .buttonStyle(.plain)
           .accessibilityLabel(emoji.accessibilityLabel)
+        }
+      }
+    }
+  }
+
+  private func usageSectionView(_ suggestions: [EmojiUsageEntry]) -> some View {
+    VStack(alignment: .leading, spacing: .ds.spacing.xs) {
+      Text(String(localized: .emRecentSectionTitle))
+        .font(.ds.caption.weight(.semibold))
+        .foregroundStyle(Color.ds.textSecondary)
+
+      LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
+        ForEach(suggestions) { suggestion in
+          Button {
+            onSelectEmoji(suggestion.selection)
+          } label: {
+            Text(suggestion.selection.value)
+              .font(.system(size: Constants.emojiFontSize))
+              .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
+              .contentShape(
+                RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+              )
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(suggestion.selection.value)
         }
       }
     }
@@ -231,11 +265,13 @@ private struct Section: Identifiable {
 private struct Item: Identifiable {
   let id: String
   let value: String
+  let selection: EmojiSelection
   let accessibilityLabel: String
 
   nonisolated init(emoji: Emoji) {
     self.id = emoji.id.rawValue
     self.value = emoji.value
+    self.selection = EmojiSelection(id: emoji.id.rawValue, value: emoji.value)
     self.accessibilityLabel = emoji.localization.name
   }
 }
@@ -263,6 +299,7 @@ private struct Group {
 #Preview {
   BrowserView(
     searchStore: EmojiSearchStore(),
+    usageStore: EmojiUsageStore(),
     searchQuery: "",
     onSelectEmoji: { _ in }
   )

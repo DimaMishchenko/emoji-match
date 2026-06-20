@@ -22,8 +22,9 @@ struct EmojiMatchView: View {
 
   let contentWidth: CGFloat
   let searchStore: EmojiSearchStore
-  let onSubmit: (String) -> Void
-  let onSelectEmoji: (String) -> Void
+  let usageStore: EmojiUsageStore
+  let onSubmit: (EmojiSelection) -> Void
+  let onSelectEmoji: (EmojiSelection) -> Void
   let onOpenBrowser: () -> Void
 
   @State private var query = ""
@@ -36,6 +37,7 @@ struct EmojiMatchView: View {
           contentWidth: contentWidth,
           horizontalContentInset: Constants.horizontalContentInset,
           searchStore: searchStore,
+          usageStore: usageStore,
           searchQuery: query,
           onSelectEmoji: onSelectEmoji
         )
@@ -57,7 +59,9 @@ struct EmojiMatchView: View {
       alignment: .top
     )
     .onChange(of: query, initial: true) { _, value in
-      guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      let normalizedQuery = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      guard !normalizedQuery.isEmpty else {
         return
       }
 
@@ -149,11 +153,17 @@ struct EmojiMatchView: View {
   }
 
   private func submit() {
-    guard let emoji = searchStore.topResult(for: query)?.value else {
+    let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    let selection =
+      normalizedQuery.isEmpty
+      ? usageStore.topSelection()
+      : searchStore.topResult(for: normalizedQuery)?.selection
+
+    guard let selection else {
       return
     }
 
-    onSubmit(emoji)
+    onSubmit(selection)
   }
 }
 
@@ -164,6 +174,7 @@ struct EmojiMatchView: View {
     EmojiMatchView(
       contentWidth: 324,
       searchStore: EmojiSearchStore(),
+      usageStore: EmojiUsageStore(),
       onSubmit: { _ in },
       onSelectEmoji: { _ in },
       onOpenBrowser: {}
