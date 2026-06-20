@@ -1,5 +1,4 @@
 import DesignSystem
-import Emojis
 import SwiftUI
 
 struct BrowserView: View {
@@ -24,9 +23,11 @@ struct BrowserView: View {
   let searchStore: EmojiSearchStore
   let usageStore: EmojiUsageStore
   let searchQuery: String
+  let selectedItemID: String?
+  let onSelectItemID: (String) -> Void
   let onSelectEmoji: (EmojiSelection) -> Void
 
-  private static let sections = Section.load()
+  private let catalog = EmojiBrowserCatalog.shared
 
   private var columns: [GridItem] {
     Array(
@@ -48,6 +49,8 @@ struct BrowserView: View {
     searchStore: EmojiSearchStore,
     usageStore: EmojiUsageStore,
     searchQuery: String,
+    selectedItemID: String? = nil,
+    onSelectItemID: @escaping (String) -> Void,
     onSelectEmoji: @escaping (EmojiSelection) -> Void
   ) {
     self.contentWidth = contentWidth
@@ -55,19 +58,21 @@ struct BrowserView: View {
     self.searchStore = searchStore
     self.usageStore = usageStore
     self.searchQuery = searchQuery
+    self.selectedItemID = selectedItemID
+    self.onSelectItemID = onSelectItemID
     self.onSelectEmoji = onSelectEmoji
   }
 
   var body: some View {
     ScrollViewReader { proxy in
       ZStack(alignment: .bottom) {
-        if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-          browseView(proxy: proxy)
+        if normalizedSearchQuery.isEmpty {
+          browseView()
         } else {
-          searchResultsView
+          searchResultsView()
         }
 
-        if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if normalizedSearchQuery.isEmpty {
           BlurEdge(
             height: .ds.spacing.xxl,
             direction: .up
@@ -81,21 +86,28 @@ struct BrowserView: View {
       .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
         self.visibleSectionIDs = ids
       }
+      .onChange(of: selectedItemID, initial: true) { _, _ in
+        scrollSelectionIntoView(proxy: proxy)
+      }
     }
     .frame(width: contentWidth)
     .frame(maxHeight: .infinity)
   }
 
-  private func browseView(proxy: ScrollViewProxy) -> some View {
-    let suggestions = usageStore.suggestions()
+  private var normalizedSearchQuery: String {
+    searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
 
-    return ScrollView(.vertical, showsIndicators: false) {
+  private func browseView() -> some View {
+    ScrollView(.vertical, showsIndicators: false) {
       LazyVStack(alignment: .leading, spacing: .ds.spacing.md) {
+        let suggestions = usageStore.suggestions()
+
         if !suggestions.isEmpty {
           usageSectionView(suggestions)
         }
 
-        ForEach(Self.sections) { section in
+        ForEach(catalog.sections) { section in
           sectionView(section)
             .id(section.id)
         }
@@ -107,8 +119,8 @@ struct BrowserView: View {
     }
   }
 
-  private var searchResultsView: some View {
-    let results = searchStore.results(for: searchQuery)
+  private func searchResultsView() -> some View {
+    let results = searchItems
 
     return ScrollView(.vertical, showsIndicators: false) {
       VStack(alignment: .leading, spacing: .ds.spacing.md) {
@@ -119,19 +131,15 @@ struct BrowserView: View {
             .frame(maxWidth: .infinity, minHeight: Constants.height - .ds.spacing.lg)
         } else {
           LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
-            ForEach(results) { result in
-              Button {
-                onSelectEmoji(result.selection)
-              } label: {
-                Text(result.value)
-                  .font(.system(size: Constants.emojiFontSize))
-                  .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
-                  .contentShape(
-                    RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-                  )
-              }
-              .buttonStyle(.plain)
-              .accessibilityLabel(result.accessibilityLabel)
+            ForEach(results) { item in
+              emojiButton(
+                item: item,
+                isSelected: item.id == selectedItemID,
+                action: {
+                  onSelectEmoji(item.selection)
+                }
+              )
+              .id(item.id)
             }
           }
         }
@@ -142,26 +150,26 @@ struct BrowserView: View {
     }
   }
 
-  private func sectionView(_ section: Section) -> some View {
+  private var searchItems: [EmojiMatchItem] {
+    searchStore.results(for: normalizedSearchQuery).map(EmojiMatchItem.searchResult)
+  }
+
+  private func sectionView(_ section: EmojiBrowserSection) -> some View {
     VStack(alignment: .leading, spacing: .ds.spacing.xs) {
       Text(section.title)
         .font(.ds.caption.weight(.semibold))
         .foregroundStyle(Color.ds.textSecondary)
 
       LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
-        ForEach(section.emojis) { emoji in
-          Button {
-            onSelectEmoji(emoji.selection)
-          } label: {
-            Text(emoji.value)
-              .font(.system(size: Constants.emojiFontSize))
-              .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
-              .contentShape(
-                RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-              )
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel(emoji.accessibilityLabel)
+        ForEach(section.items) { item in
+          emojiButton(
+            item: item,
+            isSelected: item.id == selectedItemID,
+            action: {
+              onSelectEmoji(item.selection)
+            }
+          )
+          .id(item.id)
         }
       }
     }
@@ -175,27 +183,55 @@ struct BrowserView: View {
 
       LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
         ForEach(suggestions) { suggestion in
-          Button {
-            onSelectEmoji(suggestion.selection)
-          } label: {
-            Text(suggestion.selection.value)
-              .font(.system(size: Constants.emojiFontSize))
-              .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
-              .contentShape(
-                RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-              )
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel(suggestion.selection.value)
+          let item = EmojiMatchItem.recentSuggestion(suggestion)
+
+          emojiButton(
+            item: item,
+            isSelected: item.id == selectedItemID,
+            action: {
+              onSelectEmoji(item.selection)
+            }
+          )
+          .id(item.id)
         }
       }
     }
   }
 
+  private func emojiButton(
+    item: EmojiMatchItem,
+    isSelected: Bool,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      Text(item.selection.value)
+        .font(.system(size: Constants.emojiFontSize))
+        .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
+        .background {
+          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+            .fill(isSelected ? Color.ds.primary.opacity(0.16) : .clear)
+        }
+        .overlay {
+          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+            .stroke(
+              isSelected ? Color.ds.primary.opacity(0.4) : .clear,
+              lineWidth: .ds.stroke.thin
+            )
+        }
+        .contentShape(
+          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+        )
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(item.accessibilityLabel)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
+  }
+
   private func categoryBar(proxy: ScrollViewProxy) -> some View {
     HStack(spacing: .ds.spacing.xxs) {
-      ForEach(Self.sections) { section in
+      ForEach(catalog.sections) { section in
         Button {
+          onSelectItemID(section.items.first?.id ?? section.id)
           withAnimation(.snappy(duration: .ds.motion.quick)) {
             proxy.scrollTo(section.id, anchor: .top)
           }
@@ -216,84 +252,16 @@ struct BrowserView: View {
     }
     .frame(maxWidth: .infinity)
   }
-}
 
-private struct Section: Identifiable {
-  let id: String
-  let title: LocalizedStringResource
-  let symbolName: String
-  let emojis: [Item]
-
-  static func load() -> [Self] {
-    let fetchedEmojis = loadAvailableEmojis()
-    let lookup = Dictionary(grouping: fetchedEmojis, by: \.group)
-    let groups = Group.all.compactMap { group -> Self? in
-      guard let emojis = lookup[group.emojiGroup], !emojis.isEmpty else {
-        return nil
-      }
-
-      let items =
-        emojis
-        .sorted { $0.sortOrder < $1.sortOrder }
-        .map(Item.init(emoji:))
-
-      return Self(
-        id: group.id,
-        title: group.title,
-        symbolName: group.symbolName,
-        emojis: items
-      )
+  private func scrollSelectionIntoView(proxy: ScrollViewProxy) {
+    guard let selectedItemID else {
+      return
     }
 
-    return groups
+    withAnimation(.snappy(duration: .ds.motion.quick)) {
+      proxy.scrollTo(selectedItemID, anchor: .center)
+    }
   }
-
-  private static func loadAvailableEmojis() -> [Emoji] {
-    let filter: Emojis.Filter
-
-    #if canImport(CoreText)
-      filter = .apple
-    #else
-      filter = .none
-    #endif
-
-    let emojis = (try? Emojis.fetch(filter: filter)) ?? []
-    return emojis.filter { $0.group != .component }
-  }
-}
-
-private struct Item: Identifiable {
-  let id: String
-  let value: String
-  let selection: EmojiSelection
-  let accessibilityLabel: String
-
-  nonisolated init(emoji: Emoji) {
-    self.id = emoji.id.rawValue
-    self.value = emoji.value
-    self.selection = EmojiSelection(id: emoji.id.rawValue, value: emoji.value)
-    self.accessibilityLabel = emoji.localization.name
-  }
-}
-
-private struct Group {
-  let emojiGroup: Emoji.Group
-  let title: LocalizedStringResource
-  let symbolName: String
-
-  var id: String { emojiGroup.rawValue }
-
-  static let all = [
-    Self(emojiGroup: .smileysEmotion, title: .emojiCategorySmileys, symbolName: "face.smiling"),
-    Self(emojiGroup: .peopleBody, title: .emojiCategoryPeople, symbolName: "figure.wave"),
-    Self(emojiGroup: .animalsNature, title: .emojiCategoryNature, symbolName: "leaf"),
-    Self(emojiGroup: .foodDrink, title: .emojiCategoryFood, symbolName: "fork.knife"),
-    Self(emojiGroup: .travelPlaces, title: .emojiCategoryTravel, symbolName: "car"),
-    Self(emojiGroup: .activities, title: .emojiCategoryActivities, symbolName: "soccerball"),
-    Self(emojiGroup: .objects, title: .emojiCategoryObjects, symbolName: "lightbulb"),
-    Self(emojiGroup: .symbols, title: .emojiCategorySymbols, symbolName: "heart"),
-    Self(emojiGroup: .flags, title: .emojiCategoryFlags, symbolName: "flag")
-  ]
 }
 
 #Preview {
@@ -301,6 +269,8 @@ private struct Group {
     searchStore: EmojiSearchStore(),
     usageStore: EmojiUsageStore(),
     searchQuery: "",
+    selectedItemID: nil,
+    onSelectItemID: { _ in },
     onSelectEmoji: { _ in }
   )
   .frame(width: 324, height: 376)

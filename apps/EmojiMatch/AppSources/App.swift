@@ -66,6 +66,9 @@ struct App: SwiftUI.App {
         },
         onOpenBrowser: {
           setExpanded(true)
+        },
+        onClose: {
+          close()
         }
       )
     }

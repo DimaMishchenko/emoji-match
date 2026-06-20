@@ -6,11 +6,11 @@ struct EmojiSearchResult: Identifiable, Equatable {
   let value: String
   let displayName: String
 
-  var selection: EmojiSelection {
+  nonisolated var selection: EmojiSelection {
     EmojiSelection(id: id, value: value)
   }
 
-  var accessibilityLabel: String {
+  nonisolated var accessibilityLabel: String {
     "\(displayName) \(value)"
   }
 }

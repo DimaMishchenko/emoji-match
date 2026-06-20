@@ -265,8 +265,19 @@ These are states within the main search flow, not separate top-level flows.
 2. User types, navigates results, expands secondary result areas if needed, and confirms a choice.
 3. The full primary flow can be completed entirely by keyboard.
 
-Exact keyboard shortcuts remain an open design decision and should be specified later.
-Current implementation uses `Control-Command-E` as the temporary default launcher shortcut.
+Exact keyboard shortcuts are:
+
+- `Control-Command-E`: open Emoji Match
+- `Up` and `Down`: move the visible selection by one grid row, clamped at the top and bottom
+- `Left` and `Right`: move the visible selection by one cell, clamped at the row edges
+- `Return`: paste the currently selected emoji
+- `Escape`: clear a non-empty query first, then close the launcher when the query is already empty
+- `Tab`: keeps the platform focus chain and is not used as the primary emoji navigation key
+
+Selection defaults to the first visible result in search mode, the top recent item when history is
+showing, or the first catalog item when browsing without recents. When the query changes, the
+selection resets to the new first visible item and scrolls it into view.
+
 Current implementation uses a floating all-spaces launcher panel so it can appear above other apps,
 including fullscreen ones.
 Current implementation closes the launcher when the user clicks outside it.
@@ -276,9 +287,9 @@ Current implementation requests Accessibility access from app code when caret-ba
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
 Current implementation enables `AXManualAccessibility` on the frontmost app before reading the
 accessibility tree, to better support Electron and WebView wrappers.
-Current implementation pastes the top search match on Return when a query is present, or the top
-recent/frequent selection when the query is empty and usage history exists. It restores the
-previous clipboard contents shortly after the paste event.
+Current implementation pastes the current keyboard selection on Return, falling back to the top
+search match or top recent/frequent selection when no explicit keyboard movement has occurred yet.
+It restores the previous clipboard contents shortly after the paste event.
 
 #### Flow 7: Dismiss without side effects
 
