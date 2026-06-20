@@ -267,7 +267,7 @@ These are states within the main search flow, not separate top-level flows.
 
 Exact keyboard shortcuts are:
 
-- `Control-Command-E`: open Emoji Match
+- `Shift-Command-E`: open Emoji Match
 - `Up` and `Down`: move the visible selection by one grid row, clamped at the top and bottom
 - `Left` and `Right`: move the visible selection by one cell, clamped at the row edges
 - `Return`: paste the currently selected emoji
