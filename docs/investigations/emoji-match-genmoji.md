@@ -146,7 +146,8 @@ and AppKit.framework's `Headers/NSAdaptiveImageGlyph.h`, `NSTextInputClient.h`, 
 
 The product now hands Genmoji creation to Character Palette's native input-method session. The
 header icon is the original `emoji.face.grinning.and.plus.inverse` artwork from CoreGlyphsPrivate,
-exported with a 15-point regular symbol configuration as a template PDF with vector preservation.
+retained as a template PDF fallback. Follow-up calibration loads the original system symbol
+directly at runtime, avoiding opacity and rendering differences in PDF export.
 The creator itself is Apple's actual 320 × 480-point compact UI, including its native animation,
 photo/person/emoji controls, generated-image editor, Add and dismissal behavior.
 

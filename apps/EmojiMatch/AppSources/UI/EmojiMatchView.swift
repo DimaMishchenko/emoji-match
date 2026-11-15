@@ -127,9 +127,8 @@ struct EmojiMatchView: View {
     Button {
       action(query.trimmingCharacters(in: .whitespacesAndNewlines))
     } label: {
-      Image("Genmoji")
-        .renderingMode(.template)
-        .foregroundStyle(Color.ds.textPrimary)
+      GenmojiButtonArtwork()
+        .offset(y: -1)
         .frame(width: EmojiPickerMetrics.actionSize, height: EmojiPickerMetrics.actionSize)
         .contentShape(Circle())
     }

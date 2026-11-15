@@ -525,7 +525,13 @@ This is a secondary feature and should not complicate the main insertion flow.
 
 ### Genmoji
 
-- The header uses Apple's original grinning-face-plus vector artwork.
+- The header loads Apple's original grinning-face-plus system symbol with a 16-point glyph
+  viewport and retains the exported vector artwork as a compatibility fallback. It hosts native
+  `CPKGenmojiAnimationView` when its expected runtime contract is available. Each fresh picker
+  presentation invokes Apple's own `roll`: its implementation can choose a short animation, long
+  animation or static icon. Query edits and hover do not restart it. Reduce Motion and unavailable
+  private runtime support retain the static artwork; teardown detaches the animation. The artwork
+  follows native glyph bounds and the measured one-point upward label offset.
 - The Genmoji action closes Emoji Match and hands off to the system's own Character Palette
   creation UI and original recipient text-input connection. The creator is not redrawn in SwiftUI.
 - A bounded accessibility pass presses the system picker’s adjacent Genmoji control using role
