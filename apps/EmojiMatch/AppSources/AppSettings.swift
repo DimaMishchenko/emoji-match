@@ -8,11 +8,11 @@ final class AppSettings {
     let keyCode: UInt32
     let carbonModifiers: UInt32
 
-    static let defaultLauncher = Shortcut(
+    static let defaultOpen = Shortcut(
       keyCode: UInt32(kVK_ANSI_E),
-      carbonModifiers: UInt32(cmdKey | controlKey)
+      carbonModifiers: UInt32(cmdKey | shiftKey)
     )
   }
 
-  var launcherShortcut = Shortcut.defaultLauncher
+  var openShortcut = Shortcut.defaultOpen
 }

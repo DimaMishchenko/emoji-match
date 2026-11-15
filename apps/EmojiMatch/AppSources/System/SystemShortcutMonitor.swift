@@ -6,7 +6,7 @@ final class SystemShortcutMonitor {
   private var hotKey: EventHotKeyRef?
   private var isStarted = false
   private var onKeyDown: (() -> Void)?
-  var shortcut = AppSettings.Shortcut.defaultLauncher {
+  var shortcut = AppSettings.Shortcut.defaultOpen {
     didSet {
       guard shortcut != oldValue, isStarted else {
         return

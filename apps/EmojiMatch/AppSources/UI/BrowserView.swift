@@ -2,10 +2,10 @@ import DesignSystem
 import Emojis
 import SwiftUI
 
-struct EmojiLibraryView: View {
+struct BrowserView: View {
   private enum Constants {
+    static let height: CGFloat = 316
     static let columnCount = 6
-    static let libraryHeight: CGFloat = 316
     static let emojiCellSize: CGFloat = 40
     static let emojiFontSize: CGFloat = 30
     static let categoryButtonSize: CGFloat = 24
@@ -17,38 +17,35 @@ struct EmojiLibraryView: View {
     }
   }
 
-  static let preferredHeight = Constants.libraryHeight
+  static let preferredHeight = Constants.height
 
   let contentWidth: CGFloat
   let horizontalContentInset: CGFloat
-  let topContentInset: CGFloat
   let onSelectEmoji: (String) -> Void
 
-  private static let sections = EmojiLibrarySection.load()
-
-  private var gridWidth: CGFloat {
-    max(.zero, contentWidth - (horizontalContentInset * 2))
-  }
+  private static let sections = Section.load()
 
   private var columns: [GridItem] {
     Array(
       repeating: GridItem(
         .fixed(Constants.emojiCellSize),
-        spacing: Constants.gridSpacing(for: gridWidth)
+        spacing: Constants.gridSpacing(
+          for: max(.zero, contentWidth - (horizontalContentInset * 2))
+        )
       ),
       count: Constants.columnCount
     )
   }
+  
+  @State var visibleSectionIDs = [String]()
 
   init(
     contentWidth: CGFloat = 324,
     horizontalContentInset: CGFloat = .ds.spacing.xs,
-    topContentInset: CGFloat = .zero,
     onSelectEmoji: @escaping (String) -> Void
   ) {
     self.contentWidth = contentWidth
     self.horizontalContentInset = horizontalContentInset
-    self.topContentInset = topContentInset
     self.onSelectEmoji = onSelectEmoji
   }
 
@@ -62,23 +59,30 @@ struct EmojiLibraryView: View {
                 .id(section.id)
             }
           }
-          .frame(width: gridWidth, alignment: .leading)
+          .scrollTargetLayout()
           .padding(.horizontal, horizontalContentInset)
-          .padding(.top, topContentInset + .ds.spacing.sm)
+          .padding(.top, .ds.spacing.sm)
           .padding(.bottom, Constants.bottomContentInset)
         }
+        
+        BlurEdge(
+          height: .ds.spacing.xxl,
+          direction: .up
+        )
 
         categoryBar(proxy: proxy)
-          .frame(width: gridWidth)
           .padding(.horizontal, horizontalContentInset)
           .padding(.bottom, .ds.spacing.xxs)
+      }
+      .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
+        self.visibleSectionIDs = ids
       }
     }
     .frame(width: contentWidth)
     .frame(maxHeight: .infinity)
   }
 
-  private func sectionView(_ section: EmojiLibrarySection) -> some View {
+  private func sectionView(_ section: Section) -> some View {
     VStack(alignment: .leading, spacing: .ds.spacing.xs) {
       Text(section.title)
         .font(.ds.caption.weight(.semibold))
@@ -92,7 +96,9 @@ struct EmojiLibraryView: View {
             Text(emoji.value)
               .font(.system(size: Constants.emojiFontSize))
               .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
-              .contentShape(RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous))
+              .contentShape(
+                RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
+              )
           }
           .buttonStyle(.plain)
           .accessibilityLabel(emoji.accessibilityLabel)
@@ -102,7 +108,7 @@ struct EmojiLibraryView: View {
   }
 
   private func categoryBar(proxy: ScrollViewProxy) -> some View {
-    HStack(spacing: .zero) {
+    HStack(spacing: .ds.spacing.xxs) {
       ForEach(Self.sections) { section in
         Button {
           withAnimation(.snappy(duration: .ds.motion.quick)) {
@@ -110,12 +116,15 @@ struct EmojiLibraryView: View {
           }
         } label: {
           Image(systemName: section.symbolName)
-            .font(.ds.caption.weight(.medium))
-            .foregroundStyle(Color.ds.textSecondary)
-            .frame(width: Constants.categoryButtonSize, height: Constants.categoryButtonSize)
-            .contentShape(Circle())
+            .font(.ds.body.weight(.medium))
+            .foregroundStyle(Color.ds.textPrimary)
         }
-        .buttonStyle(.plain)
+        .if(visibleSectionIDs.first == section.id){
+          $0.buttonStyle(.glass)
+        } else: {
+          $0.buttonStyle(.plain)
+        }
+        .buttonBorderShape(.capsule)
         .frame(maxWidth: .infinity)
         .accessibilityLabel(section.title)
       }
@@ -124,16 +133,16 @@ struct EmojiLibraryView: View {
   }
 }
 
-private struct EmojiLibrarySection: Identifiable {
+private struct Section: Identifiable {
   let id: String
   let title: LocalizedStringResource
   let symbolName: String
-  let emojis: [EmojiLibraryItem]
+  let emojis: [Item]
 
   static func load() -> [Self] {
     let fetchedEmojis = loadAvailableEmojis()
     let lookup = Dictionary(grouping: fetchedEmojis, by: \.group)
-    let groups = EmojiLibraryGroup.all.compactMap { group -> Self? in
+    let groups = Group.all.compactMap { group -> Self? in
       guard let emojis = lookup[group.emojiGroup], !emojis.isEmpty else {
         return nil
       }
@@ -141,7 +150,7 @@ private struct EmojiLibrarySection: Identifiable {
       let items =
         emojis
         .sorted { $0.sortOrder < $1.sortOrder }
-        .map(EmojiLibraryItem.init(emoji:))
+        .map(Item.init(emoji:))
 
       return Self(
         id: group.id,
@@ -168,7 +177,7 @@ private struct EmojiLibrarySection: Identifiable {
   }
 }
 
-private struct EmojiLibraryItem: Identifiable {
+private struct Item: Identifiable {
   let id: String
   let value: String
   let accessibilityLabel: String
@@ -180,7 +189,7 @@ private struct EmojiLibraryItem: Identifiable {
   }
 }
 
-private struct EmojiLibraryGroup {
+private struct Group {
   let emojiGroup: Emoji.Group
   let title: LocalizedStringResource
   let symbolName: String
@@ -201,6 +210,6 @@ private struct EmojiLibraryGroup {
 }
 
 #Preview {
-  EmojiLibraryView(topContentInset: 60, onSelectEmoji: { _ in })
+  BrowserView(onSelectEmoji: { _ in })
     .frame(width: 324, height: 376)
 }

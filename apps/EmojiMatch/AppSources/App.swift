@@ -5,20 +5,20 @@ import SwiftUI
 @main
 struct App: SwiftUI.App {
   private enum Constants {
-    static let launcherInitialContentSize = CGSize(width: 324, height: 44)
-    static let launcherMaximumContentSize = LauncherBar.maximumContentSize(
-      width: launcherInitialContentSize.width
+    static let emInitialContentSize = CGSize(width: 324, height: 44)
+    static let emMaximumContentSize = EmojiMatchView.maximumContentSize(
+      width: emInitialContentSize.width
     )
   }
 
   @State private var settings = AppSettings()
-  @State private var launcherPanel: NSPanel?
+  @State private var panel: NSPanel?
   private let systemShortcutMonitor = SystemShortcutMonitor()
 
   var body: some Scene {
     MenuBarExtra {
       Button(String(localized: .menuOpen)) {
-        openLauncher()
+        openEmojiMatch()
       }
 
       Divider()
@@ -31,29 +31,29 @@ struct App: SwiftUI.App {
       Label(String(localized: .appName), systemImage: "face.smiling")
         .task {
           systemShortcutMonitor.start {
-            openLauncher()
+            openEmojiMatch()
           }
         }
-        .onChange(of: settings.launcherShortcut, initial: true) { _, shortcut in
+        .onChange(of: settings.openShortcut, initial: true) { _, shortcut in
           systemShortcutMonitor.shortcut = shortcut
         }
     }
     .menuBarExtraStyle(.menu)
   }
 
-  private func openLauncher() {
+  private func openEmojiMatch() {
     AccessibilityPermission.requestIfNeeded()
-    closeExistingLauncher()
+    closeExistingInstance()
 
     let panel = EmojiMatchPanel(
-      initialContentSize: Constants.launcherInitialContentSize,
-      maximumContentSize: Constants.launcherMaximumContentSize,
+      initialContentSize: Constants.emInitialContentSize,
+      maximumContentSize: Constants.emMaximumContentSize,
       onClose: {
-        launcherPanel = nil
+        self.panel = nil
       }
     ) { close, setExpanded in
-      LauncherBar(
-        contentWidth: Constants.launcherInitialContentSize.width,
+      EmojiMatchView(
+        contentWidth: Constants.emInitialContentSize.width,
         onSubmit: {
           guard let emoji = MockRandomEmojiSource.randomEmoji() else {
             return
@@ -64,23 +64,23 @@ struct App: SwiftUI.App {
         onSelectEmoji: { emoji in
           closeAndPaste(emoji, close: close)
         },
-        onOpenLibrary: {
+        onOpenBrowser: {
           setExpanded(true)
         }
       )
     }
-    launcherPanel = panel
+    self.panel = panel
     panel.show(anchorRect: TextAnchorResolver.anchorRect())
   }
 
-  private func closeExistingLauncher() {
-    guard let launcherPanel else {
+  private func closeExistingInstance() {
+    guard let panel else {
       return
     }
 
     // `onClose` clears the stored panel after it closes. This handles the separate case where the
-    // launcher shortcut is triggered again while the previous panel is still open.
-    launcherPanel.close()
+    // open shortcut is triggered again while the previous panel is still open.
+    panel.close()
   }
 
   private func closeAndPaste(_ emoji: String, close: () -> Void) {

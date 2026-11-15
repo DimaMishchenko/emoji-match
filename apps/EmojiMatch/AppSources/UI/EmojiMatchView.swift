@@ -1,15 +1,15 @@
 import DesignSystem
 import SwiftUI
 
-struct LauncherBar: View {
+struct EmojiMatchView: View {
   private enum Constants {
     static let barHeight: CGFloat = 44
     static let fieldHeight: CGFloat = 24
-    static let librarySpacing: CGFloat = .ds.spacing.md
+    static let browserSpacing: CGFloat = .ds.spacing.xxs
     static let horizontalContentInset: CGFloat = .ds.spacing.xs
 
     static var expandedHeight: CGFloat {
-      barHeight + librarySpacing + EmojiLibraryView.preferredHeight
+      barHeight + browserSpacing + BrowserView.preferredHeight
     }
   }
 
@@ -23,28 +23,34 @@ struct LauncherBar: View {
   let contentWidth: CGFloat
   let onSubmit: () -> Void
   let onSelectEmoji: (String) -> Void
-  let onOpenLibrary: () -> Void
+  let onOpenBrowser: () -> Void
 
   @State private var query = ""
-  @State private var isLibraryPresented = false
+  @State private var isBrowserPresented = false
 
   var body: some View {
     ZStack(alignment: .top) {
-      if isLibraryPresented {
-        EmojiLibraryView(
+      if isBrowserPresented {
+        BrowserView(
           contentWidth: contentWidth,
           horizontalContentInset: Constants.horizontalContentInset,
-          topContentInset: Constants.barHeight + Constants.librarySpacing,
           onSelectEmoji: onSelectEmoji
         )
+        .scrollClipDisabled()
+        .padding(.top, Constants.barHeight + Constants.browserSpacing)
         .frame(height: Constants.expandedHeight)
+        
+        BlurEdge(
+          height: Constants.barHeight + Constants.browserSpacing,
+          direction: .down
+        )
       }
-
+      
       topBar
     }
     .frame(
       width: contentWidth,
-      height: isLibraryPresented ? Constants.expandedHeight : Constants.barHeight,
+      height: isBrowserPresented ? Constants.expandedHeight : Constants.barHeight,
       alignment: .top
     )
   }
@@ -54,8 +60,8 @@ struct LauncherBar: View {
       HStack(spacing: .ds.spacing.xs) {
         searchField
 
-        if !isLibraryPresented {
-          libraryButton
+        if !isBrowserPresented {
+          browserButton
         }
       }
     }
@@ -73,7 +79,7 @@ struct LauncherBar: View {
         .font(.ds.body.weight(.medium))
         .foregroundStyle(Color.ds.textSecondary)
 
-      TextField(String(localized: .launcherSearchPlaceholder), text: $query)
+      TextField(String(localized: .emSearchPlaceholder), text: $query)
         .textFieldStyle(.plain)
         .font(.ds.body.weight(.medium))
         .foregroundStyle(Color.ds.textPrimary)
@@ -81,7 +87,7 @@ struct LauncherBar: View {
           onSubmit()
         }
         .onKeyPress(.tab) {
-          openLibrary()
+          openBrowser()
           return .handled
         }
     }
@@ -95,16 +101,16 @@ struct LauncherBar: View {
     .glassEffect(.clear, in: Capsule(style: .continuous))
   }
 
-  private var libraryButton: some View {
+  private var browserButton: some View {
     let size = Constants.fieldHeight + .ds.spacing.xs
 
     return Button {
-      openLibrary()
+      openBrowser()
     } label: {
       HStack(spacing: .ds.spacing.xxs) {
         Image(systemName: "arrow.right.to.line")
 
-        Text(String(localized: .launcherLibraryButtonTitle))
+        Text(String(localized: .emBrowserButtonTitle))
       }
       .font(.ds.callout.weight(.medium))
       .foregroundStyle(Color.ds.textSecondary)
@@ -113,19 +119,19 @@ struct LauncherBar: View {
       .contentShape(Capsule(style: .continuous))
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(String(localized: .launcherLibraryButtonLabel))
-    .accessibilityHint(String(localized: .launcherLibraryButtonHint))
-    .help(String(localized: .launcherLibraryButtonLabel))
+    .accessibilityLabel(String(localized: .emBrowserButtonLabel))
+    .accessibilityHint(String(localized: .emBrowserButtonHint))
+    .help(String(localized: .emBrowserButtonLabel))
     .glassEffect(.clear.interactive(true), in: Capsule(style: .continuous))
   }
 
-  private func openLibrary() {
-    guard !isLibraryPresented else {
+  private func openBrowser() {
+    guard !isBrowserPresented else {
       return
     }
 
-    isLibraryPresented = true
-    onOpenLibrary()
+    isBrowserPresented = true
+    onOpenBrowser()
   }
 }
 
@@ -133,12 +139,12 @@ struct LauncherBar: View {
   VStack {
     Spacer()
       .frame(height: .ds.spacing.xs)
-    LauncherBar(
+    EmojiMatchView(
       contentWidth: 324,
       onSubmit: {},
       onSelectEmoji: { _ in },
-      onOpenLibrary: {}
+      onOpenBrowser: {}
     )
-    .frame(width: 324)
+    .frame(width: 324, height: 400)
   }
 }

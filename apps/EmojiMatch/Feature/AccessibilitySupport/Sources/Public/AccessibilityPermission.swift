@@ -1,6 +1,6 @@
 import ApplicationServices
 
-/// Handles macOS Accessibility permission checks for launcher features that depend on AX.
+/// Handles macOS Accessibility permission checks for features that depend on AX.
 public enum AccessibilityPermission {
   /// The current Accessibility trust state for this app process.
   public enum Status: Equatable {
