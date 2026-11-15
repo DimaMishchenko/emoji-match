@@ -51,6 +51,20 @@ let project = Project(
       settings: emojiMatchTargetSettings
     ),
     .target(
+      name: "EmojiMatchTests",
+      destinations: [.mac],
+      product: .unitTests,
+      bundleId: "com.dimasike.EmojiMatch.Tests",
+      deploymentTargets: .macOS("26.0"),
+      buildableFolders: [
+        "Feature/EmojiMatchTests"
+      ],
+      dependencies: [
+        .target(name: "EmojiMatch")
+      ],
+      settings: emojiMatchTargetSettings
+    ),
+    .target(
       name: "AccessibilitySupportTests",
       destinations: [.mac],
       product: .unitTests,
@@ -66,6 +80,20 @@ let project = Project(
     )
   ],
   schemes: [
+    Scheme.scheme(
+      name: "EmojiMatch",
+      buildAction: .buildAction(
+        targets: [
+          .target("EmojiMatch"),
+          .target("EmojiMatchTests")
+        ]
+      ),
+      testAction: .targets(
+        [
+          .testableTarget(target: .target("EmojiMatchTests"))
+        ]
+      )
+    ),
     Scheme.scheme(
       name: "AccessibilitySupport",
       buildAction: .buildAction(

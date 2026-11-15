@@ -1,3 +1,4 @@
+import AppKit
 import DesignSystem
 import SwiftUI
 
@@ -7,6 +8,7 @@ struct EmojiMatchView: View {
     static let fieldHeight: CGFloat = 24
     static let browserSpacing: CGFloat = .ds.spacing.xxs
     static let horizontalContentInset: CGFloat = .ds.spacing.xs
+    static let columnCount = 6
 
     static var expandedHeight: CGFloat {
       barHeight + browserSpacing + BrowserView.preferredHeight
@@ -21,12 +23,16 @@ struct EmojiMatchView: View {
   }
 
   let contentWidth: CGFloat
-  let onSubmit: () -> Void
-  let onSelectEmoji: (String) -> Void
+  let searchStore: EmojiSearchStore
+  let usageStore: EmojiUsageStore
+  let onSubmit: (EmojiSelection) -> Void
+  let onSelectEmoji: (EmojiSelection) -> Void
   let onOpenBrowser: () -> Void
+  let onClose: () -> Void
 
   @State private var query = ""
   @State private var isBrowserPresented = false
+  @State private var navigation = EmojiMatchNavigationState()
 
   var body: some View {
     ZStack(alignment: .top) {
@@ -34,6 +40,13 @@ struct EmojiMatchView: View {
         BrowserView(
           contentWidth: contentWidth,
           horizontalContentInset: Constants.horizontalContentInset,
+          searchStore: searchStore,
+          usageStore: usageStore,
+          searchQuery: query,
+          selectedItemID: navigation.selectedItemID,
+          onSelectItemID: { itemID in
+            navigation.selectItemID(itemID)
+          },
           onSelectEmoji: onSelectEmoji
         )
         .scrollClipDisabled()
@@ -53,6 +66,21 @@ struct EmojiMatchView: View {
       height: isBrowserPresented ? Constants.expandedHeight : Constants.barHeight,
       alignment: .top
     )
+    .onChange(of: query, initial: true) { _, value in
+      let normalizedQuery = normalizedQuery(from: value)
+
+      guard !normalizedQuery.isEmpty else {
+        if isBrowserPresented {
+          navigation.resetSelection(in: browseLayout)
+        } else {
+          navigation.resetSelection(in: .init(rows: []))
+        }
+        return
+      }
+
+      openBrowser()
+      navigation.resetSelection(in: searchLayout(for: normalizedQuery))
+    }
   }
 
   private var topBar: some View {
@@ -84,10 +112,26 @@ struct EmojiMatchView: View {
         .font(.ds.body.weight(.medium))
         .foregroundStyle(Color.ds.textPrimary)
         .onSubmit {
-          onSubmit()
+          submit()
         }
-        .onKeyPress(.tab) {
-          openBrowser()
+        .onKeyPress(keys: [.leftArrow]) { press in
+          handleArrowPress(press, direction: .left)
+        }
+        .onKeyPress(keys: [.rightArrow]) { press in
+          handleArrowPress(press, direction: .right)
+        }
+        .onKeyPress(keys: [.upArrow]) { press in
+          handleArrowPress(press, direction: .up)
+        }
+        .onKeyPress(keys: [.downArrow]) { press in
+          handleArrowPress(press, direction: .down)
+        }
+        .onKeyPress(.escape) {
+          if normalizedQuery(from: query).isEmpty {
+            onClose()
+          } else {
+            query = ""
+          }
           return .handled
         }
     }
@@ -106,6 +150,7 @@ struct EmojiMatchView: View {
 
     return Button {
       openBrowser()
+      navigation.resetSelection(in: browseLayout)
     } label: {
       HStack(spacing: .ds.spacing.xxs) {
         Image(systemName: "arrow.right.to.line")
@@ -133,6 +178,126 @@ struct EmojiMatchView: View {
     isBrowserPresented = true
     onOpenBrowser()
   }
+
+  private func submit() {
+    let selection =
+      navigation.resolvedSelection(in: currentLayout)
+      ?? defaultSelection
+
+    guard let selection else {
+      return
+    }
+
+    onSubmit(selection)
+  }
+
+  private var browseLayout: EmojiMatchNavigationLayout {
+    let recentRows = EmojiMatchNavigationLayout(
+      items: usageStore.suggestions().map(EmojiMatchItem.recentSuggestion),
+      columnCount: Constants.columnCount
+    )
+    .rows
+    return EmojiMatchNavigationLayout(
+      rows: recentRows + catalog.navigationRows(columnCount: Constants.columnCount)
+    )
+  }
+
+  private var currentLayout: EmojiMatchNavigationLayout {
+    layout(for: isBrowserPresented)
+  }
+
+  private var catalog: EmojiBrowserCatalog {
+    EmojiBrowserCatalog.shared
+  }
+
+  private var defaultSelection: EmojiSelection? {
+    let normalizedQuery = normalizedQuery(from: query)
+
+    guard !normalizedQuery.isEmpty else {
+      return usageStore.topSelection()
+    }
+
+    return searchStore.topResult(for: normalizedQuery)?.selection
+  }
+
+  private func layout(
+    for browserVisible: Bool, assumeBrowserVisible: Bool = false
+  ) -> EmojiMatchNavigationLayout {
+    let normalizedQuery = normalizedQuery(from: query)
+
+    if !normalizedQuery.isEmpty {
+      return searchLayout(for: normalizedQuery)
+    }
+
+    return browserVisible || assumeBrowserVisible ? browseLayout : .init(rows: [])
+  }
+
+  private func searchLayout(for normalizedQuery: String) -> EmojiMatchNavigationLayout {
+    EmojiMatchNavigationLayout(
+      items: searchStore.results(for: normalizedQuery).map(EmojiMatchItem.searchResult),
+      columnCount: Constants.columnCount
+    )
+  }
+
+  private func handleArrowPress(
+    _ press: KeyPress,
+    direction: EmojiMatchNavigationDirection
+  ) -> KeyPress.Result {
+    guard Self.handlesArrowModifiers(press.modifiers) else {
+      return .ignored
+    }
+
+    return moveSelection(direction) ? .handled : .ignored
+  }
+
+  nonisolated static func handlesArrowModifiers(_ modifiers: EventModifiers) -> Bool {
+    modifiers.isDisjoint(with: [.shift, .control, .option, .command])
+  }
+
+  private func moveSelection(_ direction: EmojiMatchNavigationDirection) -> Bool {
+    let layout = layout(for: isBrowserPresented, assumeBrowserVisible: true)
+
+    guard !layout.items.isEmpty else {
+      return false
+    }
+
+    if !isBrowserPresented {
+      openBrowser()
+    }
+
+    if navigation.selectedItemID == nil
+      || !layout.items.contains(where: { $0.id == navigation.selectedItemID })
+    {
+      navigation.resetSelection(in: layout)
+    }
+
+    if navigation.move(direction, in: layout) {
+      announceSelection(in: layout)
+    }
+    return true
+  }
+
+  private func announceSelection(in layout: EmojiMatchNavigationLayout) {
+    guard
+      let selectedItemID = navigation.selectedItemID,
+      let item = layout.items.first(where: { $0.id == selectedItemID })
+    else {
+      return
+    }
+
+    NSAccessibility.post(
+      element: NSApplication.shared,
+      notification: .announcementRequested,
+      userInfo: [
+        .announcement: item.accessibilityLabel,
+        .priority: NSAccessibilityPriorityLevel.medium.rawValue
+      ]
+    )
+  }
+
+  private func normalizedQuery(from value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
 }
 
 #Preview {
@@ -141,9 +306,12 @@ struct EmojiMatchView: View {
       .frame(height: .ds.spacing.xs)
     EmojiMatchView(
       contentWidth: 324,
-      onSubmit: {},
+      searchStore: EmojiSearchStore(),
+      usageStore: EmojiUsageStore(),
+      onSubmit: { _ in },
       onSelectEmoji: { _ in },
-      onOpenBrowser: {}
+      onOpenBrowser: {},
+      onClose: {}
     )
     .frame(width: 324, height: 400)
   }

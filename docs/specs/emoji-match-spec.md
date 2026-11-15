@@ -61,10 +61,11 @@ Expected behavior:
 
 The app supports:
 
-- direct keyword search with fuzzy typo tolerance
+- direct keyword search with normalized matching
 - category and group search
 - multilingual search across all bundled locales
-- natural-language intent search
+- deterministic ranking of exact, prefix, and contains matches
+- local keyword extensions bundled with the app
 
 Examples:
 
@@ -73,6 +74,16 @@ Examples:
 - `emoji for an "Architecture" section header`
 - `anime`
 - `subtle celebration`
+
+Concrete search behavior:
+
+- normalize case, accents, and width before matching
+- tokenize queries and emoji keywords on punctuation and whitespace
+- search against every bundled locale loaded through `Emojis.searchIndex(locales: .all)`
+- include the app-bundled `emoji-keyword-extensions.json` keywords in the same search index
+- rank exact matches ahead of prefix matches, prefix matches ahead of contains matches, and use
+  stable sort-order ties after that
+- ignore unsupported Apple-only emoji in the same way the app’s browser already does
 
 #### 3. Selected-text prefill
 
@@ -120,6 +131,18 @@ V1 behavior:
 - recent selections
 - frequently used selections
 - local only
+- deterministic ranking that favors recency first and frequency second
+- stable tie-breaking by emoji id and displayed value
+- empty-query browsing can surface history above the catalog without replacing catalog browsing
+- persist to `UserDefaults` or an equivalent local store
+- record only after the app successfully creates and posts the paste shortcut events
+- merge repeated emoji selections by stable ID/value
+- retain count and last-used timestamp for each emoji
+- bound the retained history to a small fixed window
+- sort empty-query suggestions by recency first, then frequency as a tie-breaker, then stable emoji key
+
+The empty-query default state should surface these results above the catalog browser when history
+exists, but it should not replace catalog browsing itself.
 
 #### 7. Secondary copy actions
 
@@ -176,8 +199,8 @@ still open.
 
 1. User triggers the global shortcut with no selected text.
 2. Launcher appears and focuses the search field.
-3. If the query is empty, the launcher may show recents, most used, or another lightweight default
-   state.
+3. If the query is empty and history exists, the launcher may show recent/frequent suggestions as a
+   lightweight default state above the catalog browser.
 4. User can begin typing immediately.
 
 #### Flow 2: Search and insert
@@ -203,7 +226,8 @@ Notes:
 #### Flow 4: Recents and most used
 
 1. User opens the launcher with an empty query.
-2. Launcher may show recent selections and frequently used emoji.
+2. Launcher may show recent selections and frequently used emoji while keeping the catalog browser
+   available below them.
 3. User can choose one directly without typing.
 4. Once typing starts, search results become the primary view.
 
@@ -241,8 +265,19 @@ These are states within the main search flow, not separate top-level flows.
 2. User types, navigates results, expands secondary result areas if needed, and confirms a choice.
 3. The full primary flow can be completed entirely by keyboard.
 
-Exact keyboard shortcuts remain an open design decision and should be specified later.
-Current implementation uses `Control-Command-E` as the temporary default launcher shortcut.
+Exact keyboard shortcuts are:
+
+- `Shift-Command-E`: open Emoji Match
+- `Up` and `Down`: move the visible selection by one grid row, clamped at the top and bottom
+- `Left` and `Right`: move the visible selection by one cell, clamped at the row edges
+- `Return`: paste the currently selected emoji
+- `Escape`: clear a non-empty query first, then close the launcher when the query is already empty
+- `Tab`: keeps the platform focus chain and is not used as the primary emoji navigation key
+
+Selection defaults to the first visible result in search mode, the top recent item when history is
+showing, or the first catalog item when browsing without recents. When the query changes, the
+selection resets to the new first visible item and scrolls it into view.
+
 Current implementation uses a floating all-spaces launcher panel so it can appear above other apps,
 including fullscreen ones.
 Current implementation closes the launcher when the user clicks outside it.
@@ -252,8 +287,9 @@ Current implementation requests Accessibility access from app code when caret-ba
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
 Current implementation enables `AXManualAccessibility` on the frontmost app before reading the
 accessibility tree, to better support Electron and WebView wrappers.
-Current implementation pastes a random bundled emoji on Return as a temporary submit action and
-restores the previous clipboard contents shortly after the paste event.
+Current implementation pastes the current keyboard selection on Return, falling back to the top
+search match or top recent/frequent selection when no explicit keyboard movement has occurred yet.
+It restores the previous clipboard contents shortly after the paste event.
 
 #### Flow 7: Dismiss without side effects
 
@@ -366,7 +402,23 @@ product and UI mature.
 
 ## Search Model
 
-The search stack should be hybrid.
+The search stack is deterministic and local for this pass.
+
+## Usage History Model
+
+The usage-history stack is deterministic and local for this pass.
+
+History entries are stored on device and merged by stable emoji selection identity. The primary
+ordering is:
+
+1. `lastUsedAt` descending
+2. `count` descending
+3. `emoji id` ascending
+4. `emoji value` ascending
+
+This keeps recency dominant while still letting frequency break ties in a deterministic way. The
+empty-query browser can surface the top history entries above the full catalog sections, but it
+does not replace catalog browsing.
 
 ### Baseline search
 
@@ -375,37 +427,16 @@ Use the bundled emoji dataset for:
 - emoji value matching
 - localized name matching
 - localized keyword matching
-- group and subgroup matching
-- fuzzy matching for misspellings, typos, and near matches
+- app-bundled keyword extensions
+- exact, prefix, and contains ranking
 
 This path should be deterministic and fast.
 
-### Intent-aware search
-
-Use Foundation Models when available to improve queries that are naturally phrased or vague.
-
-Possible uses:
-
-- query rewriting
-- concept expansion
-- tone interpretation
-- reranking candidate emoji
-
-Examples:
-
-- `anime` might surface results like `✨`, `🌸`, `💮`, `🫧`
-- `an "Architecture" section header` might favor `🏛️`, `📐`, `🧱`
-
 ### Query interpretation
 
-The app should recognize that some phrases are framing text rather than meaningful keywords, for
-example:
-
-- `emoji for`
-- `emoji for a`
-- `emoji for an`
-
-These prefixes should not dominate ranking.
+The app should treat the query as a normalized keyword lookup rather than a natural-language
+inference problem for this pass. Framing text such as `emoji for` should not outrank real matches,
+but it does not require model-based rewriting.
 
 ## Technical Notes
 
@@ -429,6 +460,7 @@ This gives:
 - multilingual keywords
 - group and subgroup metadata
 - deterministic local search behavior
+- app-side keyword extensions for extra aliases
 
 ### AI integration
 

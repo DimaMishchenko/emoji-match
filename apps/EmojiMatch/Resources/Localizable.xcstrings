@@ -18,7 +18,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Press Tab to open the emoji library"
+            "value" : "Choose Browse to open the emoji library"
           }
         }
       }
@@ -41,6 +41,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Browse"
+          }
+        }
+      }
+    },
+    "emNoResults" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results"
+          }
+        }
+      }
+    },
+    "emRecentSectionTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
           }
         }
       }
