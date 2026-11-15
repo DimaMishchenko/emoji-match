@@ -45,7 +45,9 @@ struct App: SwiftUI.App {
   }
 
   private func openEmojiMatch() {
+    NativeGenmoji.cancelPendingRequest()
     AccessibilityPermission.requestIfNeeded()
+    let destination = NativeGenmoji.Destination.capture()
     closeExistingInstance()
 
     let panel = EmojiMatchPanel(
@@ -64,6 +66,12 @@ struct App: SwiftUI.App {
         onSelectEmoji: { selection in
           closeAndPaste(selection, close: close)
         },
+        onCreateGenmoji: NativeGenmoji.isAvailable
+          ? { prompt in
+            close()
+            NativeGenmoji.open(
+              prompt: prompt, destination: destination, shortcutMonitor: systemShortcutMonitor)
+          } : nil,
         onClose: {
           close()
         }

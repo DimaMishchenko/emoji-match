@@ -1,3 +1,4 @@
+import AppKit
 import Carbon.HIToolbox
 import Foundation
 
@@ -5,6 +6,7 @@ final class SystemShortcutMonitor {
   private var eventHandler: EventHandlerRef?
   private var hotKey: EventHotKeyRef?
   private var isStarted = false
+  private var nativePickerRequestID: UUID?
   private var onKeyDown: (() -> Void)?
   var shortcut = AppSettings.Shortcut.defaultOpen {
     didSet {
@@ -13,7 +15,7 @@ final class SystemShortcutMonitor {
       }
 
       unregisterHotKey()
-      registerHotKey()
+      if nativePickerRequestID == nil { registerHotKey() }
     }
   }
 
@@ -43,6 +45,27 @@ final class SystemShortcutMonitor {
     )
 
     registerHotKey()
+  }
+
+  func openNativeEmojiPicker() {
+    let requestID = UUID()
+    nativePickerRequestID = requestID
+    unregisterHotKey()
+    let source = CGEventSource(stateID: .combinedSessionState)
+    for isDown in [true, false] {
+      guard
+        let event = CGEvent(
+          keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Space), keyDown: isDown
+        )
+      else { continue }
+      event.flags = [.maskControl, .maskCommand]
+      event.post(tap: .cghidEventTap)
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+      guard let self, isStarted, nativePickerRequestID == requestID else { return }
+      nativePickerRequestID = nil
+      registerHotKey()
+    }
   }
 
   fileprivate func handleHotKey() {
@@ -86,7 +109,6 @@ final class SystemShortcutMonitor {
 }
 
 private let systemShortcutIdentifier: UInt32 = 1
-// Carbon uses a four-char signature; "EMAT" is short for Emoji Match.
 private let emojiMatchShortcutSignature = fourCharCode("EMAT")
 
 private let systemShortcutEventHandler: EventHandlerUPP = { _, event, userData in

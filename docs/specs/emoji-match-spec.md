@@ -284,7 +284,8 @@ fullscreen apps and uses the native picker's observed window level.
 The picker opens directly at 320 × 444 points of content. There is no compact or expansion state.
 The measured layout uses a 49.5-point header, 28-point search field, six emoji columns with a
 44-point row pitch, and a 44-point category bar. Search, localized data, usage history, keyboard
-navigation, and the action returning to catalog browsing remain app-owned features.
+navigation remain app-owned features. The adjacent header action opens Genmoji when system
+generation is available. Escape clears search and returns to the catalog.
 The default shortcut is registered only while Emoji Match is running, without changing macOS
 keyboard settings. Quitting Emoji Match releases the shortcut so the native picker is available again.
 Current implementation closes the launcher when the user clicks outside it.
@@ -521,3 +522,23 @@ Copy as image can be implemented by rendering the selected emoji to an image usi
 rendering on macOS and writing that representation to the pasteboard.
 
 This is a secondary feature and should not complicate the main insertion flow.
+
+### Genmoji
+
+- The header uses Apple's original grinning-face-plus vector artwork.
+- The Genmoji action closes Emoji Match and hands off to the system's own Character Palette
+  creation UI and original recipient text-input connection. The creator is not redrawn in SwiftUI.
+- A bounded accessibility pass presses the system picker’s adjacent Genmoji control using role
+  and header geometry, independent of the translated button label.
+- The original app must retain focus before handoff; its captured input is refocused. Emoji Match releases its Carbon shortcut while
+  posting the native Control-Command-Space event, then restores registration after 200 ms. This
+  does not change the user's macOS keyboard settings.
+- A nonempty query prefills an empty native prompt. Existing user input is preserved. Handoff work
+  is cancelled when Emoji Match opens again or the original app loses focus; retries are bounded.
+- Apple owns generation, photo/person/emoji choices, animations, Add, cancellation, saved Genmoji
+  and insertion capability. Genmoji does not enter Emoji Match's string-only usage history.
+- This path does not read the private sticker database, use private creation calls, or request
+  restricted signing entitlements.
+  Recipient compatibility is the system picker's compatibility; plain-text fields cannot become
+  adaptive-glyph editors. The native flow is verified on macOS 27.2.1; other OS builds need runtime
+  verification because the creation entry and accessibility hierarchy are private system contracts.

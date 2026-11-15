@@ -12,35 +12,13 @@
         }
       }
     },
-    "emBrowserButtonHint" : {
+    "emGenmojiButtonLabel" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose Browse to open the emoji library"
-          }
-        }
-      }
-    },
-    "emBrowserButtonLabel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open emoji library"
-          }
-        }
-      }
-    },
-    "emBrowserButtonTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse"
+            "value" : "Create Genmoji"
           }
         }
       }

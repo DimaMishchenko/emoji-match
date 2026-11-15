@@ -8,6 +8,7 @@ struct EmojiMatchView: View {
   let usageStore: EmojiUsageStore
   let onSubmit: (EmojiSelection) -> Void
   let onSelectEmoji: (EmojiSelection) -> Void
+  let onCreateGenmoji: ((String) -> Void)?
   let onClose: () -> Void
 
   @FocusState private var isSearchFocused: Bool
@@ -51,7 +52,9 @@ struct EmojiMatchView: View {
   private var topBar: some View {
     HStack(spacing: .ds.spacing.xs) {
       searchField
-      browserButton
+      if let onCreateGenmoji {
+        genmojiButton(action: onCreateGenmoji)
+      }
     }
     .padding(.horizontal, EmojiPickerMetrics.searchHorizontalInset)
     .padding(.top, EmojiPickerMetrics.searchTopInset)
@@ -120,23 +123,20 @@ struct EmojiMatchView: View {
     }
   }
 
-  private var browserButton: some View {
+  private func genmojiButton(action: @escaping (String) -> Void) -> some View {
     Button {
-      query = ""
-      navigation.resetSelection(in: browseLayout)
+      action(query.trimmingCharacters(in: .whitespacesAndNewlines))
     } label: {
-      Image(systemName: "face.smiling")
-        .font(EmojiPickerMetrics.searchFont)
-        .foregroundStyle(Color.ds.textSecondary)
-        .frame(minWidth: EmojiPickerMetrics.actionSize)
-        .frame(height: EmojiPickerMetrics.actionSize)
-        .contentShape(Capsule())
+      Image("Genmoji")
+        .renderingMode(.template)
+        .foregroundStyle(Color.ds.textPrimary)
+        .frame(width: EmojiPickerMetrics.actionSize, height: EmojiPickerMetrics.actionSize)
+        .contentShape(Circle())
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(String(localized: .emBrowserButtonLabel))
-    .accessibilityHint(String(localized: .emBrowserButtonHint))
-    .help(String(localized: .emBrowserButtonLabel))
-    .background(Color.ds.textPrimary.opacity(0.12), in: Capsule())
+    .accessibilityLabel(String(localized: .emGenmojiButtonLabel))
+    .help(String(localized: .emGenmojiButtonLabel))
+    .background(Color.ds.textPrimary.opacity(0.12), in: Circle())
   }
 
   private func submit() {
@@ -255,6 +255,7 @@ struct EmojiMatchView: View {
       usageStore: EmojiUsageStore(),
       onSubmit: { _ in },
       onSelectEmoji: { _ in },
+      onCreateGenmoji: { _ in },
       onClose: {}
     )
     .frame(width: EmojiPickerMetrics.contentWidth, height: EmojiPickerMetrics.expandedHeight)

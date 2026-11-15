@@ -141,3 +141,51 @@ without testing the deployment versions actually supported by Emoji Match.
 Installed SDK evidence: ImagePlayground.framework's `Modules/ImagePlayground.swiftmodule/arm64e-apple-macos.swiftinterface`,
 and AppKit.framework's `Headers/NSAdaptiveImageGlyph.h`, `NSTextInputClient.h`, `NSTextInputContext.h`,
 `NSAttributedString.h` and `NSTextView.h` under the active Xcode macOS SDK.
+
+## Product integration follow-up, 2026-11-15
+
+The product now hands Genmoji creation to Character Palette's native input-method session. The
+header icon is the original `emoji.face.grinning.and.plus.inverse` artwork from CoreGlyphsPrivate,
+exported with a 15-point regular symbol configuration as a template PDF with vector preservation.
+The creator itself is Apple's actual 320 × 480-point compact UI, including its native animation,
+photo/person/emoji controls, generated-image editor, Add and dismissal behavior.
+
+Why the final integration uses a system handoff:
+
+- The public Image Playground controller generates and returns real glyphs, but its presentation
+  enforces an 800 × 600-point content size on this runtime; setting a compact popover size does not
+  turn it into the system's compact creator.
+- Directly hosting `STKEmojiGenerationViewController` reproduces the layout but fails generation
+  with ModelManager permission errors in an ordinary process.
+- `CPKGenerationRemoteViewController` successfully hosts the privileged generation service and
+  generates images. Its result is an NSUUID. Resolving that UUID requires sticker database access;
+  `stickersd` rejects clients without `com.apple.private.stickers`. A disposable ad-hoc helper
+  claiming that entitlement was killed by macOS. The app does not claim the entitlement.
+- A prototype of `CPKShowGenmojiCreationFirstOnNextSession` did not provide a consistently correct
+  insertion session when called from the replacement picker. The product instead opens the native
+  picker in the original recipient, then advances its existing Genmoji control. No private creation
+  function or direct sticker database reader remains in production.
+
+An early handoff rendered the creator but did not prove insertion. Retaining and refocusing the
+original AX input, allowing the replacement popover to release key focus, and focusing the native
+prompt before prefill resolved the tested path. The production action generated a lemon wearing
+sunglasses, and Add inserted it into a task-owned TextEdit RTFD document. Copy-back decoded as an
+`NSAdaptiveImageGlyph`, identifier `A89DF024-4052-41D4-993F-0DF750A185D30`, with 7,373 image bytes.
+This establishes semantic glyph delivery; it is not a comparison against inaccessible original
+sticker-database bytes. The test clipboard was restored.
+
+Recipient boundary observed in the follow-up: a task-owned Safari `contenteditable`/ARIA textbox
+received the native system browser, but macOS omitted its Genmoji control entirely. Emoji Match did
+not force a glyph or description into that field. This is an unsupported receiving context for the
+native Genmoji path on this machine, rather than evidence that all Safari editors support it.
+
+Notes also passed the production path. A temporary note received the native creator, query prefill,
+generation and Add. Copy-back returned an adaptive glyph with identifier
+`5D9C7B08-6294-49B1-A40F-16291C4C79440`, description `a smiling lime`, and 7,391 image bytes. No message
+or email was sent. Test clipboard contents were restored. Both tested supported native recipients
+retained the adaptive-glyph representation; this does not establish universal receiving-app support.
+
+[Compact creator, dark backdrop](../verification/emoji-match-genmoji/generated.png),
+[compact creator, Notes backdrop](../verification/emoji-match-genmoji/notes-generated.png),
+[TextEdit copy-back](../verification/emoji-match-genmoji/textedit-copy.rtfd), and
+[Notes copy-back](../verification/emoji-match-genmoji/notes-copy.rtfd).
