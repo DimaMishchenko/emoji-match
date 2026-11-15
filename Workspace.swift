@@ -1,9 +1,8 @@
 import ProjectDescription
 
 let workspace = Workspace(
-  name: "dimasike-apps",
+  name: "emoji-match",
   projects: [
-    "apps/DesignSystemCatalog",
     "apps/EmojiMatch"
   ]
 )

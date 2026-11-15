@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-  name: "dimasike-platform",
+  name: "emoji-match",
   platforms: [
     .iOS(.v26),
     .macOS(.v26),
