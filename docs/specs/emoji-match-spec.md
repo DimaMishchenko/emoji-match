@@ -267,7 +267,7 @@ These are states within the main search flow, not separate top-level flows.
 
 Exact keyboard shortcuts are:
 
-- `Shift-Command-E`: open Emoji Match
+- `Control-Command-Space`: open Emoji Match in place of the native emoji picker while the app is running
 - `Up` and `Down`: move the visible selection by one grid row, clamped at the top and bottom
 - `Left` and `Right`: move the visible selection by one cell, clamped at the row edges
 - `Return`: paste the currently selected emoji
@@ -280,6 +280,8 @@ selection resets to the new first visible item and scrolls it into view.
 
 Current implementation uses a floating all-spaces launcher panel so it can appear above other apps,
 including fullscreen ones.
+The default shortcut is registered only while Emoji Match is running, without changing macOS
+keyboard settings. Quitting Emoji Match releases the shortcut so the native picker is available again.
 Current implementation closes the launcher when the user clicks outside it.
 Current implementation anchors the launcher near the focused text caret when available; otherwise
 it falls back to editor-level heuristics and then to the current screen center.
@@ -363,7 +365,6 @@ product and UI mature.
 
 ### Interaction Decisions
 
-- default global shortcut
 - result navigation shortcuts
 - shortcut for opening the full catalog
 - shortcut for expanding secondary result sections
