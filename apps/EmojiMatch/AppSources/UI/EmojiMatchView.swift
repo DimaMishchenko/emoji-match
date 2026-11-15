@@ -39,13 +39,13 @@ struct EmojiMatchView: View {
         .scrollClipDisabled()
         .padding(.top, Constants.barHeight + Constants.browserSpacing)
         .frame(height: Constants.expandedHeight)
-        
+
         BlurEdge(
           height: Constants.barHeight + Constants.browserSpacing,
           direction: .down
         )
       }
-      
+
       topBar
     }
     .frame(

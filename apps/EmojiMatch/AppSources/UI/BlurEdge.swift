@@ -4,14 +4,14 @@ struct BlurEdge: View {
   enum Direction {
     case up
     case down
-    
+
     var startPoint: UnitPoint {
       switch self {
       case .up: .top
       case .down: .bottom
       }
     }
-    
+
     var endPoint: UnitPoint {
       switch self {
       case .up: .bottom
@@ -19,10 +19,10 @@ struct BlurEdge: View {
       }
     }
   }
-  
+
   let height: CGFloat
   let direction: Direction
-  
+
   var body: some View {
     Rectangle()
       .fill(.ultraThickMaterial)

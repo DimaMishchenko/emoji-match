@@ -36,8 +36,8 @@ struct BrowserView: View {
       count: Constants.columnCount
     )
   }
-  
-  @State var visibleSectionIDs = [String]()
+
+  @State var visibleSectionIDs: [String] = []
 
   init(
     contentWidth: CGFloat = 324,
@@ -64,7 +64,7 @@ struct BrowserView: View {
           .padding(.top, .ds.spacing.sm)
           .padding(.bottom, Constants.bottomContentInset)
         }
-        
+
         BlurEdge(
           height: .ds.spacing.xxl,
           direction: .up
@@ -119,7 +119,7 @@ struct BrowserView: View {
             .font(.ds.body.weight(.medium))
             .foregroundStyle(Color.ds.textPrimary)
         }
-        .if(visibleSectionIDs.first == section.id){
+        .if(visibleSectionIDs.first == section.id) {
           $0.buttonStyle(.glass)
         } else: {
           $0.buttonStyle(.plain)
