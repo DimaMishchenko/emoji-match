@@ -5,10 +5,11 @@ import SwiftUI
 @main
 struct App: SwiftUI.App {
   private enum Constants {
-    static let emInitialContentSize = CGSize(width: 324, height: 44)
-    static let emMaximumContentSize = EmojiMatchView.maximumContentSize(
-      width: emInitialContentSize.width
+    static let emContentSize = CGSize(
+      width: EmojiPickerMetrics.contentWidth,
+      height: EmojiPickerMetrics.expandedHeight
     )
+
   }
 
   @State private var settings = AppSettings()
@@ -48,14 +49,13 @@ struct App: SwiftUI.App {
     closeExistingInstance()
 
     let panel = EmojiMatchPanel(
-      initialContentSize: Constants.emInitialContentSize,
-      maximumContentSize: Constants.emMaximumContentSize,
+      contentSize: Constants.emContentSize,
       onClose: {
         self.panel = nil
       }
-    ) { close, setExpanded in
+    ) { close in
       EmojiMatchView(
-        contentWidth: Constants.emInitialContentSize.width,
+        contentWidth: Constants.emContentSize.width,
         searchStore: searchStore,
         usageStore: usageStore,
         onSubmit: { selection in
@@ -63,9 +63,6 @@ struct App: SwiftUI.App {
         },
         onSelectEmoji: { selection in
           closeAndPaste(selection, close: close)
-        },
-        onOpenBrowser: {
-          setExpanded(true)
         },
         onClose: {
           close()
@@ -81,8 +78,6 @@ struct App: SwiftUI.App {
       return
     }
 
-    // `onClose` clears the stored panel after it closes. This handles the separate case where the
-    // open shortcut is triggered again while the previous panel is still open.
     panel.close()
   }
 

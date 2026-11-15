@@ -1,7 +1,32 @@
 import AppKit
 import ApplicationServices
 
-struct AccessibilityElementReader {
+protocol AccessibilityElementReading {
+  func focusedElement() -> AXUIElement?
+  func refreshedFocusedElement(after element: AXUIElement?) -> AXUIElement?
+  func ancestorElements(of element: AXUIElement, maxDepth: Int) -> [AXUIElement]
+  func childElements(of element: AXUIElement) -> [AXUIElement]
+  func role(of element: AXUIElement) -> String?
+  func stringValue(of element: AXUIElement) -> String?
+  func isExplicitlyEditable(_ element: AXUIElement) -> Bool
+  func insertionPointLine(of element: AXUIElement) -> Int?
+  func isWindowElement(_ element: AXUIElement?) -> Bool
+  func isEditableTextRole(_ role: String?) -> Bool
+  func isSingleLineTextRole(_ role: String?) -> Bool
+  func elementRect(for element: AXUIElement) -> CGRect?
+  func selectedTextRange(for element: AXUIElement) -> CFRange?
+  func selectedTextMarkerRange(for element: AXUIElement) -> AXTextMarkerRange?
+  func boundsForRangeValue(_ rangeValue: AXValue, in element: AXUIElement) -> CGRect?
+  func stringForRangeValue(_ rangeValue: AXValue, in element: AXUIElement) -> String?
+  func lineNumber(for index: Int, in element: AXUIElement) -> Int?
+  func rangeForLine(_ line: Int, in element: AXUIElement) -> CFRange?
+  func textMarkerSelectionBounds(
+    for selectedTextMarkerRange: AXTextMarkerRange,
+    in element: AXUIElement
+  ) -> CGRect?
+}
+
+struct AccessibilityElementReader: AccessibilityElementReading {
   private enum Constants {
     static let editableAttribute = "AXEditable" as CFString
     static let selectedTextMarkerRangeAttribute = "AXSelectedTextMarkerRange" as CFString
@@ -78,10 +103,6 @@ struct AccessibilityElementReader {
     return []
   }
 
-  func elementIdentifier(for element: AXUIElement) -> UInt {
-    UInt(bitPattern: Unmanaged.passUnretained(element).toOpaque())
-  }
-
   func role(of element: AXUIElement) -> String? {
     stringAttribute(kAXRoleAttribute as CFString, from: element)
   }
@@ -136,7 +157,7 @@ struct AccessibilityElementReader {
     }
 
     let rect = CGRect(origin: position, size: size)
-    return rect.isEmpty ? nil : rect
+    return FocusedTextAnchorHeuristics.isUsableRect(rect) ? rect : nil
   }
 
   func selectedTextRange(for element: AXUIElement) -> CFRange? {
@@ -180,7 +201,9 @@ struct AccessibilityElementReader {
     }
 
     var bounds = CGRect.zero
-    guard AXValueGetValue(boundsValue, .cgRect, &bounds), !bounds.isEmpty else {
+    guard AXValueGetValue(boundsValue, .cgRect, &bounds),
+      FocusedTextAnchorHeuristics.isUsableTextBounds(bounds)
+    else {
       return nil
     }
 
@@ -243,7 +266,9 @@ struct AccessibilityElementReader {
 
     let boundsValue = unsafeBitCast(value, to: AXValue.self)
     var bounds = CGRect.zero
-    guard AXValueGetValue(boundsValue, .cgRect, &bounds), !bounds.isEmpty else {
+    guard AXValueGetValue(boundsValue, .cgRect, &bounds),
+      FocusedTextAnchorHeuristics.isUsableTextBounds(bounds)
+    else {
       return nil
     }
 

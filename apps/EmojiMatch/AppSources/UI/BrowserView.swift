@@ -2,21 +2,7 @@ import DesignSystem
 import SwiftUI
 
 struct BrowserView: View {
-  private enum Constants {
-    static let height: CGFloat = 316
-    static let columnCount = 6
-    static let emojiCellSize: CGFloat = 40
-    static let emojiFontSize: CGFloat = 30
-    static let categoryButtonSize: CGFloat = 24
-    static let bottomContentInset: CGFloat = categoryButtonSize + .ds.spacing.md
-
-    static func gridSpacing(for width: CGFloat) -> CGFloat {
-      let occupiedWidth = CGFloat(columnCount) * emojiCellSize
-      return max(.zero, (width - occupiedWidth) / CGFloat(columnCount - 1))
-    }
-  }
-
-  static let preferredHeight = Constants.height
+  static let preferredHeight = EmojiPickerMetrics.browserHeight
 
   let contentWidth: CGFloat
   let horizontalContentInset: CGFloat
@@ -31,20 +17,15 @@ struct BrowserView: View {
 
   private var columns: [GridItem] {
     Array(
-      repeating: GridItem(
-        .fixed(Constants.emojiCellSize),
-        spacing: Constants.gridSpacing(
-          for: max(.zero, contentWidth - (horizontalContentInset * 2))
-        )
-      ),
-      count: Constants.columnCount
+      repeating: GridItem(.flexible(), spacing: .zero),
+      count: EmojiPickerMetrics.columnCount
     )
   }
 
   @State private var visibleSectionIDs: [String] = []
 
   init(
-    contentWidth: CGFloat = 324,
+    contentWidth: CGFloat = EmojiPickerMetrics.contentWidth,
     horizontalContentInset: CGFloat = .ds.spacing.xs,
     searchStore: EmojiSearchStore,
     usageStore: EmojiUsageStore,
@@ -65,22 +46,29 @@ struct BrowserView: View {
 
   var body: some View {
     ScrollViewReader { proxy in
-      ZStack(alignment: .bottom) {
-        if normalizedSearchQuery.isEmpty {
-          browseView()
-        } else {
-          searchResultsView()
+      VStack(spacing: .zero) {
+        Group {
+          if normalizedSearchQuery.isEmpty {
+            browseView()
+          } else {
+            searchResultsView()
+          }
         }
+        .frame(
+          height: normalizedSearchQuery.isEmpty
+            ? EmojiPickerMetrics.scrollHeight : Self.preferredHeight
+        )
 
         if normalizedSearchQuery.isEmpty {
-          BlurEdge(
-            height: .ds.spacing.xxl,
-            direction: .up
-          )
-
           categoryBar(proxy: proxy)
             .padding(.horizontal, horizontalContentInset)
-            .padding(.bottom, .ds.spacing.xxs)
+            .frame(height: EmojiPickerMetrics.categoryBarHeight)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) {
+              Rectangle()
+                .fill(Color.ds.textPrimary.opacity(0.08))
+                .frame(height: .ds.stroke.hairline)
+            }
         }
       }
       .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
@@ -91,7 +79,7 @@ struct BrowserView: View {
       }
     }
     .frame(width: contentWidth)
-    .frame(maxHeight: .infinity)
+    .frame(height: Self.preferredHeight)
   }
 
   private var normalizedSearchQuery: String {
@@ -115,7 +103,7 @@ struct BrowserView: View {
       .scrollTargetLayout()
       .padding(.horizontal, horizontalContentInset)
       .padding(.top, .ds.spacing.sm)
-      .padding(.bottom, Constants.bottomContentInset)
+      .padding(.bottom, .ds.spacing.xs)
     }
   }
 
@@ -128,9 +116,9 @@ struct BrowserView: View {
           Text(String(localized: .emNoResults))
             .font(.ds.caption.weight(.semibold))
             .foregroundStyle(Color.ds.textSecondary)
-            .frame(maxWidth: .infinity, minHeight: Constants.height - .ds.spacing.lg)
+            .frame(maxWidth: .infinity, minHeight: EmojiPickerMetrics.scrollHeight - .ds.spacing.lg)
         } else {
-          LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
+          LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
             ForEach(results) { item in
               emojiButton(
                 item: item,
@@ -160,7 +148,7 @@ struct BrowserView: View {
         .font(.ds.caption.weight(.semibold))
         .foregroundStyle(Color.ds.textSecondary)
 
-      LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
+      LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
         ForEach(section.items) { item in
           emojiButton(
             item: item,
@@ -181,7 +169,7 @@ struct BrowserView: View {
         .font(.ds.caption.weight(.semibold))
         .foregroundStyle(Color.ds.textSecondary)
 
-      LazyVGrid(columns: columns, alignment: .leading, spacing: .ds.spacing.xs) {
+      LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
         ForEach(suggestions) { suggestion in
           let item = EmojiMatchItem.recentSuggestion(suggestion)
 
@@ -205,8 +193,8 @@ struct BrowserView: View {
   ) -> some View {
     Button(action: action) {
       Text(item.selection.value)
-        .font(.system(size: Constants.emojiFontSize))
-        .frame(width: Constants.emojiCellSize, height: Constants.emojiCellSize)
+        .font(.system(size: EmojiPickerMetrics.emojiFontSize))
+        .frame(width: EmojiPickerMetrics.emojiCellSize, height: EmojiPickerMetrics.emojiCellSize)
         .background {
           RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
             .fill(isSelected ? Color.ds.primary.opacity(0.16) : .clear)
@@ -228,7 +216,7 @@ struct BrowserView: View {
   }
 
   private func categoryBar(proxy: ScrollViewProxy) -> some View {
-    HStack(spacing: .ds.spacing.xxs) {
+    HStack(spacing: .zero) {
       ForEach(catalog.sections) { section in
         Button {
           onSelectItemID(section.items.first?.id ?? section.id)
@@ -237,16 +225,23 @@ struct BrowserView: View {
           }
         } label: {
           Image(systemName: section.symbolName)
-            .font(.ds.body.weight(.medium))
+            .font(.system(size: EmojiPickerMetrics.categorySymbolSize))
             .foregroundStyle(Color.ds.textPrimary)
+            .frame(
+              width: EmojiPickerMetrics.categoryButtonSize,
+              height: EmojiPickerMetrics.categoryButtonSize
+            )
+            .background {
+              Circle()
+                .fill(
+                  visibleSectionIDs.first == section.id
+                    ? Color.ds.textPrimary.opacity(0.12) : .clear
+                )
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
-        .if(visibleSectionIDs.first == section.id) {
-          $0.buttonStyle(.glass)
-        } else: {
-          $0.buttonStyle(.plain)
-        }
-        .buttonBorderShape(.capsule)
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
         .accessibilityLabel(section.title)
       }
     }
@@ -273,5 +268,5 @@ struct BrowserView: View {
     onSelectItemID: { _ in },
     onSelectEmoji: { _ in }
   )
-  .frame(width: 324, height: 376)
+  .frame(width: EmojiPickerMetrics.contentWidth, height: BrowserView.preferredHeight)
 }

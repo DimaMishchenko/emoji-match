@@ -18,26 +18,77 @@ enum FocusedTextAnchorHeuristics {
 
   nonisolated static func insertionIndex(in text: NSString, for selectedTextRange: CFRange) -> Int?
   {
-    guard selectedTextRange.location != kCFNotFound else {
+    guard isValidRange(selectedTextRange, textLength: text.length) else {
       return nil
     }
 
-    return min(max(selectedTextRange.location + selectedTextRange.length, 0), text.length)
+    return selectedTextRange.location + selectedTextRange.length
+  }
+
+  nonisolated static func isValidRange(_ range: CFRange, textLength: Int? = nil) -> Bool {
+    guard range.location >= 0, range.length >= 0,
+      range.location <= Int.max - range.length
+    else {
+      return false
+    }
+
+    return textLength.map { range.location + range.length <= $0 } ?? true
   }
 
   nonisolated static func candidateCharacterRanges(for selectedTextRange: CFRange) -> [CFRange] {
-    guard selectedTextRange.location != kCFNotFound else {
+    guard isValidRange(selectedTextRange), selectedTextRange.length == 0 else {
       return []
     }
 
     var ranges: [CFRange] = []
-
     if selectedTextRange.location > 0 {
       ranges.append(CFRange(location: selectedTextRange.location - 1, length: 1))
     }
-
-    ranges.append(CFRange(location: selectedTextRange.location, length: 1))
+    if selectedTextRange.location < Int.max {
+      ranges.append(CFRange(location: selectedTextRange.location, length: 1))
+    }
     return ranges
+  }
+
+  nonisolated static func isUsableRect(_ rect: CGRect) -> Bool {
+    isUsableTextBounds(rect) && rect.width > 0
+  }
+
+  nonisolated static func isUsableTextBounds(_ rect: CGRect) -> Bool {
+    rect.origin.x.isFinite && rect.origin.y.isFinite
+      && rect.size.width.isFinite && rect.size.height.isFinite
+      && rect.size.width >= 0 && rect.size.height > 0
+      && rect.maxX.isFinite && rect.maxY.isFinite
+  }
+
+  nonisolated static func isPlausibleTextBounds(
+    _ bounds: CGRect,
+    selectionRange: CFRange?,
+    elementRect: CGRect?
+  ) -> Bool {
+    guard isUsableTextBounds(bounds) else {
+      return false
+    }
+    guard let elementRect else {
+      return true
+    }
+    guard isUsableRect(elementRect) else {
+      return false
+    }
+
+    let tolerance: CGFloat = 2
+    guard bounds.minX >= elementRect.minX - tolerance,
+      bounds.maxX <= elementRect.maxX + tolerance,
+      bounds.minY >= elementRect.minY - tolerance,
+      bounds.maxY <= elementRect.maxY + tolerance
+    else {
+      return false
+    }
+
+    guard selectionRange?.length == 0 else {
+      return true
+    }
+    return bounds.width <= max(defaultEstimatedCharacterWidth * 2, elementRect.width * 0.1)
   }
 
   nonisolated static func isAtLineStart(in text: NSString, selectedTextRange: CFRange) -> Bool {
@@ -69,13 +120,14 @@ enum FocusedTextAnchorHeuristics {
   nonisolated static func horizontalInset(
     baseInset: CGFloat,
     elementMinX: CGFloat,
-    leadingAccessoryTrailingEdge: CGFloat?
+    leadingAccessoryTrailingEdge: CGFloat?,
+    accessorySpacing: CGFloat = estimatedAccessoryTextSpacing
   ) -> CGFloat {
     guard let leadingAccessoryTrailingEdge else {
       return baseInset
     }
 
-    let accessoryInset = leadingAccessoryTrailingEdge - elementMinX + estimatedAccessoryTextSpacing
+    let accessoryInset = leadingAccessoryTrailingEdge - elementMinX + accessorySpacing
     return min(max(baseInset, accessoryInset), maximumEstimatedAccessoryTextInset)
   }
 }

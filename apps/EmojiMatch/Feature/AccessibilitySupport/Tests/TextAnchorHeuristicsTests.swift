@@ -44,14 +44,14 @@ import Testing
     #expect(ranges.isEmpty)
   }
 
-  @Test func insertionIndexClampsToStringBounds() {
+  @Test func insertionIndexRejectsOutOfBoundsSelection() {
     let text = NSString(string: "hello")
 
     #expect(
       FocusedTextAnchorHeuristics.insertionIndex(
         in: text,
         for: CFRange(location: 99, length: 0)
-      ) == 5
+      ) == nil
     )
     #expect(
       FocusedTextAnchorHeuristics.insertionIndex(
@@ -59,6 +59,43 @@ import Testing
         for: CFRange(location: 2, length: 2)
       ) == 4
     )
+  }
+
+  @Test func malformedRangesAreRejectedWithoutOverflow() {
+    for range in [
+      CFRange(location: -2, length: 0), CFRange(location: 0, length: -1),
+      CFRange(location: Int.max, length: 1), CFRange(location: 1, length: Int.max)
+    ] {
+      #expect(!FocusedTextAnchorHeuristics.isValidRange(range))
+      #expect(FocusedTextAnchorHeuristics.candidateCharacterRanges(for: range).isEmpty)
+      #expect(FocusedTextAnchorHeuristics.insertionIndex(in: "hello", for: range) == nil)
+    }
+  }
+
+  @Test func selectedTextDoesNotProduceAdjacentCaretGuesses() {
+    #expect(
+      FocusedTextAnchorHeuristics.candidateCharacterRanges(
+        for: CFRange(location: 2, length: 3)
+      )
+      .isEmpty)
+  }
+
+  @Test func zeroWidthCaretBoundsAreUsable() {
+    #expect(
+      FocusedTextAnchorHeuristics.isUsableTextBounds(
+        CGRect(x: 10, y: 10, width: 0, height: 18)))
+  }
+
+  @Test func nonfiniteAndNegativeGeometryIsRejected() {
+    for rect in [
+      CGRect(x: CGFloat.nan, y: 0, width: 1, height: 18),
+      CGRect(x: 0, y: 0, width: CGFloat.infinity, height: 18),
+      CGRect(x: 0, y: 0, width: -1, height: 18),
+      CGRect(x: 0, y: 0, width: 1, height: 0),
+      CGRect(x: 0, y: 0, width: 1, height: -18)
+    ] {
+      #expect(!FocusedTextAnchorHeuristics.isUsableTextBounds(rect))
+    }
   }
 
   @Test func insertionIndexRejectsUnknownSelection() {

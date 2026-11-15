@@ -7,9 +7,9 @@
 
 Emoji Match is a macOS-first utility for finding and inserting the right emoji while writing.
 
-It is not an emoji keyboard replacement. It is a shortcut-driven helper that stays out of the
-way, opens instantly, understands intent, and pastes a useful emoji into the current app with
-minimal friction.
+It is a shortcut-driven replacement for the compact system emoji picker while the app is running.
+It preserves Emoji Match’s search, usage history, and catalog features while aiming to match the
+system picker’s presentation and placement.
 
 The core loop is:
 
@@ -37,7 +37,7 @@ slow, repetitive, and unnecessary for such a small task.
 
 - macOS only
 - global shortcut first
-- compact picker UI, not a replacement keyboard
+- native-sized emoji popover, not a replacement keyboard
 - default action is paste
 - semantic lookup is core
 - supports quick browsing of the full emoji library
@@ -52,7 +52,7 @@ The app opens from a user-configurable global shortcut.
 
 Expected behavior:
 
-- opens as a compact picker panel
+- opens directly into the full emoji browser in a native AppKit popover
 - focuses the search field immediately
 - can be used without touching the mouse
 - still allows quick browsing of the full emoji library, similar to the default picker
@@ -234,7 +234,7 @@ Notes:
 #### Flow 5: Full catalog browsing
 
 1. User opens the launcher.
-2. User enters an explicit browse mode to see the emoji catalog.
+2. The emoji catalog is visible immediately.
 3. User browses by category, grouping, or search within the catalog.
 4. User selects an emoji and inserts it into the current app.
 
@@ -247,10 +247,9 @@ These are states within the main search flow, not separate top-level flows.
   - AI results are still loading
   - launcher may show a lightweight placeholder for the AI section
 
-- `Expanded results`
-  - compact view may show only a subset of results
-  - user can explicitly expand to inspect more results
-  - this can apply to direct results, AI results, or both
+- `Scrollable results`
+  - the full-size picker displays the result grid immediately
+  - the user scrolls to inspect results beyond the viewport
 
 - `No results`
   - query returns no useful local match
@@ -278,13 +277,31 @@ Selection defaults to the first visible result in search mode, the top recent it
 showing, or the first catalog item when browsing without recents. When the query changes, the
 selection resets to the new first visible item and scrolls it into view.
 
-Current implementation uses a floating all-spaces launcher panel so it can appear above other apps,
-including fullscreen ones.
+Current implementation uses an invisible, nonactivating all-spaces anchor panel and an AppKit
+`NSPopover` for the picker. AppKit supplies the pointer, material, rounded corners, shadow,
+screen-edge clamping, edge flipping, and outside-click dismissal. The anchor panel can accompany
+fullscreen apps and uses the native picker's observed window level.
+The picker opens directly at 320 × 444 points of content. There is no compact or expansion state.
+The measured layout uses a 49.5-point header, 28-point search field, six emoji columns with a
+44-point row pitch, and a 44-point category bar. Search, localized data, usage history, keyboard
+navigation, and the action returning to catalog browsing remain app-owned features.
 The default shortcut is registered only while Emoji Match is running, without changing macOS
 keyboard settings. Quitting Emoji Match releases the shortcut so the native picker is available again.
 Current implementation closes the launcher when the user clicks outside it.
-Current implementation anchors the launcher near the focused text caret when available; otherwise
-it falls back to editor-level heuristics and then to the current screen center.
+Current implementation anchors the launcher near the focused text caret or selection when available.
+It prefers exact AX marker and selected-range bounds within the nearest focused input subtree, then
+nearby-character and line bounds, then estimates from a valid selection, then the focused input’s
+bounds. Marker geometry does not require a numeric selection range. Numeric ranges must be valid
+and fit exposed UTF-16 text before parameterized AX queries. Zero-width carets are valid; nonfinite,
+negative-size, or out-of-input geometry is rejected. Exact geometry is not shifted or rejected based
+on estimated text insets or estimated line layout. Discovery does not borrow sibling input selection
+through a window or application ancestor. When no focused text input is identifiable, placement
+falls back to the current screen center.
+Field-bound placement and estimated layout are degraded fallbacks, not claims of native caret parity.
+A bounded leading control in the same-bounds parent can inform estimated text insets when the
+field lacks useful AX caret bounds. Sibling placeholders and arbitrary labels are not accessories.
+Visual matching and cross-app verification evidence is maintained in
+`docs/verification/emoji-match-picker-review.md`.
 Current implementation requests Accessibility access from app code when caret-based positioning is
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
 Current implementation enables `AXManualAccessibility` on the frontmost app before reading the

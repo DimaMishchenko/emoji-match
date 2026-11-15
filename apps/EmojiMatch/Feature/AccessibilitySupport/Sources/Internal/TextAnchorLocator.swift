@@ -1,7 +1,6 @@
 import AppKit
 import ApplicationServices
 
-// The public API stays intentionally small; this type owns the messy AX lookup and fallback logic.
 struct TextAnchorLocator {
   private enum Constants {
     static let manualAccessibilityWarmupDelay: CFTimeInterval = 0.15
@@ -10,8 +9,12 @@ struct TextAnchorLocator {
     static let maximumCandidateCount = 64
   }
 
-  private let elements = AccessibilityElementReader()
+  private let elements: any AccessibilityElementReading
   private var manualAccessibilityWarmup = ManualAccessibilityWarmup()
+
+  init(elements: any AccessibilityElementReading = AccessibilityElementReader()) {
+    self.elements = elements
+  }
 
   mutating func anchorRect() -> CGRect? {
     guard AXIsProcessTrusted() else {
@@ -27,7 +30,6 @@ struct TextAnchorLocator {
       return anchorRect
     }
 
-    // Wrapper apps sometimes expose the accessibility tree a beat after AXManualAccessibility.
     guard didWarmUpManualAccessibility else {
       return nil
     }
@@ -48,14 +50,12 @@ private extension TextAnchorLocator {
       return nil
     }
 
-    guard let textContext = textContext(startingFrom: focusedElement) else {
-      return nil
-    }
-
-    return anchorRect(for: textContext)
+    return anchorRect(startingFrom: focusedElement)
   }
+}
 
-  func textContext(startingFrom focusedElement: AXUIElement) -> TextAnchorContext? {
+extension TextAnchorLocator {
+  func anchorRect(startingFrom focusedElement: AXUIElement) -> CGRect? {
     guard !elements.isWindowElement(focusedElement) else {
       return nil
     }
@@ -63,238 +63,147 @@ private extension TextAnchorLocator {
     let lineage =
       [focusedElement]
       + elements.ancestorElements(
-        of: focusedElement,
-        maxDepth: Constants.maximumAncestorDepth
-      )
-
-    // If the focused chain has no text signal at all, centering is safer than guessing.
-    guard hasTextFocusSignal(in: lineage) else {
+        of: focusedElement, maxDepth: Constants.maximumAncestorDepth)
+    guard let inputElement = lineage.first(where: isTextInputCandidate) else {
       return nil
     }
 
-    let candidates = candidateElements(from: lineage)
-
-    if isTextInputCandidate(focusedElement) {
-      let inputElementRect = editableElementRect(for: focusedElement)
-      if anchorRect(for: focusedElement, elementRect: inputElementRect) != nil {
-        return TextAnchorContext(element: focusedElement)
-      }
-    }
-
-    let nonFocusedCandidates = candidates.filter {
-      elements.elementIdentifier(for: $0) != elements.elementIdentifier(for: focusedElement)
-    }
-
-    for element in nonFocusedCandidates where isTextInputCandidate(element) {
-      let inputElementRect = editableElementRect(for: element)
-
-      if let selectedTextMarkerRange = elements.selectedTextMarkerRange(for: element),
-        let bounds = elements.textMarkerSelectionBounds(
-          for: selectedTextMarkerRange,
-          in: element
-        ),
-        isPlausibleCaretRect(
-          bounds,
-          for: elements.selectedTextRange(for: element) ?? CFRange(location: 0, length: 0),
-          in: element,
-          elementRect: inputElementRect
-        )
+    let inputElementRect = editableElementRect(for: inputElement)
+    let candidates = candidateElements(from: inputElement)
+    for element in candidates {
+      if let bounds = exactAnchorRect(for: element),
+        FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+          bounds, selectionRange: nil, elementRect: inputElementRect)
       {
-        return TextAnchorContext(element: element)
+        return bounds
       }
     }
 
-    for element in nonFocusedCandidates where isTextInputCandidate(element) {
-      let inputElementRect = editableElementRect(for: element)
-      if let selectedTextRange = elements.selectedTextRange(for: element),
-        selectionBounds(
-          for: selectedTextRange,
-          in: element,
-          elementRect: inputElementRect
-        ) != nil
+    let selections = candidates.compactMap { element -> (AXUIElement, CFRange)? in
+      validSelectedTextRange(for: element).map { (element, $0) }
+    }
+    for (element, range) in selections {
+      if let bounds = adjacentCharacterRect(
+        for: range, in: element, elementRect: editableElementRect(for: element)),
+        FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+          bounds, selectionRange: nil, elementRect: inputElementRect)
       {
-        return TextAnchorContext(element: element)
+        return bounds
       }
     }
-
-    for element in nonFocusedCandidates where isTextInputCandidate(element) {
-      if let selectedTextRange = elements.selectedTextRange(for: element),
-        adjacentCharacterRect(for: selectedTextRange, in: element) != nil
+    for (element, range) in selections {
+      if let bounds = lineRangeCaretRect(
+        for: range, in: element, elementRect: editableElementRect(for: element)),
+        FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+          bounds, selectionRange: nil, elementRect: inputElementRect)
       {
-        return TextAnchorContext(element: element)
+        return bounds
       }
     }
-
-    for element in nonFocusedCandidates where isTextInputCandidate(element) {
-      let inputElementRect = editableElementRect(for: element)
-      if let selectedTextRange = elements.selectedTextRange(for: element),
-        lineRangeCaretRect(
-          for: selectedTextRange,
-          in: element,
-          elementRect: inputElementRect
-        ) != nil
+    for (element, range) in selections {
+      if let bounds = estimatedCaretRect(
+        for: element, selectedTextRange: range, elementRect: editableElementRect(for: element)),
+        FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+          bounds, selectionRange: nil, elementRect: inputElementRect)
       {
-        return TextAnchorContext(element: element)
+        return bounds
       }
-    }
-
-    for element in nonFocusedCandidates where isTextInputCandidate(element) {
-      let inputElementRect = editableElementRect(for: element)
-      if let selectedTextRange = elements.selectedTextRange(for: element),
-        estimatedCaretRect(
-          for: element,
-          selectedTextRange: selectedTextRange,
-          elementRect: inputElementRect
-        ) != nil
-      {
-        return TextAnchorContext(element: element)
-      }
-    }
-
-    return nil
-  }
-
-  func candidateElements(from lineage: [AXUIElement]) -> [AXUIElement] {
-    var candidates: [AXUIElement] = []
-    candidates.reserveCapacity(Constants.maximumCandidateCount)
-
-    var seen = Set(lineage.map(elements.elementIdentifier(for:)))
-    candidates.append(contentsOf: lineage)
-
-    var queue = lineage.map { (element: $0, depth: 0) }
-    var queueIndex = 0
-
-    while queueIndex < queue.count, candidates.count < Constants.maximumCandidateCount {
-      let current = queue[queueIndex]
-      queueIndex += 1
-
-      guard current.depth < Constants.maximumDescendantDepth else {
-        continue
-      }
-
-      for child in elements.childElements(of: current.element) {
-        let childIdentifier = elements.elementIdentifier(for: child)
-        guard seen.insert(childIdentifier).inserted else {
-          continue
-        }
-
-        candidates.append(child)
-        queue.append((child, current.depth + 1))
-
-        guard candidates.count < Constants.maximumCandidateCount else {
-          break
-        }
-      }
-    }
-
-    return candidates
-  }
-}
-
-private extension TextAnchorLocator {
-  func anchorRect(for textContext: TextAnchorContext) -> CGRect? {
-    let inputElementRect = editableElementRect(for: textContext.element)
-
-    return anchorRect(for: textContext.element, elementRect: inputElementRect)
-  }
-
-  func anchorRect(for element: AXUIElement, elementRect inputElementRect: CGRect?) -> CGRect? {
-    guard let selectedTextRange = elements.selectedTextRange(for: element) else {
-      return nil
-    }
-
-    if let selectedTextMarkerRange = elements.selectedTextMarkerRange(for: element),
-      let bounds = elements.textMarkerSelectionBounds(
-        for: selectedTextMarkerRange,
-        in: element
-      ),
-      isPlausibleCaretRect(
-        bounds,
-        for: selectedTextRange,
-        in: element,
-        elementRect: inputElementRect
-      )
-    {
-      return adjustedCaretRect(
-        bounds,
-        for: selectedTextRange,
-        in: element,
-        elementRect: inputElementRect
-      )
-    }
-
-    if let bounds = selectionBounds(
-      for: selectedTextRange,
-      in: element,
-      elementRect: inputElementRect
-    ) {
-      return adjustedCaretRect(
-        bounds,
-        for: selectedTextRange,
-        in: element,
-        elementRect: inputElementRect
-      )
-    }
-
-    if let bounds = adjacentCharacterRect(
-      for: selectedTextRange,
-      in: element
-    ) {
-      return adjustedCaretRect(
-        bounds,
-        for: selectedTextRange,
-        in: element,
-        elementRect: inputElementRect
-      )
-    }
-
-    if let bounds = lineRangeCaretRect(
-      for: selectedTextRange,
-      in: element,
-      elementRect: inputElementRect
-    ) {
-      return bounds
-    }
-
-    // Final text-aware fallback when AX exposes selection but not caret geometry.
-    if let bounds = estimatedCaretRect(
-      for: element,
-      selectedTextRange: selectedTextRange,
-      elementRect: inputElementRect
-    ) {
-      return bounds
     }
 
     return inputElementRect
   }
+}
 
-  func editableElementRect(for element: AXUIElement) -> CGRect? {
-    guard isEditableTextElement(element) else {
+private extension TextAnchorLocator {
+  func candidateElements(from inputElement: AXUIElement) -> [AXUIElement] {
+    var candidates = [inputElement]
+    var queue = [(element: inputElement, depth: 0)]
+    var visited = [inputElement]
+    var queueIndex = 0
+
+    while queueIndex < queue.count, visited.count < Constants.maximumCandidateCount {
+      let current = queue[queueIndex]
+      queueIndex += 1
+      guard current.depth < Constants.maximumDescendantDepth else {
+        continue
+      }
+
+      for child in elements.childElements(of: current.element)
+      where !visited.contains(where: { CFEqual($0, child) }) {
+        visited.append(child)
+        queue.append((child, current.depth + 1))
+        if isTextInputCandidate(child) {
+          candidates.append(child)
+        }
+        guard visited.count < Constants.maximumCandidateCount else {
+          break
+        }
+      }
+    }
+    return candidates
+  }
+
+  func validSelectedTextRange(for element: AXUIElement) -> CFRange? {
+    guard let range = elements.selectedTextRange(for: element),
+      FocusedTextAnchorHeuristics.isValidRange(
+        range, textLength: elements.stringValue(of: element).map { ($0 as NSString).length })
+    else {
       return nil
     }
+    return range
+  }
 
-    return elements.elementRect(for: element)
+  func exactAnchorRect(for element: AXUIElement) -> CGRect? {
+    let elementRect = editableElementRect(for: element)
+    let selectedTextRange = validSelectedTextRange(for: element)
+    if let marker = elements.selectedTextMarkerRange(for: element),
+      let bounds = elements.textMarkerSelectionBounds(for: marker, in: element),
+      FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+        bounds, selectionRange: selectedTextRange, elementRect: elementRect)
+    {
+      return bounds
+    }
+    if let selectedTextRange {
+      return selectionBounds(for: selectedTextRange, in: element, elementRect: elementRect)
+    }
+    return nil
+  }
+
+  func editableElementRect(for element: AXUIElement) -> CGRect? {
+    guard isTextInputCandidate(element), let rect = elements.elementRect(for: element),
+      FocusedTextAnchorHeuristics.isUsableRect(rect)
+    else {
+      return nil
+    }
+    return rect
   }
 
   func adjacentCharacterRect(
     for selectedTextRange: CFRange,
-    in element: AXUIElement
+    in element: AXUIElement,
+    elementRect: CGRect?
   ) -> CGRect? {
+    guard selectedTextRange.length == 0 else {
+      return nil
+    }
     if let text = elements.stringValue(of: element).map(NSString.init),
       FocusedTextAnchorHeuristics.isAtLineStart(in: text, selectedTextRange: selectedTextRange)
     {
       return nil
     }
 
-    for range in FocusedTextAnchorHeuristics.candidateCharacterRanges(for: selectedTextRange) {
+    let textLength = elements.stringValue(of: element).map { ($0 as NSString).length }
+    for range in FocusedTextAnchorHeuristics.candidateCharacterRanges(for: selectedTextRange)
+    where FocusedTextAnchorHeuristics.isValidRange(range, textLength: textLength) {
       var mutableRange = range
       guard let rangeValue = AXValueCreate(.cfRange, &mutableRange),
-        let bounds = elements.boundsForRangeValue(rangeValue, in: element)
+        let bounds = elements.boundsForRangeValue(rangeValue, in: element),
+        FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+          bounds, selectionRange: nil, elementRect: elementRect)
       else {
         continue
       }
 
-      // Newline bounds tend to point at the previous line edge, which is worse than estimating.
       let string = elements.stringForRangeValue(rangeValue, in: element)
       if string?.contains(where: \.isNewline) == true {
         continue
@@ -316,6 +225,7 @@ private extension TextAnchorLocator {
     elementRect: CGRect?
   ) -> CGRect? {
     guard
+      selectedTextRange.length == 0,
       let text = elements.stringValue(of: element).map(NSString.init),
       FocusedTextAnchorHeuristics.isAtLineStart(in: text, selectedTextRange: selectedTextRange),
       let insertionIndex = FocusedTextAnchorHeuristics.insertionIndex(
@@ -323,9 +233,15 @@ private extension TextAnchorLocator {
         for: selectedTextRange
       ),
       let lineNumber = elements.lineNumber(for: insertionIndex, in: element),
+      FocusedTextAnchorHeuristics.isPlausibleInsertionPointLine(lineNumber),
       let lineRange = elements.rangeForLine(lineNumber, in: element),
+      FocusedTextAnchorHeuristics.isValidRange(lineRange, textLength: text.length),
+      lineRange.location <= insertionIndex,
+      lineRange.location + lineRange.length >= insertionIndex,
       let lineRangeValue = rangeValue(for: lineRange),
-      let lineBounds = elements.boundsForRangeValue(lineRangeValue, in: element)
+      let lineBounds = elements.boundsForRangeValue(lineRangeValue, in: element),
+      FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+        lineBounds, selectionRange: nil, elementRect: elementRect)
     else {
       return nil
     }
@@ -385,7 +301,12 @@ private extension TextAnchorLocator {
       return FocusedTextAnchorHeuristics.visualLineIndex(in: text.substring(to: insertionIndex))
     }
 
-    return max(elements.insertionPointLine(of: element).map { $0 - 1 } ?? 0, 0)
+    guard let line = elements.insertionPointLine(of: element),
+      FocusedTextAnchorHeuristics.isPlausibleInsertionPointLine(line)
+    else {
+      return 0
+    }
+    return max(line - 1, 0)
   }
 
   func estimatedCaretX(
@@ -393,7 +314,13 @@ private extension TextAnchorLocator {
     selectedTextRange: CFRange,
     in elementRect: CGRect
   ) -> CGFloat {
-    let minX = elementRect.minX + leadingTextInset(for: element, in: elementRect)
+    let minX = max(
+      elementRect.minX,
+      min(
+        elementRect.minX + leadingTextInset(for: element, in: elementRect),
+        elementRect.maxX - 1
+      )
+    )
     let maxX = max(
       minX,
       elementRect.maxX - FocusedTextAnchorHeuristics.estimatedTextHorizontalInset
@@ -430,89 +357,13 @@ private extension TextAnchorLocator {
     }
 
     guard
-      isPlausibleCaretRect(
-        bounds,
-        for: selectedTextRange,
-        in: element,
-        elementRect: elementRect
-      )
+      FocusedTextAnchorHeuristics.isPlausibleTextBounds(
+        bounds, selectionRange: selectedTextRange, elementRect: elementRect)
     else {
       return nil
     }
 
     return bounds
-  }
-
-  func isPlausibleCaretRect(
-    _ bounds: CGRect,
-    for selectedTextRange: CFRange,
-    in element: AXUIElement,
-    elementRect: CGRect?
-  ) -> Bool {
-    guard selectedTextRange.length == 0, let elementRect else {
-      return true
-    }
-
-    let maxExpectedWidth = max(
-      FocusedTextAnchorHeuristics.defaultEstimatedCharacterWidth * 2,
-      elementRect.width * 0.1
-    )
-    guard
-      bounds.width <= maxExpectedWidth,
-      bounds.height <= max(elementRect.height * 1.5, 44)
-    else {
-      return false
-    }
-
-    if let text = elements.stringValue(of: element).map(NSString.init),
-      FocusedTextAnchorHeuristics.isAtLineStart(in: text, selectedTextRange: selectedTextRange)
-    {
-      return true
-    }
-
-    // Some multiline editors report a previous-line caret rect for empty lines. Compare the
-    // AX-provided rect against the text-derived line position and reject only clearly off-line
-    // results so we can fall back to the estimated caret instead.
-    guard
-      !isSingleLineTextElement(element),
-      let estimatedBounds = estimatedCaretRect(
-        for: element,
-        selectedTextRange: selectedTextRange,
-        elementRect: elementRect
-      )
-    else {
-      return true
-    }
-
-    let allowedVerticalDelta = max(8, min(bounds.height, estimatedBounds.height) * 0.75)
-    return abs(bounds.midY - estimatedBounds.midY) <= allowedVerticalDelta
-  }
-
-  func adjustedCaretRect(
-    _ rect: CGRect,
-    for selectedTextRange: CFRange,
-    in element: AXUIElement,
-    elementRect: CGRect?
-  ) -> CGRect {
-    guard
-      selectedTextRange.length == 0,
-      isSingleLineTextElement(element),
-      let elementRect
-    else {
-      return rect
-    }
-
-    let minimumTextX = elementRect.minX + leadingTextInset(for: element, in: elementRect)
-    guard rect.minX < minimumTextX else {
-      return rect
-    }
-
-    return CGRect(
-      x: minimumTextX,
-      y: rect.minY,
-      width: rect.width,
-      height: rect.height
-    )
   }
 
   func leadingTextInset(for element: AXUIElement, in elementRect: CGRect) -> CGFloat {
@@ -521,37 +372,66 @@ private extension TextAnchorLocator {
       ? FocusedTextAnchorHeuristics.estimatedSearchFieldHorizontalInset
       : FocusedTextAnchorHeuristics.estimatedTextHorizontalInset
 
+    guard let accessory = leadingAccessoryBounds(in: element, elementRect: elementRect) else {
+      return baseInset
+    }
+    let spacing: CGFloat =
+      accessory.height >= elementRect.height
+      ? 0 : FocusedTextAnchorHeuristics.estimatedAccessoryTextSpacing
     return FocusedTextAnchorHeuristics.horizontalInset(
       baseInset: baseInset,
       elementMinX: elementRect.minX,
-      leadingAccessoryTrailingEdge: leadingAccessoryTrailingEdge(
-        in: element, elementRect: elementRect)
+      leadingAccessoryTrailingEdge: accessory.maxX,
+      accessorySpacing: spacing
     )
   }
 
-  func leadingAccessoryTrailingEdge(
-    in element: AXUIElement,
-    elementRect: CGRect
-  ) -> CGFloat? {
+  func leadingAccessoryBounds(in element: AXUIElement, elementRect: CGRect) -> CGRect? {
     let leadingLimit =
       elementRect.minX + FocusedTextAnchorHeuristics.maximumEstimatedAccessoryTextInset
-    let childEdges = elements.childElements(of: element)
-      .compactMap { child -> CGFloat? in
-        guard
-          !isEditableTextElement(child),
-          let childRect = elements.elementRect(for: child),
-          childRect.minX >= elementRect.minX,
-          childRect.maxX <= leadingLimit,
-          childRect.midY >= elementRect.minY,
-          childRect.midY <= elementRect.maxY
-        else {
-          return nil
+    var candidates = elements.childElements(of: element)
+    if let parent = elements.ancestorElements(of: element, maxDepth: 1).first,
+      let parentRect = elements.elementRect(for: parent),
+      abs(parentRect.minX - elementRect.minX) <= 2,
+      abs(parentRect.minY - elementRect.minY) <= 2,
+      abs(parentRect.width - elementRect.width) <= 2,
+      abs(parentRect.height - elementRect.height) <= 2
+    {
+      candidates += elements.childElements(of: parent)
+        .filter { sibling in
+          guard let rect = elements.elementRect(for: sibling),
+            abs(rect.minX - elementRect.minX) <= 2,
+            abs(rect.minY - elementRect.minY) <= 2,
+            abs(rect.height - elementRect.height) <= 2
+          else { return false }
+          return isLeadingAccessory(sibling)
         }
-
-        return childRect.maxX
+    }
+    return
+      candidates.compactMap { child -> CGRect? in
+        guard !CFEqual(child, element), isLeadingAccessory(child),
+          let rect = elements.elementRect(for: child),
+          FocusedTextAnchorHeuristics.isUsableRect(rect),
+          rect.minX >= elementRect.minX,
+          rect.maxX <= leadingLimit,
+          rect.minY >= elementRect.minY,
+          rect.maxY <= elementRect.maxY
+        else { return nil }
+        return rect
       }
+      .max { $0.maxX < $1.maxX }
+  }
 
-    return childEdges.max()
+  func isLeadingAccessory(_ element: AXUIElement) -> Bool {
+    let role = elements.role(of: element)
+    if role == kAXButtonRole || role == kAXImageRole { return true }
+    guard role == kAXGroupRole, let rect = elements.elementRect(for: element) else { return false }
+    return elements.childElements(of: element)
+      .contains { child in
+        let childRole = elements.role(of: child)
+        return (childRole == kAXButtonRole || childRole == kAXImageRole)
+          && elements.elementRect(for: child) == rect
+      }
   }
 
   func rangeValue(for range: CFRange) -> AXValue? {
@@ -561,38 +441,23 @@ private extension TextAnchorLocator {
 }
 
 private extension TextAnchorLocator {
-  func hasTextFocusSignal(in elementsToCheck: [AXUIElement]) -> Bool {
-    elementsToCheck.contains { isTextInputCandidate($0) }
-  }
-
   func isTextInputCandidate(_ element: AXUIElement) -> Bool {
-    isEditableTextElement(element)
+    let role = elements.role(of: element)
+    guard role != kAXWindowRole, role != kAXApplicationRole else {
+      return false
+    }
+    return isEditableTextElement(element)
       || elements.insertionPointLine(of: element)
         .map(FocusedTextAnchorHeuristics.isPlausibleInsertionPointLine)
         ?? false
   }
 
   func isEditableTextElement(_ element: AXUIElement) -> Bool {
-    guard !hasBogusInsertionPointLine(element) else {
-      return false
-    }
-
-    if elements.isExplicitlyEditable(element) {
-      return true
-    }
-
-    return elements.isEditableTextRole(elements.role(of: element))
+    elements.isExplicitlyEditable(element)
+      || elements.isEditableTextRole(elements.role(of: element))
   }
 
   func isSingleLineTextElement(_ element: AXUIElement) -> Bool {
     elements.isSingleLineTextRole(elements.role(of: element))
-  }
-
-  func hasBogusInsertionPointLine(_ element: AXUIElement) -> Bool {
-    guard let insertionPointLine = elements.insertionPointLine(of: element) else {
-      return false
-    }
-
-    return !FocusedTextAnchorHeuristics.isPlausibleInsertionPointLine(insertionPointLine)
   }
 }
