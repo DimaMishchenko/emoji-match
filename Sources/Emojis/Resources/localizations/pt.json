@@ -2096,15 +2096,11 @@
     "1F201" : {
       "name" : "botão japonês de “aqui”",
       "searchTokens" : [
-        "\"aqui\"",
-        "“aqui”",
-        "alfabeto",
-        "botão \"aqui\"",
-        "botão japonês de “aqui”",
+        "aqui",
+        "botão",
         "japonês",
         "katakana",
-        "koko",
-        "ココ"
+        "botão japonês de “aqui”"
       ]
     },
     "1F202-FE0F" : {
@@ -2120,101 +2116,76 @@
     "1F21A" : {
       "name" : "botão japonês de “gratuito”",
       "searchTokens" : [
-        "“gratuito”",
-        "alfabeto",
-        "botão japonês de “gratuito”",
-        "de graça",
-        "grátis",
-        "ideográfico",
+        "botão",
+        "gratuito",
         "ideograma",
         "japonês",
-        "sem custo",
-        "無"
+        "botão japonês de “gratuito”"
       ]
     },
     "1F22F" : {
       "name" : "botão japonês de “reservado”",
       "searchTokens" : [
-        "“reservado”",
-        "alfabeto",
-        "botão japonês de “reservado”",
-        "ideográfico",
+        "botão",
         "ideograma",
         "japonês",
         "reservado",
-        "指"
+        "botão japonês de “reservado”"
       ]
     },
     "1F232" : {
       "name" : "botão japonês de “proibido”",
       "searchTokens" : [
-        "“proibido”",
-        "alfabeto",
-        "botão japonês de “proibido”",
-        "ideográfico",
-        "ideográfico quadrado “proibir”",
+        "botão",
         "ideograma",
         "japonês",
         "proibido",
-        "proibir",
-        "禁"
+        "botão japonês de “proibido”"
       ]
     },
     "1F233" : {
       "name" : "botão japonês de “vago”",
       "searchTokens" : [
-        "“vago”",
-        "alfabeto",
-        "botão japonês de “vago”",
-        "ideográfico",
+        "botão",
         "ideograma",
         "japonês",
-        "vaga",
         "vago",
-        "vazio",
-        "空"
+        "botão japonês de “vago”"
       ]
     },
     "1F234" : {
       "name" : "botão japonês de “nota mínima”",
       "searchTokens" : [
-        "“nota mínima”",
-        "alfabeto",
-        "botão japonês de “nota mínima”",
-        "chinês",
-        "ideográfico",
-        "ideográfico quadrado “juntos”",
+        "botão",
         "ideograma",
         "japonês",
-        "juntos",
-        "合"
+        "mínima",
+        "nota",
+        "botão japonês de “nota mínima”"
       ]
     },
     "1F235" : {
       "name" : "botão japonês de “sem vagas”",
       "searchTokens" : [
-        "“sem vagas”",
-        "alfabeto",
-        "botão japonês de “sem vagas”",
-        "completude",
-        "ideográfico",
-        "ideográfico quadrado “completude”",
+        "botão",
         "ideograma",
         "japonês",
-        "満"
+        "sem",
+        "vagas",
+        "botão japonês de “sem vagas”"
       ]
     },
     "1F236" : {
       "name" : "botão japonês de “não gratuito”",
       "searchTokens" : [
-        "“não gratuito”",
-        "alfabeto",
-        "botão japonês de “não gratuito”",
-        "ideográfico",
+        "botão",
+        "grátis",
         "ideograma",
+        "isento",
         "japonês",
-        "não gratuito",
-        "有"
+        "não",
+        "taxa",
+        "botão japonês de “não gratuito”"
       ]
     },
     "1F237-FE0F" : {
@@ -2230,69 +2201,54 @@
     "1F238" : {
       "name" : "botão japonês de “aplicação”",
       "searchTokens" : [
-        "“aplicação”",
-        "alfabeto",
-        "aplicar",
-        "botão japonês de “aplicação”",
-        "chinês",
-        "ideográfico quadrado “aplicar”",
+        "aplicação",
+        "aplicativo",
+        "botão",
         "ideograma",
         "japonês",
-        "申"
+        "botão japonês de “aplicação”"
       ]
     },
     "1F239" : {
       "name" : "botão japonês de “desconto”",
       "searchTokens" : [
-        "“desconto”",
-        "alfabeto",
-        "botão japonês de “desconto”",
+        "botão",
         "desconto",
-        "ideográfico",
         "ideograma",
         "japonês",
-        "割"
+        "botão japonês de “desconto”"
       ]
     },
     "1F23A" : {
       "name" : "botão japonês de “aberto para negócios”",
       "searchTokens" : [
-        "“aberto para negócios”",
-        "botão japonês de “aberto para negócios”",
-        "chinês",
-        "ideográfico quadrado “operando”",
+        "aberto",
+        "botão",
         "ideograma",
         "japonês",
-        "operando",
-        "営"
+        "negócios",
+        "botão japonês de “aberto para negócios”"
       ]
     },
     "1F250" : {
       "name" : "botão japonês de “barganha”",
       "searchTokens" : [
-        "“barganha”",
-        "alfabeto",
         "barganha",
-        "botão japonês de “barganha”",
-        "ideográfico",
+        "botão",
         "ideograma",
         "japonês",
-        "pechincha",
-        "得"
+        "promoção",
+        "botão japonês de “barganha”"
       ]
     },
     "1F251" : {
       "name" : "botão japonês de “aceitável”",
       "searchTokens" : [
-        "“aceitável”",
-        "aceitar",
-        "alfabeto",
-        "botão japonês de “aceitável”",
-        "chinês",
-        "ideográfico circular “aceitar”",
+        "aceitável",
+        "botão",
         "ideograma",
         "japonês",
-        "可"
+        "botão japonês de “aceitável”"
       ]
     },
     "1F300" : {
@@ -4888,6 +4844,54 @@
         "ornamento chinês",
         "vaso",
         "vaso chinês"
+      ]
+    },
+    "1F3FB" : {
+      "name" : "pele clara",
+      "searchTokens" : [
+        "pele",
+        "pele clara",
+        "tipo 1–2",
+        "tom"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "pele morena clara",
+      "searchTokens" : [
+        "clara",
+        "morena",
+        "pele",
+        "tipo 3",
+        "tom",
+        "pele morena clara"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "pele morena",
+      "searchTokens" : [
+        "pele",
+        "pele morena",
+        "tipo 4",
+        "tom"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "pele morena escura",
+      "searchTokens" : [
+        "escura",
+        "morena",
+        "pele",
+        "tipo 5",
+        "tom",
+        "pele morena escura"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "pele escura",
+      "searchTokens" : [
+        "pele escura",
+        "tipo 6",
+        "tom de pele"
       ]
     },
     "1F400" : {
@@ -12345,6 +12349,32 @@
         "subir"
       ]
     },
+    "1F6D8" : {
+      "name" : "deslizamento",
+      "searchTokens" : [
+        "avalanche",
+        "desastre",
+        "montanha",
+        "perigo",
+        "rochas",
+        "terremoto",
+        "deslizamento"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "farol",
+      "searchTokens" : [
+        "esperança",
+        "iluminação",
+        "luz",
+        "mar",
+        "marítimo",
+        "navegação",
+        "orientação",
+        "sinal",
+        "farol"
+      ]
+    },
     "1F6DC" : {
       "name" : "sem fio",
       "searchTokens" : [
@@ -14668,6 +14698,43 @@
         "bengala para cegos"
       ]
     },
+    "1F9B0" : {
+      "name" : "cabelo vermelho",
+      "searchTokens" : [
+        "cabelo vermelho",
+        "ruivo"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "cabelo cacheado",
+      "searchTokens" : [
+        "afro",
+        "cabelo",
+        "cacheado",
+        "encaracolado",
+        "cabelo cacheado"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "careca",
+      "searchTokens" : [
+        "careca",
+        "nenhum cabelo",
+        "quimioterapia",
+        "raspado",
+        "sem cabelo"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "cabelo branco",
+      "searchTokens" : [
+        "branco",
+        "cabelo",
+        "grisalho",
+        "velho",
+        "cabelo branco"
+      ]
+    },
     "1F9B4" : {
       "name" : "osso",
       "searchTokens" : [
@@ -15369,6 +15436,17 @@
         "crianças",
         "família",
         "família: adulto, criança, criança"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "bailarina",
+      "searchTokens" : [
+        "bailarino",
+        "balé",
+        "ballet",
+        "dançarina",
+        "dançarino",
+        "bailarina"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -16386,6 +16464,70 @@
         "orquestra"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone",
+      "searchTokens" : [
+        "instrumento",
+        "jazz",
+        "música",
+        "sopro",
+        "triste",
+        "trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteoro",
+      "searchTokens" : [
+        "apocalipse",
+        "bola de fogo",
+        "espaço",
+        "estrela",
+        "gravidade",
+        "queda",
+        "rocha",
+        "meteoro"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "borracha",
+      "searchTokens" : [
+        "apagar",
+        "correção",
+        "desenho",
+        "desfazer",
+        "equívoco",
+        "erro",
+        "escrita",
+        "excluir",
+        "passar",
+        "remover",
+        "borracha"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "rede com cabo",
+      "searchTokens" : [
+        "armadilha",
+        "capturar",
+        "coletar",
+        "malha",
+        "rede com cabo"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "baú de tesouro",
+      "searchTokens" : [
+        "dinheiro",
+        "joia",
+        "joias",
+        "ouro",
+        "prata",
+        "prêmio",
+        "riqueza",
+        "tesouro",
+        "baú de tesouro"
+      ]
+    },
     "1FA8F" : {
       "name" : "pá",
       "searchTokens" : [
@@ -17096,6 +17238,44 @@
         "segurança"
       ]
     },
+    "1FAC8" : {
+      "name" : "criatura peluda",
+      "searchTokens" : [
+        "críptido",
+        "EUA",
+        "floresta",
+        "gigante",
+        "pé grande",
+        "pé‑grande",
+        "peludo",
+        "sasquatch",
+        "yeti",
+        "criatura peluda"
+      ]
+    },
+    "1FACC" : {
+      "name" : "borboleta-monarca",
+      "searchTokens" : [
+        "esperança",
+        "frágil",
+        "inseto",
+        "lagarta",
+        "metamorfose",
+        "migração",
+        "mudança",
+        "transformação",
+        "borboleta-monarca"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orca",
+      "searchTokens" : [
+        "baleia",
+        "marinho",
+        "oceano",
+        "orca"
+      ]
+    },
     "1FACE" : {
       "name" : "alce",
       "searchTokens" : [
@@ -17295,6 +17475,18 @@
         "vegetal"
       ]
     },
+    "1FADD" : {
+      "name" : "picles",
+      "searchTokens" : [
+        "condimento",
+        "conserva",
+        "fermentar",
+        "pepino",
+        "picles",
+        "problema",
+        "salmoura"
+      ]
+    },
     "1FADF" : {
       "name" : "respingo",
       "searchTokens" : [
@@ -17468,6 +17660,43 @@
         "rosto com olheiras"
       ]
     },
+    "1FAEA" : {
+      "name" : "rosto distorcido",
+      "searchTokens" : [
+        "ansiedade",
+        "chocado",
+        "inchado",
+        "pânico",
+        "surpreso",
+        "vulnerável",
+        "rosto distorcido"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "rosto rachando",
+      "searchTokens" : [
+        "decepção",
+        "quebrar",
+        "quebrar a cara",
+        "resiliência",
+        "revelação",
+        "tensão",
+        "transformação",
+        "rosto rachando"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "nuvem de briga",
+      "searchTokens" : [
+        "briga",
+        "debate",
+        "desacordo",
+        "discussão",
+        "luta",
+        "tumulto",
+        "nuvem de briga"
+      ]
+    },
     "1FAF0" : {
       "name" : "mão com dedo indicador e polegar cruzados",
       "searchTokens" : [
@@ -17594,6 +17823,42 @@
         "recusar",
         "toca aqui",
         "mão empurrando para a direita"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "sinal de polegar para a esquerda",
+      "searchTokens" : [
+        "apontar",
+        "aquele",
+        "aquilo",
+        "esquerda",
+        "essa",
+        "esse",
+        "esta",
+        "este",
+        "isso",
+        "isto",
+        "lado",
+        "neutro",
+        "sinal de polegar para a esquerda"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "sinal de polegar para a direita",
+      "searchTokens" : [
+        "apontar",
+        "aquele",
+        "aquilo",
+        "direita",
+        "essa",
+        "esse",
+        "esta",
+        "este",
+        "isso",
+        "isto",
+        "lado",
+        "neutro",
+        "sinal de polegar para a direita"
       ]
     },
     "203C-FE0F" : {

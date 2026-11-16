@@ -973,10 +973,10 @@
       ]
     },
     "1F1ED-1F1F2" : {
-      "name" : "flag: Heard & McDonald Islands",
+      "name" : "flag: Heard Island & McDonald Islands",
       "searchTokens" : [
         "flag",
-        "flag: Heard & McDonald Islands"
+        "flag: Heard Island & McDonald Islands"
       ]
     },
     "1F1ED-1F1F3" : {
@@ -1701,10 +1701,10 @@
       ]
     },
     "1F1F8-1F1ED" : {
-      "name" : "flag: St. Helena",
+      "name" : "flag: St. Helena, Ascension & Tristan da Cunha",
       "searchTokens" : [
         "flag",
-        "flag: St. Helena"
+        "flag: St. Helena, Ascension & Tristan da Cunha"
       ]
     },
     "1F1F8-1F1EE" : {
@@ -1827,10 +1827,10 @@
       ]
     },
     "1F1F9-1F1EB" : {
-      "name" : "flag: French Southern Territories",
+      "name" : "flag: French Southern and Antarctic Lands",
       "searchTokens" : [
         "flag",
-        "flag: French Southern Territories"
+        "flag: French Southern and Antarctic Lands"
       ]
     },
     "1F1F9-1F1EC" : {
@@ -4913,6 +4913,61 @@
         "zodiac"
       ]
     },
+    "1F3FB" : {
+      "name" : "light skin tone",
+      "searchTokens" : [
+        "1–2",
+        "light",
+        "skin",
+        "tone",
+        "type",
+        "light skin tone"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "medium-light skin tone",
+      "searchTokens" : [
+        "3",
+        "medium-light",
+        "skin",
+        "tone",
+        "type",
+        "medium-light skin tone"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "medium skin tone",
+      "searchTokens" : [
+        "4",
+        "medium",
+        "skin",
+        "tone",
+        "type",
+        "medium skin tone"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "medium-dark skin tone",
+      "searchTokens" : [
+        "5",
+        "medium-dark",
+        "skin",
+        "tone",
+        "type",
+        "medium-dark skin tone"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "dark skin tone",
+      "searchTokens" : [
+        "6",
+        "dark",
+        "skin",
+        "tone",
+        "type",
+        "dark skin tone"
+      ]
+    },
     "1F400" : {
       "name" : "rat",
       "searchTokens" : [
@@ -6260,191 +6315,161 @@
       ]
     },
     "1F468-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "family: man, boy"
       ]
     },
     "1F468-200D-1F466-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, boy, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "family: man, boy, boy"
       ]
     },
     "1F468-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, girl"
       ]
     },
     "1F468-200D-1F467-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, girl, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, girl, boy"
       ]
     },
     "1F468-200D-1F467-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, girl, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, girl, girl"
       ]
     },
     "1F468-200D-1F468-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, man, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "family: man, man, boy"
       ]
     },
     "1F468-200D-1F468-200D-1F466-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, man, boy, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "family: man, man, boy, boy"
       ]
     },
     "1F468-200D-1F468-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, man, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, man, girl"
       ]
     },
     "1F468-200D-1F468-200D-1F467-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, man, girl, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, man, girl, boy"
       ]
     },
     "1F468-200D-1F468-200D-1F467-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, man, girl, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "family: man, man, girl, girl"
       ]
     },
     "1F468-200D-1F469-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, woman, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "woman",
+        "family: man, woman, boy"
       ]
     },
     "1F468-200D-1F469-200D-1F466-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, woman, boy, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "man",
+        "woman",
+        "family: man, woman, boy, boy"
       ]
     },
     "1F468-200D-1F469-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, woman, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "woman",
+        "family: man, woman, girl"
       ]
     },
     "1F468-200D-1F469-200D-1F467-200D-1F466" : {
-      "name" : "",
+      "name" : "family: man, woman, girl, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "mujer",
-        "niña",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "girl",
+        "man",
+        "woman",
+        "family: man, woman, girl, boy"
       ]
     },
     "1F468-200D-1F469-200D-1F467-200D-1F467" : {
-      "name" : "",
+      "name" : "family: man, woman, girl, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "hombre",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "man",
+        "woman",
+        "family: man, woman, girl, girl"
       ]
     },
     "1F468-200D-1F4BB" : {
@@ -6542,47 +6567,43 @@
       ]
     },
     "1F468-200D-1F9B0" : {
-      "name" : "",
+      "name" : "man: red hair",
       "searchTokens" : [
-        "adulto",
-        "cara",
-        "hombre",
-        "pelo pelirrojo",
-        "persona",
-        "señor"
+        "adult",
+        "bro",
+        "man",
+        "red hair",
+        "man: red hair"
       ]
     },
     "1F468-200D-1F9B1" : {
-      "name" : "",
+      "name" : "man: curly hair",
       "searchTokens" : [
-        "adulto",
-        "cara",
-        "hombre",
-        "pelo rizado",
-        "persona",
-        "señor"
+        "adult",
+        "bro",
+        "curly hair",
+        "man",
+        "man: curly hair"
       ]
     },
     "1F468-200D-1F9B2" : {
-      "name" : "",
+      "name" : "man: bald",
       "searchTokens" : [
-        "adulto",
-        "cara",
-        "hombre",
-        "persona",
-        "señor",
-        "sin pelo"
+        "adult",
+        "bald",
+        "bro",
+        "man",
+        "man: bald"
       ]
     },
     "1F468-200D-1F9B3" : {
-      "name" : "",
+      "name" : "man: white hair",
       "searchTokens" : [
-        "adulto",
-        "cara",
-        "hombre",
-        "pelo blanco",
-        "persona",
-        "señor"
+        "adult",
+        "bro",
+        "man",
+        "white hair",
+        "man: white hair"
       ]
     },
     "1F468-200D-1F9BC" : {
@@ -6768,125 +6789,105 @@
       ]
     },
     "1F469-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "woman",
+        "family: woman, boy"
       ]
     },
     "1F469-200D-1F466-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, boy, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "woman",
+        "family: woman, boy, boy"
       ]
     },
     "1F469-200D-1F467" : {
-      "name" : "",
+      "name" : "family: woman, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, girl"
       ]
     },
     "1F469-200D-1F467-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, girl, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, girl, boy"
       ]
     },
     "1F469-200D-1F467-200D-1F467" : {
-      "name" : "",
+      "name" : "family: woman, girl, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, girl, girl"
       ]
     },
     "1F469-200D-1F469-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, woman, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "woman",
+        "family: woman, woman, boy"
       ]
     },
     "1F469-200D-1F469-200D-1F466-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, woman, boy, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "woman",
+        "family: woman, woman, boy, boy"
       ]
     },
     "1F469-200D-1F469-200D-1F467" : {
-      "name" : "",
+      "name" : "family: woman, woman, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, woman, girl"
       ]
     },
     "1F469-200D-1F469-200D-1F467-200D-1F466" : {
-      "name" : "",
+      "name" : "family: woman, woman, girl, boy",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "niño",
-        "padre"
+        "boy",
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, woman, girl, boy"
       ]
     },
     "1F469-200D-1F469-200D-1F467-200D-1F467" : {
-      "name" : "",
+      "name" : "family: woman, woman, girl, girl",
       "searchTokens" : [
-        "familia",
-        "hija",
-        "hijo",
-        "madre",
-        "mujer",
-        "niña",
-        "padre"
+        "child",
+        "family",
+        "girl",
+        "woman",
+        "family: woman, woman, girl, girl"
       ]
     },
     "1F469-200D-1F4BB" : {
@@ -12780,6 +12781,34 @@
         "lift"
       ]
     },
+    "1F6D8" : {
+      "name" : "landslide",
+      "searchTokens" : [
+        "avalanche",
+        "danger",
+        "disaster",
+        "earthquake",
+        "mountain",
+        "mudslide",
+        "rocks",
+        "landslide"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "lighthouse",
+      "searchTokens" : [
+        "beacon",
+        "enlightenment",
+        "guidance",
+        "hope",
+        "light",
+        "maritime",
+        "navigation",
+        "sea",
+        "signal",
+        "lighthouse"
+      ]
+    },
     "1F6DC" : {
       "name" : "wireless",
       "searchTokens" : [
@@ -15016,6 +15045,47 @@
         "white cane"
       ]
     },
+    "1F9B0" : {
+      "name" : "red hair",
+      "searchTokens" : [
+        "ginger",
+        "hair",
+        "red",
+        "redhead",
+        "red hair"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "curly hair",
+      "searchTokens" : [
+        "afro",
+        "curly",
+        "hair",
+        "ringlets",
+        "curly hair"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "bald",
+      "searchTokens" : [
+        "bald",
+        "chemotherapy",
+        "hair",
+        "hairless",
+        "no",
+        "shaven"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "white hair",
+      "searchTokens" : [
+        "gray",
+        "hair",
+        "old",
+        "white",
+        "white hair"
+      ]
+    },
     "1F9B4" : {
       "name" : "bone",
       "searchTokens" : [
@@ -15705,6 +15775,14 @@
         "child",
         "family",
         "family: adult, child, child"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "ballet dancer",
+      "searchTokens" : [
+        "ballet",
+        "dancer",
+        "ballet dancer"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -16669,6 +16747,72 @@
         "orchestra"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone",
+      "searchTokens" : [
+        "brass",
+        "instrument",
+        "jazz",
+        "music",
+        "sad",
+        "slide",
+        "trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteor",
+      "searchTokens" : [
+        "apocalypse",
+        "falling",
+        "fireball",
+        "gravity",
+        "rock",
+        "space",
+        "star",
+        "meteor"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "eraser",
+      "searchTokens" : [
+        "correction",
+        "delete",
+        "drawing",
+        "erase",
+        "error",
+        "mistake",
+        "remove",
+        "rub",
+        "undo",
+        "writing",
+        "eraser"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "net with handle",
+      "searchTokens" : [
+        "catch",
+        "collect",
+        "mesh",
+        "trap",
+        "net with handle"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "treasure chest",
+      "searchTokens" : [
+        "gem",
+        "gold",
+        "jewels",
+        "loot",
+        "money",
+        "prize",
+        "silver",
+        "valuables",
+        "wealth",
+        "treasure chest"
+      ]
+    },
     "1FA8F" : {
       "name" : "shovel",
       "searchTokens" : [
@@ -17331,6 +17475,43 @@
         "trace"
       ]
     },
+    "1FAC8" : {
+      "name" : "hairy creature",
+      "searchTokens" : [
+        "bigfoot",
+        "cryptid",
+        "forest",
+        "giant",
+        "hairy",
+        "sasquatch",
+        "woodwose",
+        "yeti",
+        "hairy creature"
+      ]
+    },
+    "1FACC" : {
+      "name" : "monarch butterfly",
+      "searchTokens" : [
+        "caterpillar",
+        "change",
+        "fragile",
+        "hope",
+        "insect",
+        "metamorphosis",
+        "migration",
+        "transformation",
+        "monarch butterfly"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orca",
+      "searchTokens" : [
+        "marine",
+        "ocean",
+        "whale",
+        "orca"
+      ]
+    },
     "1FACE" : {
       "name" : "moose",
       "searchTokens" : [
@@ -17489,6 +17670,19 @@
         "remolacha",
         "verdura",
         "vegetal de raíz"
+      ]
+    },
+    "1FADD" : {
+      "name" : "pickle",
+      "searchTokens" : [
+        "brine",
+        "condiment",
+        "cucumber",
+        "ferment",
+        "gherkin",
+        "relish",
+        "trouble",
+        "pickle"
       ]
     },
     "1FADF" : {
@@ -17679,6 +17873,44 @@
         "face with bags under eyes"
       ]
     },
+    "1FAEA" : {
+      "name" : "distorted face",
+      "searchTokens" : [
+        "anxiety",
+        "bloated",
+        "panic",
+        "shocked",
+        "surprised",
+        "vulnerable",
+        "distorted face"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "cracking face",
+      "searchTokens" : [
+        "breaking",
+        "crumbling",
+        "masking",
+        "resilience",
+        "reveal",
+        "tension",
+        "transformation",
+        "cracking face"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "fight cloud",
+      "searchTokens" : [
+        "argument",
+        "brawl",
+        "debate",
+        "disagreement",
+        "fight",
+        "ruckus",
+        "wrestle",
+        "fight cloud"
+      ]
+    },
     "1FAF0" : {
       "name" : "hand with index finger and thumb crossed",
       "searchTokens" : [
@@ -17821,6 +18053,30 @@
         "stop",
         "wait",
         "rightwards pushing hand"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "leftwards thumb sign",
+      "searchTokens" : [
+        "grip",
+        "left",
+        "neutral",
+        "point",
+        "that",
+        "this",
+        "leftwards thumb sign"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "rightwards thumb sign",
+      "searchTokens" : [
+        "grip",
+        "neutral",
+        "point",
+        "right",
+        "that",
+        "this",
+        "rightwards thumb sign"
       ]
     },
     "203C-FE0F" : {
@@ -19126,6 +19382,7 @@
       "name" : "white exclamation mark",
       "searchTokens" : [
         "!",
+        "bang",
         "exclamation",
         "mark",
         "outlined",
@@ -19138,6 +19395,7 @@
       "name" : "red exclamation mark",
       "searchTokens" : [
         "!",
+        "bang",
         "exclamation",
         "mark",
         "punctuation",

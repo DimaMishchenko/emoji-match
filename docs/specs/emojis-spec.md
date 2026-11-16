@@ -148,6 +148,12 @@ Rules:
 - keep the no-tone base emoji as the top-level entry when it exists
 - store tone-modified Unicode sequences under `skinToneVariants`
 - preserve tone-slot order for multi-tone variants
+- resolve bases by scalar sequence after removing tone modifiers and normalizing presentation selectors for matching only; retain original fully-qualified IDs and values
+- use explicit structural aliases for Unicode's legacy singleton handshake, holding-hands, kiss, heart-couple, bunny-ear and wrestling bases
+- never infer identity from English names or synthesize an unlisted no-tone sequence; fail generation for an unresolved variant
+- include standalone `component` rows as canonical entries alongside fully-qualified rows, preserving every RGI sequence exactly once across bases and variants
+- omit minimally-qualified and unqualified aliases as separate rows
+- preserve the source's CLDR ordering and illustrative groups/subgroups; native Apple picker grouping and ordering belong in app adapters
 - do not collapse unrelated distinctions such as profession, gender, family composition, flags, or presentation variants
 
 Examples:
@@ -265,3 +271,17 @@ When changing the model or generator:
 - prefer test-first changes
 - keep generated resource commits separate from logic/spec commits when possible
 - treat the generated JSON as build artifacts that happen to be checked into git
+
+Empty CLDR display names do not count as usable localization values, even when keywords exist. Generation applies English/synthesized fallback and validates nonempty display names and tokens before writing.
+
+## Upstream Discovery And Provenance
+
+`fetch latest` resolves the version from the official `emoji/latest/emoji-test.txt` header, then fetches a concrete versioned source and validates its header before generation. Numeric `/Public/emoji/` directories stop at 16.0; releases from 17 use `/Public/<version>.0/emoji/`. Unicode character properties and presentation variation sequences come from `/Public/<version>.0/ucd/emoji/`, not the keyboard data directory.
+
+CLDR JSON discovery accepts only stable numeric `major.minor.patch` tags. Annotation URLs retain the exact tag, while `cldrVersion` records its major release. Every consumed upstream file has a concrete URL and SHA-256 in metadata; the floating discovery URL is never recorded as a pinned source.
+
+The bundled snapshot uses Unicode Emoji 18.0 and CLDR 49 (`49.0.0`) with the existing 20 locales. It contains 1,932 canonical base/component entries and 2,040 concrete tone variants, covering all 3,963 fully-qualified sequences and nine components. No prior base IDs were removed from the 16.0 snapshot.
+
+Generation validates the complete dataset before writing. JSON is sorted and newline-terminated; writes are atomic per file, not a transaction across the complete bundle. If release, locale set and upstream source hashes match existing metadata, its generation timestamp is retained so repeating a fetch produces identical bytes. A parser implementation change can still change payload bytes without changing the upstream-source timestamp.
+
+Primary release sources: https://unicode.org/Public/18.0.0/emoji/emoji-test.txt and https://github.com/unicode-org/cldr-json/releases/tag/49.0.0. CLDR's release index is https://cldr.unicode.org/index/downloads.

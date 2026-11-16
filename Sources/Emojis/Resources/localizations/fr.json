@@ -4858,6 +4858,42 @@
         "zodiaque"
       ]
     },
+    "1F3FB" : {
+      "name" : "peau claire",
+      "searchTokens" : [
+        "peau",
+        "peau claire"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "peau moyennement claire",
+      "searchTokens" : [
+        "peau",
+        "peau moyennement claire"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "peau légèrement mate",
+      "searchTokens" : [
+        "peau",
+        "peau légèrement mate"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "peau mate",
+      "searchTokens" : [
+        "peau",
+        "peau mate"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "peau foncée",
+      "searchTokens" : [
+        "peau",
+        "peau foncée",
+        "peau mate"
+      ]
+    },
     "1F400" : {
       "name" : "rat",
       "searchTokens" : [
@@ -5765,19 +5801,16 @@
     "1F44D" : {
       "name" : "pouce vers le haut",
       "searchTokens" : [
+        "+1",
         "bien",
         "compris",
         "d’accord",
         "génial",
         "haut",
-        "main",
-        "moi aussi",
         "OK",
         "oui",
-        "pouce levé",
-        "pouce vers le haut",
         "super",
-        "top"
+        "pouce vers le haut"
       ]
     },
     "1F44E" : {
@@ -12771,6 +12804,32 @@
         "montée"
       ]
     },
+    "1F6D8" : {
+      "name" : "éboulement",
+      "searchTokens" : [
+        "avalanche",
+        "catastrophe",
+        "coulée de boue",
+        "danger",
+        "glissement de terrain",
+        "montagne",
+        "rochers",
+        "tremblement de terre",
+        "éboulement"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "phare",
+      "searchTokens" : [
+        "lumière",
+        "mer",
+        "navigation",
+        "repère",
+        "signal",
+        "tour",
+        "phare"
+      ]
+    },
     "1F6DC" : {
       "name" : "sans fil",
       "searchTokens" : [
@@ -15129,6 +15188,43 @@
         "malvoyant"
       ]
     },
+    "1F9B0" : {
+      "name" : "cheveux roux",
+      "searchTokens" : [
+        "cheveux roux",
+        "rouquin",
+        "rouquine"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "cheveux bouclés",
+      "searchTokens" : [
+        "afro",
+        "boucles",
+        "bouclés",
+        "cheveux bouclés"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "chauve",
+      "searchTokens" : [
+        "chauve",
+        "chimiothérapie",
+        "imberbe",
+        "rasé",
+        "sans cheveux"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "cheveux blancs",
+      "searchTokens" : [
+        "blancs",
+        "cheveux",
+        "gris",
+        "vieux",
+        "cheveux blancs"
+      ]
+    },
     "1F9B4" : {
       "name" : "os",
       "searchTokens" : [
@@ -15876,6 +15972,16 @@
         "famille : adulte",
         "famille : adulte, enfant, enfant",
         "famille monoparentale"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "danseuse de ballet",
+      "searchTokens" : [
+        "ballerine",
+        "ballet",
+        "danse classique",
+        "danseuse",
+        "danseuse de ballet"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -16935,6 +17041,65 @@
         "orchestre"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone à coulisse",
+      "searchTokens" : [
+        "cuivre",
+        "instrument",
+        "jazz",
+        "musique",
+        "trombone à coulisse"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "météorite",
+      "searchTokens" : [
+        "apocalypse",
+        "boule de feu",
+        "chute",
+        "espace",
+        "étoile",
+        "gravité",
+        "roche",
+        "météorite"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "gomme",
+      "searchTokens" : [
+        "annuler",
+        "dessin",
+        "effacer",
+        "erreur",
+        "oups",
+        "supprimer",
+        "gomme"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "filet avec manche",
+      "searchTokens" : [
+        "attraper",
+        "capturer",
+        "épuisette",
+        "piège",
+        "filet avec manche"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "coffre au trésor",
+      "searchTokens" : [
+        "argent",
+        "argenterie",
+        "bijoux",
+        "butin",
+        "objets de valeur",
+        "or",
+        "pierre précieuse",
+        "richesse",
+        "coffre au trésor"
+      ]
+    },
     "1FA8F" : {
       "name" : "pelle",
       "searchTokens" : [
@@ -17613,6 +17778,40 @@
         "sécurité"
       ]
     },
+    "1FAC8" : {
+      "name" : "créature velue",
+      "searchTokens" : [
+        "bigfoot",
+        "cryptide",
+        "forêt",
+        "géant",
+        "homme sauvage",
+        "poilu",
+        "sasquatch",
+        "yéti",
+        "créature velue"
+      ]
+    },
+    "1FACC" : {
+      "name" : "monarque",
+      "searchTokens" : [
+        "chenille",
+        "fragile",
+        "insecte",
+        "métamorphose",
+        "papillon",
+        "monarque"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orque",
+      "searchTokens" : [
+        "baleine",
+        "marin",
+        "océan",
+        "orque"
+      ]
+    },
     "1FACE" : {
       "name" : "élan",
       "searchTokens" : [
@@ -17795,6 +17994,16 @@
         "légume-racine"
       ]
     },
+    "1FADD" : {
+      "name" : "cornichon",
+      "searchTokens" : [
+        "condiment",
+        "pickle",
+        "saumure",
+        "vinaigre",
+        "cornichon"
+      ]
+    },
     "1FADF" : {
       "name" : "éclaboussure",
       "searchTokens" : [
@@ -17929,6 +18138,45 @@
         "visage avec des valises sous les yeux"
       ]
     },
+    "1FAEA" : {
+      "name" : "visage déformé",
+      "searchTokens" : [
+        "anxiété",
+        "bouffi",
+        "choc",
+        "gonflé",
+        "panique",
+        "surprise",
+        "vulnérabilité",
+        "visage déformé"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "visage craquelé",
+      "searchTokens" : [
+        "craquer",
+        "effondrement",
+        "masquer",
+        "résilience",
+        "révéler",
+        "tension",
+        "transformation",
+        "visage craquelé"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "nuage de colère",
+      "searchTokens" : [
+        "bagarre",
+        "combat",
+        "désaccord",
+        "discussion",
+        "dispute",
+        "grabuge",
+        "lutte",
+        "nuage de colère"
+      ]
+    },
     "1FAF0" : {
       "name" : "main avec index et pouce croisés",
       "searchTokens" : [
@@ -18032,6 +18280,28 @@
         "stop",
         "tape m’en cinq",
         "top là"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "pouce vers la gauche",
+      "searchTokens" : [
+        "ça",
+        "gauche",
+        "neutre",
+        "poing",
+        "stop",
+        "pouce vers la gauche"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "pouce vers la droite",
+      "searchTokens" : [
+        "ça",
+        "droite",
+        "neutre",
+        "poing",
+        "stop",
+        "pouce vers la droite"
       ]
     },
     "203C-FE0F" : {

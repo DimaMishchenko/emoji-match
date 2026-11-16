@@ -4682,6 +4682,46 @@
         "Wassermann"
       ]
     },
+    "1F3FB" : {
+      "name" : "helle Hautfarbe",
+      "searchTokens" : [
+        "Hautfarbe",
+        "Hauttyp 1–2",
+        "helle Hautfarbe"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "mittelhelle Hautfarbe",
+      "searchTokens" : [
+        "Hautfarbe",
+        "Hauttyp 3",
+        "mittelhelle Hautfarbe"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "mittlere Hautfarbe",
+      "searchTokens" : [
+        "Hautfarbe",
+        "Hauttyp 4",
+        "mittlere Hautfarbe"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "mitteldunkle Hautfarbe",
+      "searchTokens" : [
+        "Hautfarbe",
+        "Hauttyp 5",
+        "mitteldunkle Hautfarbe"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "dunkle Hautfarbe",
+      "searchTokens" : [
+        "dunkle Hautfarbe",
+        "Hautfarbe",
+        "Hauttyp 6"
+      ]
+    },
     "1F400" : {
       "name" : "Ratte",
       "searchTokens" : [
@@ -12035,6 +12075,35 @@
         "Transport"
       ]
     },
+    "1F6D8" : {
+      "name" : "Erdrutsch",
+      "searchTokens" : [
+        "Berg",
+        "Erdbeben",
+        "Felsen",
+        "Gefahr",
+        "Katastrophe",
+        "Lawine",
+        "Murenabgang",
+        "Murgang",
+        "Schlammlawine",
+        "Erdrutsch"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "Leuchtturm",
+      "searchTokens" : [
+        "Hoffnung",
+        "Leuchtfeuer",
+        "Licht",
+        "Meer",
+        "Orientierung",
+        "Schiffe",
+        "Seefahrt",
+        "Wegweiser",
+        "Leuchtturm"
+      ]
+    },
     "1F6DC" : {
       "name" : "WLAN",
       "searchTokens" : [
@@ -14479,6 +14548,44 @@
         "Gehstock"
       ]
     },
+    "1F9B0" : {
+      "name" : "rotes Haar",
+      "searchTokens" : [
+        "rote Haare",
+        "rotes Haar",
+        "rothaarig",
+        "Rotschopf"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "lockiges Haar",
+      "searchTokens" : [
+        "Afro",
+        "Lockenkopf",
+        "lockig",
+        "lockiges Haar"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "Glatze",
+      "searchTokens" : [
+        "Chemo",
+        "Glatze",
+        "haarlos",
+        "kein Haar",
+        "rasiert"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "weißes Haar",
+      "searchTokens" : [
+        "grau",
+        "graues Haar",
+        "grauhaarig",
+        "weißes Haar",
+        "weißhaarig"
+      ]
+    },
     "1F9B4" : {
       "name" : "Knochen",
       "searchTokens" : [
@@ -15228,6 +15335,14 @@
         "Familie",
         "Kind",
         "Familie: 1 Erwachsene(r), 2 Kinder"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "Balletttänzerin",
+      "searchTokens" : [
+        "Ballett",
+        "Tänzerin",
+        "Balletttänzerin"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -16347,6 +16462,70 @@
         "Orchester"
       ]
     },
+    "1FA8A" : {
+      "name" : "Posaune",
+      "searchTokens" : [
+        "Blasinstrument",
+        "Blechbläser",
+        "Blechblasinstrument",
+        "Instrument",
+        "Jazz",
+        "Musik",
+        "schieben",
+        "traurig",
+        "ziehen",
+        "Posaune"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "Meteor",
+      "searchTokens" : [
+        "Atmosphäre",
+        "Feuerkugel",
+        "Gestein",
+        "Meteor",
+        "Sternschnuppe",
+        "verglühen"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "Radiergummi",
+      "searchTokens" : [
+        "ausradieren",
+        "Bleistift",
+        "Fehler",
+        "radieren",
+        "Radierer",
+        "Radiergummi",
+        "Ratzefummel",
+        "wegradieren"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "Kescher",
+      "searchTokens" : [
+        "einsammeln",
+        "fangen",
+        "herausholen",
+        "keschern",
+        "Kescher"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "Schatztruhe",
+      "searchTokens" : [
+        "Beute",
+        "Edelstein",
+        "Geld",
+        "Gold",
+        "Juwelen",
+        "Preis",
+        "Reichtum",
+        "Silber",
+        "Wertgegenstände",
+        "Schatztruhe"
+      ]
+    },
     "1FA8F" : {
       "name" : "Schaufel",
       "searchTokens" : [
@@ -17085,6 +17264,49 @@
         "Sicherheit"
       ]
     },
+    "1FAC8" : {
+      "name" : "haariges Wesen",
+      "searchTokens" : [
+        "Bigfoot",
+        "Fabelwesen",
+        "Gigant",
+        "haarig",
+        "Kryptid",
+        "Riese",
+        "Sasquatch",
+        "Wald",
+        "wilder Mann",
+        "Woodwose",
+        "Yeti",
+        "haariges Wesen"
+      ]
+    },
+    "1FACC" : {
+      "name" : "Monarchfalter",
+      "searchTokens" : [
+        "Hoffnung",
+        "Insekt",
+        "Metamorphose",
+        "Raupe",
+        "Veränderung",
+        "Verwandlung",
+        "Wechsel",
+        "zart",
+        "Monarchfalter"
+      ]
+    },
+    "1FACD" : {
+      "name" : "Orca",
+      "searchTokens" : [
+        "Meer",
+        "Meeressäuger",
+        "Meerestier",
+        "Orka",
+        "Ozean",
+        "Wal",
+        "Orca"
+      ]
+    },
     "1FACE" : {
       "name" : "Elch",
       "searchTokens" : [
@@ -17285,6 +17507,17 @@
         "Wurzelgemüse"
       ]
     },
+    "1FADD" : {
+      "name" : "Saure Gurke",
+      "searchTokens" : [
+        "eingelegt",
+        "Essig",
+        "Gewürzgurke",
+        "Gurke",
+        "saure Gurke",
+        "Saure Gurke"
+      ]
+    },
     "1FADF" : {
       "name" : "Spritzer",
       "searchTokens" : [
@@ -17464,6 +17697,45 @@
         "Gesicht mit Augenringen"
       ]
     },
+    "1FAEA" : {
+      "name" : "verzerrtes Gesicht",
+      "searchTokens" : [
+        "Angst",
+        "ängstlich",
+        "aufgedunsen",
+        "besorgt",
+        "Panik",
+        "panisch",
+        "schockiert",
+        "überrascht",
+        "verzerrtes Gesicht"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "Zerbrechendes Gesicht",
+      "searchTokens" : [
+        "Spannung",
+        "Verwandlung",
+        "widerstandsfähig",
+        "zerbrechend",
+        "zerfallend",
+        "Zerbrechendes Gesicht"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "Kampfwolke",
+      "searchTokens" : [
+        "Handgemenge",
+        "Kampf",
+        "Krawall",
+        "Prügelei",
+        "Rauferei",
+        "Schlägerei",
+        "Streit",
+        "Wortgefecht",
+        "Kampfwolke"
+      ]
+    },
     "1FAF0" : {
       "name" : "Hand mit gekreuztem Zeigefinger und Daumen",
       "searchTokens" : [
@@ -17613,6 +17885,24 @@
         "warte mal",
         "warten",
         "nach rechts schiebende Hand"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "Daumen nach links",
+      "searchTokens" : [
+        "Daumen nach links",
+        "geschlossene Finger",
+        "neutral",
+        "zeigen"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "Daumen nach rechts",
+      "searchTokens" : [
+        "Daumen nach rechts",
+        "geschlossene Finger",
+        "neutral",
+        "zeigen"
       ]
     },
     "203C-FE0F" : {

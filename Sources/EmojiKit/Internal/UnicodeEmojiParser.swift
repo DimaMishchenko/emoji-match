@@ -27,7 +27,11 @@ internal struct UnicodeEmojiParser {
       throw ValidationError("Unable to decode emoji-test.txt as UTF-8.")
     }
 
-    return try collapseSkinToneVariants(in: parseRawEmojiRecords(from: text))
+    let records = try parseRawEmojiRecords(from: text)
+    guard !records.isEmpty, Set(records.map(\.id)).count == records.count else {
+      throw ValidationError("Unicode emoji records must be nonempty and have unique sequence IDs.")
+    }
+    return try collapseSkinToneVariants(in: records)
   }
 
   private static func parseRawEmojiRecords(from text: String) throws -> [RawEmojiRecord] {
@@ -49,24 +53,38 @@ internal struct UnicodeEmojiParser {
         continue
       }
 
-      guard rawLine.contains("; fully-qualified"), let hashIndex = rawLine.firstIndex(of: "#")
+      guard let hashIndex = rawLine.firstIndex(of: "#")
       else {
         continue
       }
 
       let left = rawLine[..<hashIndex]
+      let fields = left.split(separator: ";")
+      guard fields.count == 2 else { continue }
+      let status = fields[1].trimmingCharacters(in: .whitespaces)
+      guard status == "fully-qualified" || status == "component" else { continue }
       let right = rawLine[rawLine.index(after: hashIndex)...]
       let scalars = left.split(separator: ";")[0]
         .split(separator: " ")
         .map(String.init)
         .filter { !$0.isEmpty }
 
-      let rightParts = right.split(separator: " ", omittingEmptySubsequences: true)
+      let rightParts = String(right).components(separatedBy: .whitespaces).filter { !$0.isEmpty }
       guard rightParts.count >= 3 else {
         throw ValidationError("Unsupported emoji-test.txt format.")
       }
 
-      let value = String(rightParts[0])
+      let unicodeScalars = try scalars.map { component -> Unicode.Scalar in
+        guard let codePoint = UInt32(component, radix: 16), let scalar = Unicode.Scalar(codePoint)
+        else {
+          throw ValidationError("Invalid Unicode scalar in emoji-test.txt.")
+        }
+        return scalar
+      }
+      let value = String(String.UnicodeScalarView(unicodeScalars))
+      guard value == String(rightParts[0]), !currentGroup.isEmpty, !currentSubgroup.isEmpty else {
+        throw ValidationError("Invalid sequence or missing Unicode grouping in emoji-test.txt.")
+      }
       guard let versionIndex = rightParts.firstIndex(where: { $0.hasPrefix("E") }) else {
         throw ValidationError("Missing Unicode version in emoji-test.txt.")
       }
@@ -94,9 +112,8 @@ internal struct UnicodeEmojiParser {
     in rawRecords: [RawEmojiRecord]
   ) throws -> [GeneratedBaseEmoji] {
     var logicalByID: [String: GeneratedBaseEmoji] = [:]
-    var idsByFallbackName: [String: String] = [:]
+    var idsBySequence: [String: String] = [:]
     var orderedLogicalIDs: [String] = []
-    var seenLogicalIDs: Set<String> = []
 
     for record in rawRecords where !isSkinToneVariant(record) {
       logicalByID[record.id] = GeneratedBaseEmoji(
@@ -108,31 +125,17 @@ internal struct UnicodeEmojiParser {
         sortOrder: record.sortOrder,
         fallbackName: record.fallbackName
       )
-      if seenLogicalIDs.insert(record.id).inserted {
-        orderedLogicalIDs.append(record.id)
-      }
-      if idsByFallbackName[record.fallbackName] == nil {
-        idsByFallbackName[record.fallbackName] = record.id
-      }
+      orderedLogicalIDs.append(record.id)
+      idsBySequence[presentationIndependentID(record.id)] = record.id
     }
 
     for record in rawRecords where isSkinToneVariant(record) {
-      let logicalID = resolveLogicalBaseID(for: record, idsByFallbackName: idsByFallbackName)
-
-      if logicalByID[logicalID] == nil {
-        logicalByID[logicalID] = GeneratedBaseEmoji(
-          id: logicalID,
-          value: strippedSkinToneValue(from: record.value),
-          group: record.group,
-          subgroup: record.subgroup,
-          unicodeVersion: record.unicodeVersion,
-          sortOrder: record.sortOrder,
-          fallbackName: baseFallbackName(from: record.fallbackName) ?? record.fallbackName
-        )
-      }
-
-      if seenLogicalIDs.insert(logicalID).inserted {
-        orderedLogicalIDs.append(logicalID)
+      let strippedID = presentationIndependentID(strippedSkinToneID(from: record.id))
+      guard
+        let logicalID = idsBySequence[strippedID]
+          ?? legacyBaseIDs[strippedID].flatMap({ logicalByID[$0] == nil ? nil : $0 })
+      else {
+        throw ValidationError("No canonical base for skin-tone sequence \(record.id)")
       }
 
       let variant = GeneratedSkinToneVariant(
@@ -165,26 +168,23 @@ internal struct UnicodeEmojiParser {
     record.group != componentGroup && !skinTones(in: record.id).isEmpty
   }
 
-  private static func resolveLogicalBaseID(
-    for record: RawEmojiRecord,
-    idsByFallbackName: [String: String]
-  ) -> String {
-    if let baseName = baseFallbackName(from: record.fallbackName),
-      let baseID = idsByFallbackName[baseName]
-    {
-      return baseID
-    }
+  private static let legacyBaseIDs: [String: String] = [
+    "1FAF1-200D-1FAF2": "1F91D",
+    "1F469-200D-1F91D-200D-1F469": "1F46D",
+    "1F469-200D-1F91D-200D-1F468": "1F46B",
+    "1F468-200D-1F91D-200D-1F468": "1F46C",
+    "1F9D1-200D-2764-200D-1F48B-200D-1F9D1": "1F48F",
+    "1F9D1-200D-2764-200D-1F9D1": "1F491",
+    "1F9D1-200D-1F430-200D-1F9D1": "1F46F",
+    "1F468-200D-1F430-200D-1F468": "1F46F-200D-2642-FE0F",
+    "1F469-200D-1F430-200D-1F469": "1F46F-200D-2640-FE0F",
+    "1F9D1-200D-1FAEF-200D-1F9D1": "1F93C",
+    "1F468-200D-1FAEF-200D-1F468": "1F93C-200D-2642-FE0F",
+    "1F469-200D-1FAEF-200D-1F469": "1F93C-200D-2640-FE0F"
+  ]
 
-    return strippedSkinToneID(from: record.id)
-  }
-
-  private static func baseFallbackName(from fallbackName: String) -> String? {
-    guard fallbackName.contains("skin tone"), let separator = fallbackName.firstIndex(of: ":")
-    else {
-      return nil
-    }
-
-    return String(fallbackName[..<separator]).trimmingCharacters(in: .whitespacesAndNewlines)
+  private static func presentationIndependentID(_ id: String) -> String {
+    id.split(separator: "-").filter { $0 != "FE0F" }.joined(separator: "-")
   }
 
   private static func strippedSkinToneID(from id: String) -> String {
@@ -192,17 +192,6 @@ internal struct UnicodeEmojiParser {
       .map(String.init)
       .filter { skinToneByScalar[$0] == nil }
       .joined(separator: "-")
-  }
-
-  private static func strippedSkinToneValue(from value: String) -> String {
-    String(
-      String.UnicodeScalarView(
-        value.unicodeScalars.filter { scalar in
-          let identifier = String(format: "%04X", scalar.value)
-          return skinToneByScalar[identifier] == nil
-        }
-      )
-    )
   }
 
   private static func skinTones(in emojiID: String) -> [GeneratedSkinTone] {

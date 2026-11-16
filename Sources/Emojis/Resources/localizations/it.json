@@ -2111,7 +2111,6 @@
         "simbolo",
         "tabelloni",
         "tasto",
-        "ココ",
         "ideogramma giapponese per “Qui”"
       ]
     },
@@ -3091,12 +3090,10 @@
     "1F348" : {
       "name" : "melone",
       "searchTokens" : [
-        "cantaloupe",
         "cibo",
         "frutta",
         "frutto",
-        "melone",
-        "oliva"
+        "melone"
       ]
     },
     "1F349" : {
@@ -3563,14 +3560,10 @@
       "name" : "lecca lecca",
       "searchTokens" : [
         "caramella",
-        "chupa chups",
         "dolce",
-        "dolcetti",
         "dolcetto",
-        "dolci",
         "lecca lecca",
         "ristorante",
-        "willi wonka",
         "zucchero"
       ]
     },
@@ -3593,15 +3586,13 @@
       "searchTokens" : [
         "api",
         "barattolo",
-        "barattolo di miele",
         "cibo",
         "dolce",
         "miele",
         "ristorante",
-        "vaso",
         "vaso di miele",
-        "winnie the pooh",
-        "zucchero"
+        "zucchero",
+        "barattolo di miele"
       ]
     },
     "1F370" : {
@@ -3836,12 +3827,8 @@
       "name" : "fiocco",
       "searchTokens" : [
         "auguri",
-        "bambina",
-        "bebé",
         "festa",
-        "fiocco",
-        "fiocco rosa",
-        "neonata"
+        "fiocco"
       ]
     },
     "1F381" : {
@@ -4272,7 +4259,6 @@
       "name" : "cilindro",
       "searchTokens" : [
         "abbigliamento",
-        "bombetta",
         "cappello",
         "cilindro",
         "elegante",
@@ -4289,7 +4275,6 @@
         "festa",
         "fiera",
         "intrattenimento",
-        "orfei",
         "spettacolo",
         "tenda",
         "tenda da circo",
@@ -4302,7 +4287,6 @@
         "ammissione",
         "biglietto",
         "cartellino",
-        "giallo",
         "ingresso"
       ]
     },
@@ -4500,8 +4484,7 @@
         "musica",
         "strumento",
         "strumento musicale",
-        "tromba",
-        "trombone"
+        "tromba"
       ]
     },
     "1F3BB" : {
@@ -5032,7 +5015,7 @@
       "searchTokens" : [
         "edificio",
         "edificio di uffici",
-        "edifico di uffici",
+        "lavoro",
         "palazzo",
         "ufficio"
       ]
@@ -5313,6 +5296,56 @@
         "reperto",
         "segno zodiacale",
         "vaso"
+      ]
+    },
+    "1F3FB" : {
+      "name" : "carnagione chiara",
+      "searchTokens" : [
+        "carnagione chiara",
+        "colore della pelle",
+        "fototipo",
+        "pelle chiara",
+        "tonalità"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "carnagione abbastanza chiara",
+      "searchTokens" : [
+        "carnagione abbastanza chiara",
+        "colore della pelle",
+        "fototipo",
+        "pelle abbastanza chiara",
+        "tonalità"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "carnagione olivastra",
+      "searchTokens" : [
+        "carnagione olivastra",
+        "colore della pelle",
+        "fototipo",
+        "pelle olivastra",
+        "tonalità"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "carnagione abbastanza scura",
+      "searchTokens" : [
+        "carnagione abbastanza scura",
+        "colore della pelle",
+        "fototipo",
+        "pelle abbastanza scura",
+        "tonalità"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "carnagione scura",
+      "searchTokens" : [
+        "carnagione scura",
+        "colore della pelle",
+        "fototipo",
+        "pelle scura",
+        "tonalità"
       ]
     },
     "1F400" : {
@@ -5630,11 +5663,8 @@
       "name" : "cinghiale",
       "searchTokens" : [
         "animale",
-        "animali",
         "bosco",
         "cinghiale",
-        "faccina cinghiale",
-        "game of thones",
         "maiale selvatico"
       ]
     },
@@ -6238,7 +6268,7 @@
         "indice alzato",
         "indice in su",
         "mano",
-        "sù"
+        "su"
       ]
     },
     "1F447" : {
@@ -6435,9 +6465,9 @@
         "abbigliamento",
         "abbigliamento uomo",
         "camicia",
-        "camicia a righe",
         "colletto",
         "cravatta",
+        "cravatta a righe",
         "vestiti da uomo"
       ]
     },
@@ -6451,7 +6481,6 @@
         "maglia",
         "maglietta",
         "maniche corte",
-        "polo",
         "shopping",
         "t-shirt"
       ]
@@ -6506,14 +6535,14 @@
       "name" : "maglietta da donna",
       "searchTokens" : [
         "abbigliamento",
+        "blusa",
+        "camicetta",
+        "camicia",
+        "colletto",
         "donna",
-        "maglietta",
-        "maglietta da donna",
-        "maglietta rosa",
-        "polo",
-        "t-shirt",
+        "shopping",
         "vestiti",
-        "vestiti da donna"
+        "maglietta da donna"
       ]
     },
     "1F45B" : {
@@ -8279,8 +8308,7 @@
         "lavoro",
         "londra",
         "sentinella",
-        "turno di guardia",
-        "uomo"
+        "turno di guardia"
       ]
     },
     "1F482-200D-2640-FE0F" : {
@@ -8443,7 +8471,7 @@
         "medicina",
         "pillola",
         "pillole",
-        "vitaminca"
+        "vitamina"
       ]
     },
     "1F48B" : {
@@ -9049,7 +9077,7 @@
         "crisi",
         "denaro",
         "Euro",
-        "millionario",
+        "milionario",
         "soldi",
         "valuta",
         "banconota Euro"
@@ -9229,7 +9257,7 @@
         "17",
         "calendario",
         "data",
-        "diciasette",
+        "diciassette",
         "giorno",
         "ricorrenza",
         "sfortuna",
@@ -10016,7 +10044,7 @@
       ]
     },
     "1F502" : {
-      "name" : "pulsante di ripetizione della riproduzione di una traccia",
+      "name" : "pulsante di ripetizione di una traccia",
       "searchTokens" : [
         "frecce",
         "frecce a cerchio numero 1",
@@ -10025,7 +10053,8 @@
         "pulsante di ripetizione della riproduzione di una traccia",
         "ripeti",
         "ripetizione",
-        "senso orario"
+        "senso orario",
+        "pulsante di ripetizione di una traccia"
       ]
     },
     "1F503" : {
@@ -12589,11 +12618,8 @@
     "1F645" : {
       "name" : "persona che fa segno di no",
       "searchTokens" : [
-        "donna",
         "escluso",
-        "faccina",
         "gesto",
-        "gesto di rifiuto",
         "no",
         "non bene",
         "persona",
@@ -12624,8 +12650,7 @@
     "1F646" : {
       "name" : "persona con gesto OK",
       "searchTokens" : [
-        "donna",
-        "donna con braccia alzate",
+        "braccia alzate",
         "esercizio",
         "fitness",
         "gesto",
@@ -12740,7 +12765,6 @@
       "name" : "persona con mano alzata",
       "searchTokens" : [
         "ciao",
-        "donna",
         "eccomi",
         "felice",
         "gesto",
@@ -12792,7 +12816,6 @@
         "arrabbiata",
         "corrucciata",
         "delusa",
-        "donna",
         "faccia",
         "frustrata",
         "gesto",
@@ -12824,7 +12847,6 @@
         "arrabbiata",
         "broncio",
         "delusa",
-        "donna",
         "gesto",
         "imbronciata",
         "persona",
@@ -13809,7 +13831,7 @@
     "1F6BF" : {
       "name" : "doccia",
       "searchTokens" : [
-        "aqua",
+        "acqua",
         "doccia",
         "fare la doccia",
         "lavare",
@@ -14008,6 +14030,33 @@
         "accessibilità",
         "ascensore",
         "montacarichi"
+      ]
+    },
+    "1F6D8" : {
+      "name" : "frana",
+      "searchTokens" : [
+        "disastro",
+        "montagna",
+        "pericolo",
+        "rocce",
+        "smottamento",
+        "terremoto",
+        "valanga",
+        "frana"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "faro",
+      "searchTokens" : [
+        "faro",
+        "guida",
+        "illuminazione",
+        "luce",
+        "mare",
+        "marittimo",
+        "navigazione",
+        "segnale",
+        "speranza"
       ]
     },
     "1F6DC" : {
@@ -14934,13 +14983,11 @@
       "searchTokens" : [
         "cervello",
         "faccina sorpresa",
-        "mindblown",
         "non ci credo",
         "sbalordito",
         "scioccato",
         "sconcertato",
-        "sorpesa",
-        "sorpreso",
+        "sorpresa",
         "stupore",
         "testa che esplode"
       ]
@@ -15609,7 +15656,6 @@
       "name" : "kiwi",
       "searchTokens" : [
         "cibo",
-        "frutt",
         "frutta",
         "frutto",
         "kiwi"
@@ -16096,9 +16142,9 @@
       "name" : "granchio",
       "searchTokens" : [
         "cancro",
+        "crostaceo",
         "granchio",
         "mare",
-        "mollusco",
         "oceano",
         "segno zodiacale"
       ]
@@ -16392,8 +16438,6 @@
         "guanaco",
         "lama",
         "lana",
-        "lana di alpaca",
-        "vicuña",
         "vigogna"
       ]
     },
@@ -16637,6 +16681,43 @@
         "bastone per ciechi",
         "bastone per ipovedenti",
         "bastone per non vedenti"
+      ]
+    },
+    "1F9B0" : {
+      "name" : "capelli rossi",
+      "searchTokens" : [
+        "capelli rossi",
+        "pel di carota",
+        "rosso"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "capelli ricci",
+      "searchTokens" : [
+        "afro",
+        "boccoli",
+        "capelli ricci",
+        "ricci"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "calvo",
+      "searchTokens" : [
+        "calvizie",
+        "calvo",
+        "chemioterapia",
+        "pelato",
+        "rasato"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "capelli bianchi",
+      "searchTokens" : [
+        "anziani",
+        "bianchi",
+        "capelli",
+        "grigi",
+        "capelli bianchi"
       ]
     },
     "1F9B4" : {
@@ -17385,6 +17466,15 @@
         "minore"
       ]
     },
+    "1F9D1-200D-1FA70" : {
+      "name" : "persona che danza",
+      "searchTokens" : [
+        "ballerina",
+        "ballerino",
+        "balletto",
+        "persona che danza"
+      ]
+    },
     "1F9D1-200D-2695-FE0F" : {
       "name" : "health worker",
       "searchTokens" : [
@@ -17847,8 +17937,7 @@
         "giacca",
         "giaccone",
         "giubbotto",
-        "inverno",
-        "rosso"
+        "inverno"
       ]
     },
     "1F9E6" : {
@@ -18063,7 +18152,7 @@
     "1F9F6" : {
       "name" : "gomitolo",
       "searchTokens" : [
-        "fare a maglia",
+        "fare la maglia",
         "filo",
         "gomitolo",
         "lavorare a maglia",
@@ -18452,6 +18541,72 @@
         "strumento"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone",
+      "searchTokens" : [
+        "coulisse",
+        "jazz",
+        "musica",
+        "ottone",
+        "strumento",
+        "tiro",
+        "trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteora",
+      "searchTokens" : [
+        "apocalisse",
+        "caduta",
+        "gravità",
+        "palla di fuoco",
+        "roccia",
+        "spazio",
+        "stella",
+        "meteora"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "gomma per cancellare",
+      "searchTokens" : [
+        "annullare",
+        "cancellare",
+        "correzione",
+        "disegno",
+        "eliminare",
+        "errore",
+        "rimuovere",
+        "sbaglio",
+        "scrittura",
+        "strofinare",
+        "gomma per cancellare"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "retino",
+      "searchTokens" : [
+        "catturare",
+        "raccogliere",
+        "rete",
+        "trappola",
+        "retino"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "forziere",
+      "searchTokens" : [
+        "argento",
+        "bottino",
+        "denaro",
+        "gemme",
+        "gioielli",
+        "oro",
+        "premio",
+        "ricchezza",
+        "valori",
+        "forziere"
+      ]
+    },
     "1FA8F" : {
       "name" : "vanga",
       "searchTokens" : [
@@ -18463,14 +18618,14 @@
       ]
     },
     "1FA90" : {
-      "name" : "pianeta con satellite",
+      "name" : "pianeta con anelli",
       "searchTokens" : [
+        "anelli",
         "corpo celeste",
-        "pianeta con anelli",
-        "pianeta con satellite",
-        "satellite",
+        "pianeta",
         "Saturno",
-        "spazio"
+        "spazio",
+        "pianeta con anelli"
       ]
     },
     "1FA91" : {
@@ -18901,12 +19056,10 @@
         "coltivare",
         "curare",
         "decorare",
-        "inutile",
-        "noioso",
         "pianta",
-        "pianta in vaso",
         "vaso",
-        "verde"
+        "verde",
+        "pianta in vaso"
       ]
     },
     "1FAB5" : {
@@ -19124,6 +19277,44 @@
         "traccia"
       ]
     },
+    "1FAC8" : {
+      "name" : "creatura pelosa",
+      "searchTokens" : [
+        "bigfoot",
+        "criptide",
+        "foresta",
+        "gigante",
+        "peloso",
+        "sasquatch",
+        "scimmione",
+        "yeti",
+        "creatura pelosa"
+      ]
+    },
+    "1FACC" : {
+      "name" : "farfalla monarca",
+      "searchTokens" : [
+        "bruco",
+        "cambiamento",
+        "fragile",
+        "insetto",
+        "metamorfosi",
+        "migrazione",
+        "speranza",
+        "trasformazione",
+        "farfalla monarca"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orca",
+      "searchTokens" : [
+        "animale",
+        "cetaceo",
+        "marino",
+        "oceano",
+        "orca"
+      ]
+    },
     "1FACE" : {
       "name" : "alce",
       "searchTokens" : [
@@ -19289,6 +19480,18 @@
         "rapa",
         "vegetale",
         "ortaggio da radice"
+      ]
+    },
+    "1FADD" : {
+      "name" : "sottaceto",
+      "searchTokens" : [
+        "cetriolino",
+        "cetriolo",
+        "condimento",
+        "fermentare",
+        "salamoia",
+        "salsa",
+        "sottaceto"
       ]
     },
     "1FADF" : {
@@ -19460,6 +19663,44 @@
         "faccina con borse sotto gli occhi"
       ]
     },
+    "1FAEA" : {
+      "name" : "faccina stravolta",
+      "searchTokens" : [
+        "ansia",
+        "panico",
+        "scioccato",
+        "sconvolto",
+        "sorpresa",
+        "vulnerabile",
+        "faccina stravolta"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "faccia screpolata",
+      "searchTokens" : [
+        "maschera",
+        "resilienza",
+        "rivelare",
+        "rottura",
+        "sgretolamento",
+        "tensione",
+        "trasformazione",
+        "faccia screpolata"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "nuvoletta di zuffa",
+      "searchTokens" : [
+        "confusione",
+        "dibattito",
+        "disaccordo",
+        "discussione",
+        "lotta",
+        "rissa",
+        "zuffa",
+        "nuvoletta di zuffa"
+      ]
+    },
     "1FAF0" : {
       "name" : "mano con indice e pollice incrociati",
       "searchTokens" : [
@@ -19583,6 +19824,30 @@
         "spinta",
         "stop",
         "mano che spinge a destra"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "segno del pollice a sinistra",
+      "searchTokens" : [
+        "indicare",
+        "neutro",
+        "presa",
+        "quello",
+        "questo",
+        "sinistra",
+        "segno del pollice a sinistra"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "segno del pollice a destra",
+      "searchTokens" : [
+        "destra",
+        "indicare",
+        "neutro",
+        "presa",
+        "quello",
+        "questo",
+        "segno del pollice a destra"
       ]
     },
     "203C-FE0F" : {
@@ -20184,13 +20449,14 @@
       ]
     },
     "2650" : {
-      "name" : "Segno zodiacale del Saggitario",
+      "name" : "Segno zodiacale del Sagittario",
       "searchTokens" : [
         "oroscopo",
         "Sagittario",
         "segno zodiacale",
         "Segno zodiacale del Saggitario",
-        "zodiaco"
+        "zodiaco",
+        "Segno zodiacale del Sagittario"
       ]
     },
     "2651" : {

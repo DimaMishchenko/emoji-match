@@ -29,10 +29,8 @@ internal struct EmojiDataLoader {
   }
 
   internal func fetchLatestRelease() async throws -> EmojiDataRelease {
-    let unicodeListing = try await fetch(url: EmojiDataSource.unicodeDirectoryURL)
-    let unicodeVersion = try UnicodeReleaseResolver.latestVersion(
-      fromDirectoryListingHTML: String(decoding: unicodeListing.data, as: UTF8.self)
-    )
+    let latestTest = try await fetch(url: EmojiDataSource.unicodeLatestTestURL)
+    let unicodeVersion = try UnicodeReleaseResolver.version(fromEmojiTest: latestTest.data)
     let cldrTags = try await fetch(url: EmojiDataSource.cldrTagsURL)
     let cldrTag = try CLDRReleaseResolver.latestTag(fromTagsJSON: cldrTags.data)
     return EmojiDataRelease(
@@ -71,11 +69,13 @@ internal struct EmojiDataLoader {
 
   internal func fetchUnicodeSourceFiles(release: EmojiDataRelease) async throws -> [EmojiDataFile] {
     let required = try await fetch(url: release.unicodeBaseURL.appending(path: "emoji-test.txt"))
+    let pinnedVersion = try UnicodeReleaseResolver.version(fromEmojiTest: required.data)
+    guard pinnedVersion == release.unicodeEmojiVersion else {
+      throw ValidationError("Pinned Unicode source version does not match the resolved release.")
+    }
     let optionalNames = [
       "emoji-sequences.txt",
-      "emoji-zwj-sequences.txt",
-      "emoji-variation-sequences.txt",
-      "emoji-data.txt"
+      "emoji-zwj-sequences.txt"
     ]
 
     var optionalFiles: [EmojiDataFile] = []
@@ -85,6 +85,12 @@ internal struct EmojiDataLoader {
       }
     }
 
+    let ucdBase = EmojiDataSource.unicodePropertiesBaseURL(for: release.unicodeEmojiVersion)
+    for name in ["emoji-data.txt", "emoji-variation-sequences.txt"] {
+      if let file = try await optionalFile(at: ucdBase.appending(path: name)) {
+        optionalFiles.append(file)
+      }
+    }
     return [required] + optionalFiles
   }
 

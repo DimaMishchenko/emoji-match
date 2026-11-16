@@ -4746,11 +4746,13 @@
       "name" : "pinautomaat",
       "searchTokens" : [
         "ATM",
-        "automaat",
         "bank",
+        "contant",
+        "geautomatiseerd",
         "geld",
-        "pinautomaat",
-        "pinnen"
+        "pinnen",
+        "teken",
+        "pinautomaat"
       ]
     },
     "1F3E8" : {
@@ -4942,6 +4944,46 @@
         "kruik",
         "sterrenbeeld",
         "waterman"
+      ]
+    },
+    "1F3FB" : {
+      "name" : "lichte huidskleur",
+      "searchTokens" : [
+        "huidskleur",
+        "lichte huidskleur",
+        "type 1–2"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "lichtgetinte huidskleur",
+      "searchTokens" : [
+        "huidskleur",
+        "lichtgetinte huidskleur",
+        "type 3"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "getinte huidskleur",
+      "searchTokens" : [
+        "getinte huidskleur",
+        "huidskleur",
+        "type 4"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "donkergetinte huidskleur",
+      "searchTokens" : [
+        "donkergetinte huidskleur",
+        "huidskleur",
+        "type 5"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "donkere huidskleur",
+      "searchTokens" : [
+        "donkere huidskleur",
+        "huidskleur",
+        "type 6"
       ]
     },
     "1F400" : {
@@ -7077,7 +7119,6 @@
         "flirten",
         "hand",
         "jongens",
-        "mannen",
         "paar",
         "schatje",
         "tweeling",
@@ -8020,13 +8061,13 @@
         "rust",
         "saai",
         "slaap",
-        "slaapsymbool",
         "slaapwel",
         "slapen",
         "slaperig",
         "strip",
         "vermoeid",
-        "zzz"
+        "zzz",
+        "slaapsymbool"
       ]
     },
     "1F4A5" : {
@@ -10563,7 +10604,7 @@
       ]
     },
     "1F606" : {
-      "name" : "grijnzend gezicht met stijf dichtgeknepen ogen",
+      "name" : "grijnzend gezicht met dichtgeknepen ogen",
       "searchTokens" : [
         "blij",
         "gesloten",
@@ -10580,7 +10621,7 @@
         "open",
         "rofl",
         "scheelzien",
-        "grijnzend gezicht met stijf dichtgeknepen ogen"
+        "grijnzend gezicht met dichtgeknepen ogen"
       ]
     },
     "1F607" : {
@@ -10890,7 +10931,6 @@
         "ik hou van je",
         "kus",
         "kussen",
-        "kussend",
         "lach",
         "lachen",
         "liefde",
@@ -11203,18 +11243,16 @@
       "searchTokens" : [
         "geschokt",
         "geschrokken",
-        "gezicht",
-        "gezicht met open mond",
         "mond",
         "oeps",
         "omg",
         "ongelofelijk",
         "ongelooflijk",
         "open",
-        "smiley",
         "sympathie",
         "vergeten",
-        "wauw"
+        "wauw",
+        "gezicht met open mond"
       ]
     },
     "1F62E-200D-1F4A8" : {
@@ -11252,8 +11290,6 @@
     "1F630" : {
       "name" : "angstig gezicht met zweetdruppel",
       "searchTokens" : [
-        "angstig",
-        "angstig gezicht met zweetdruppel",
         "angstzweet",
         "blauw",
         "blauw gezicht met angstzweet",
@@ -11262,9 +11298,9 @@
         "gezicht met open mond en zweetdruppel",
         "koud",
         "nerveus",
-        "smiley",
         "zweet",
-        "zweetdruppel"
+        "zweetdruppel",
+        "angstig gezicht met zweetdruppel"
       ]
     },
     "1F631" : {
@@ -11301,8 +11337,6 @@
       "name" : "blozend gezicht",
       "searchTokens" : [
         "beschaamd",
-        "blozend",
-        "dood",
         "gek",
         "gezicht",
         "heet",
@@ -12852,6 +12886,34 @@
         "personenlift",
         "toegankelijkheid",
         "voorwerp"
+      ]
+    },
+    "1F6D8" : {
+      "name" : "aardverschuiving",
+      "searchTokens" : [
+        "aardbeving",
+        "berg",
+        "gevaar",
+        "lawine",
+        "modderlawine",
+        "ramp",
+        "stenen",
+        "aardverschuiving"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "vuurtoren",
+      "searchTokens" : [
+        "baken",
+        "gids",
+        "hoop",
+        "licht",
+        "maritiem",
+        "navigatie",
+        "signaal",
+        "verlichting",
+        "zee",
+        "vuurtoren"
       ]
     },
     "1F6DC" : {
@@ -14475,16 +14537,16 @@
         "dutje",
         "gaap",
         "gapen",
-        "gapend gezicht",
         "geeuwen",
+        "gezicht",
         "moe",
         "rusten",
         "saai",
         "slaap lekker",
         "slaperig",
-        "smiley",
         "vermoeid",
-        "verveeld"
+        "verveeld",
+        "gapend gezicht"
       ]
     },
     "1F972" : {
@@ -14605,7 +14667,6 @@
         "dankbaar",
         "dankbaarheid",
         "gevoelens",
-        "gezicht",
         "houden",
         "huilen",
         "tegen",
@@ -15143,6 +15204,43 @@
         "lopen",
         "taststok",
         "toegankelijkheid"
+      ]
+    },
+    "1F9B0" : {
+      "name" : "rood haar",
+      "searchTokens" : [
+        "rood haar",
+        "rooie",
+        "rossig"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "krullend haar",
+      "searchTokens" : [
+        "afro",
+        "krulhaar",
+        "krullen",
+        "krullend haar"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "kaal",
+      "searchTokens" : [
+        "chemotherapie",
+        "geen haar",
+        "geschoren",
+        "haarloos",
+        "kaal"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "wit haar",
+      "searchTokens" : [
+        "grijs",
+        "haar",
+        "oud",
+        "wit",
+        "wit haar"
       ]
     },
     "1F9B4" : {
@@ -15829,6 +15927,14 @@
         "kind",
         "volwassene",
         "gezin: volwassene, kind, kind"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "balletdanser",
+      "searchTokens" : [
+        "ballet",
+        "danser",
+        "balletdanser"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -16865,6 +16971,71 @@
         "orkestra"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone",
+      "searchTokens" : [
+        "droevig",
+        "instrument",
+        "jazz",
+        "koper",
+        "muziek",
+        "schuiven",
+        "trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteoor",
+      "searchTokens" : [
+        "apocalyps",
+        "ruimte",
+        "steen",
+        "vallende ster",
+        "vuurbal",
+        "zwaartekracht",
+        "meteoor"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "gum",
+      "searchTokens" : [
+        "correctie",
+        "fout",
+        "ongedaan maken",
+        "schrappen",
+        "schrijven",
+        "tekenen",
+        "vergissing",
+        "verwijderen",
+        "wissen",
+        "wrijven",
+        "gum"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "net met steel",
+      "searchTokens" : [
+        "gaas",
+        "schepnet",
+        "vangen",
+        "verzamelen",
+        "net met steel"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "schatkist",
+      "searchTokens" : [
+        "buit",
+        "edelsteen",
+        "geld",
+        "goud",
+        "juwelen",
+        "kostbaarheden",
+        "prijs",
+        "rijkdom",
+        "zilver",
+        "schatkist"
+      ]
+    },
     "1FA8F" : {
       "name" : "schop",
       "searchTokens" : [
@@ -17424,14 +17595,14 @@
         "branden",
         "dier",
         "gelei",
-        "kwal",
         "leven",
         "oceaan",
         "ongewerveld",
         "plankton",
-        "stekel",
+        "steek",
         "tentakels",
-        "zee"
+        "zee",
+        "kwal"
       ]
     },
     "1FABD" : {
@@ -17558,6 +17729,43 @@
         "identiteit",
         "veiligheid",
         "vingerafdruk"
+      ]
+    },
+    "1FAC8" : {
+      "name" : "harig wezen",
+      "searchTokens" : [
+        "bigfoot",
+        "cryptide",
+        "harig",
+        "reus",
+        "sasquatch",
+        "wildeman",
+        "woud",
+        "yeti",
+        "harig wezen"
+      ]
+    },
+    "1FACC" : {
+      "name" : "monarchvlinder",
+      "searchTokens" : [
+        "fragiel",
+        "hoop",
+        "insect",
+        "metamorfose",
+        "migratie",
+        "rups",
+        "transformatie",
+        "verandering",
+        "monarchvlinder"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orka",
+      "searchTokens" : [
+        "oceaan",
+        "walvis",
+        "zee",
+        "orka"
       ]
     },
     "1FACE" : {
@@ -17726,6 +17934,18 @@
         "knol"
       ]
     },
+    "1FADD" : {
+      "name" : "augurk",
+      "searchTokens" : [
+        "condiment",
+        "fermenteren",
+        "ingemaakt",
+        "komkommer",
+        "kruiderij",
+        "zuur",
+        "augurk"
+      ]
+    },
     "1FADF" : {
       "name" : "Gespat",
       "searchTokens" : [
@@ -17882,6 +18102,44 @@
         "uitgeput"
       ]
     },
+    "1FAEA" : {
+      "name" : "verwrongen gezicht",
+      "searchTokens" : [
+        "geschokt",
+        "kwetsbaar",
+        "onrust",
+        "opgeblazen",
+        "paniek",
+        "verrast",
+        "verwrongen gezicht"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "barstend gezicht",
+      "searchTokens" : [
+        "afbrokkelend",
+        "brekend",
+        "maskeren",
+        "onthullen",
+        "spanning",
+        "transformatie",
+        "weerbarstig",
+        "barstend gezicht"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "vechtwolk",
+      "searchTokens" : [
+        "debat",
+        "onenigheid",
+        "ruzie",
+        "tumult",
+        "vechtpartij",
+        "woordenwisseling",
+        "worsteling",
+        "vechtwolk"
+      ]
+    },
     "1FAF0" : {
       "name" : "hand met wijsvinger en duim gekruist",
       "searchTokens" : [
@@ -17986,6 +18244,30 @@
         "stoppen",
         "wachten",
         "weigeren"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "duim naar links",
+      "searchTokens" : [
+        "dat",
+        "dit",
+        "grip",
+        "links",
+        "neutraal",
+        "wijzen",
+        "duim naar links"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "duim naar rechts",
+      "searchTokens" : [
+        "dat",
+        "dit",
+        "grip",
+        "neutraal",
+        "rechts",
+        "wijzen",
+        "duim naar rechts"
       ]
     },
     "203C-FE0F" : {

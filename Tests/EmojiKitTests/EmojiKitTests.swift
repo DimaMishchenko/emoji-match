@@ -81,6 +81,45 @@ import Testing
     #expect(handshake.skinToneVariants.map(\.tones) == [[.light, .light], [.medium, .dark]])
   }
 
+  @Test func preservesSequenceIdentityAndComponentsWithoutNameGrouping() throws {
+    let fixture = """
+      # group: People & Body
+      # subgroup: person
+      1F575 FE0F ; fully-qualified # 🕵️ E0.7 detective
+      1F575 1F3FB ; fully-qualified # 🕵🏻 E2.0 deliberately different name: light skin tone
+      1F575 FE0F 200D 2642 FE0F ; fully-qualified # 🕵️‍♂️ E4.0 man detective
+      1F575 1F3FB 200D 2642 FE0F ; fully-qualified # 🕵🏻‍♂️ E4.0 detective: light skin tone
+      1F575 ; unqualified # 🕵 E0.7 detective
+      # group: Component
+      # subgroup: skin-tone
+      1F3FB ; component # 🏻 E1.0 light skin tone
+      """
+    let emojis = try UnicodeEmojiParser.parseEmojiTest(Data(fixture.utf8))
+    #expect(emojis.map(\.id) == ["1F575-FE0F", "1F575-FE0F-200D-2642-FE0F", "1F3FB"])
+    #expect(emojis.map { $0.skinToneVariants.count } == [1, 1, 0])
+    #expect(emojis[0].skinToneVariants[0].id.rawValue == "1F575-1F3FB")
+    #expect(emojis[1].skinToneVariants[0].id.rawValue == "1F575-1F3FB-200D-2642-FE0F")
+  }
+
+  @Test func rejectsOrphanToneSequencesInsteadOfInventingBases() {
+    let fixture = """
+      # group: People & Body
+      # subgroup: hand
+      1F44D 1F3FB ; fully-qualified # 👍🏻 E1.0 thumbs up: light skin tone
+      """
+    #expect(throws: (any Error).self) {
+      try UnicodeEmojiParser.parseEmojiTest(Data(fixture.utf8))
+    }
+  }
+
+  @Test func unicodeReleaseHeaderResolvesModernPinnedLocation() throws {
+    #expect(
+      try UnicodeReleaseResolver.version(fromEmojiTest: Data("# Version: 18.0\n".utf8)) == "18.0")
+    #expect(
+      EmojiDataSource.unicodeBaseURL(for: "18.0").absoluteString
+        == "https://unicode.org/Public/18.0.0/emoji/")
+  }
+
   @Test func generatedSkinToneVariantEncodesRawValueShape() throws {
     let data = try JSONEncoder()
       .encode(
@@ -128,26 +167,14 @@ import Testing
     #expect(localization["1F600"]?.searchTokens == ["face", "grin"])
   }
 
-  @Test func unicodeReleaseResolverFindsLatestVersionFromDirectoryListing() throws {
-    let html = """
-      <html>
-        <a href="15.1/">15.1/</a>
-        <a href="16.0/">16.0/</a>
-        <a href="14.0/">14.0/</a>
-      </html>
-      """
-
-    let version = try UnicodeReleaseResolver.latestVersion(fromDirectoryListingHTML: html)
-
-    #expect(version == "16.0")
-  }
-
   @Test func cldrReleaseResolverFindsLatestTagFromTagsJSON() throws {
     let json = """
       [
         { "name": "46.1.0" },
         { "name": "47.0.0" },
-        { "name": "45.0.0" }
+        { "name": "45.0.0" },
+        { "name": "99.0.0-BETA1" },
+        { "name": "release-100" }
       ]
       """
 
@@ -155,6 +182,32 @@ import Testing
 
     #expect(tag == "47.0.0")
     #expect(CLDRReleaseResolver.version(fromTag: tag) == "47")
+  }
+
+  @Test func discoveryUsesLatestHeaderAndStableCLDRTag() async throws {
+    let loader = EmojiDataLoader(
+      httpClient: StubHTTPClient(responses: [
+        EmojiDataSource.unicodeLatestTestURL.absoluteString: .success("# Version: 18.0"),
+        EmojiDataSource.cldrTagsURL.absoluteString: .success(
+          #"[{"name":"49.0.0"},{"name":"50.0.0-BETA1"}]"#)
+      ]))
+    let release = try await loader.fetchLatestRelease()
+    #expect(
+      release == EmojiDataRelease(unicodeEmojiVersion: "18.0", cldrVersion: "49", cldrTag: "49.0.0")
+    )
+  }
+
+  @Test func pinnedUnicodeHeaderMustMatchDiscoveredRelease() async throws {
+    let release = EmojiDataRelease(
+      unicodeEmojiVersion: "18.0", cldrVersion: "49", cldrTag: "49.0.0")
+    let loader = EmojiDataLoader(
+      httpClient: StubHTTPClient(responses: [
+        release.unicodeBaseURL.appending(path: "emoji-test.txt").absoluteString: .success(
+          "# Version: 17.0")
+      ]))
+    await #expect(throws: (any Error).self) {
+      try await loader.fetchUnicodeSourceFiles(release: release)
+    }
   }
 
   @Test func fetchUnicodeSourceFilesIgnoresMissingOptionalValidationFiles() async throws {
@@ -166,16 +219,17 @@ import Testing
     let fetcher = EmojiDataLoader(
       httpClient: StubHTTPClient(
         responses: [
-          release.unicodeBaseURL.appending(path: "emoji-test.txt").absoluteString: .success("test"),
+          release.unicodeBaseURL.appending(path: "emoji-test.txt").absoluteString: .success(
+            "# Version: 16.0"),
           release.unicodeBaseURL.appending(path: "emoji-sequences.txt").absoluteString: .failure(
             404),
           release.unicodeBaseURL.appending(path: "emoji-zwj-sequences.txt").absoluteString:
             .success(
               "zwj"
             ),
-          release.unicodeBaseURL.appending(path: "emoji-variation-sequences.txt").absoluteString:
+          "https://unicode.org/Public/16.0.0/ucd/emoji/emoji-variation-sequences.txt":
             .failure(404),
-          release.unicodeBaseURL.appending(path: "emoji-data.txt").absoluteString: .failure(404)
+          "https://unicode.org/Public/16.0.0/ucd/emoji/emoji-data.txt": .failure(404)
         ]
       )
     )
@@ -298,6 +352,21 @@ import Testing
     #expect(effective.searchTokens == ["face", "grin", "grinning face"])
   }
 
+  @Test func emptyDerivedDisplayNameFallsBackToEnglish() throws {
+    let emoji = GeneratedBaseEmoji(
+      id: "1F468-200D-1F466", value: "👨‍👦", group: "People & Body", subgroup: "family",
+      unicodeVersion: "4.0", sortOrder: 1, fallbackName: "family: man, boy")
+    let english = GeneratedLocalizationEntry(
+      name: "family: man, boy", searchTokens: ["family", "man", "boy"])
+    let result = try EmojiGenerator()
+      .effectiveLocalization(
+        for: emoji, locale: "es-MX", direct: [:],
+        derived: [emoji.id: GeneratedLocalizationEntry(name: "", searchTokens: ["familia"])],
+        english: english)
+    #expect(result.name == english.name)
+    #expect(result.searchTokens.contains("family"))
+  }
+
   @Test func effectiveLocalizationSynthesizesFallbackWhenEnglishIsMissing() throws {
     let generator = EmojiGenerator()
     let emoji = GeneratedBaseEmoji(
@@ -326,6 +395,7 @@ import Testing
   @Test func writerSkipsUnchangedBytesAndForcesRewrite() throws {
     let directory = URL(fileURLWithPath: NSTemporaryDirectory())
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
     let paths = try CLIOutputPaths(
       outputRoot: directory.path,
       metadataPath: nil,

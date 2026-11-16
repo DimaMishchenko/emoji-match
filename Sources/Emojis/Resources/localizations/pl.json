@@ -4910,6 +4910,51 @@
         "zodiak"
       ]
     },
+    "1F3FB" : {
+      "name" : "karnacja jasna",
+      "searchTokens" : [
+        "karnacja",
+        "karnacja jasna",
+        "odcień skóry",
+        "typ 1–2"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "karnacja średnio jasna",
+      "searchTokens" : [
+        "karnacja",
+        "karnacja średnio jasna",
+        "odcień skóry",
+        "typ 3"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "karnacja średnia",
+      "searchTokens" : [
+        "karnacja",
+        "karnacja średnia",
+        "odcień skóry",
+        "typ 4"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "karnacja średnio ciemna",
+      "searchTokens" : [
+        "karnacja",
+        "karnacja średnio ciemna",
+        "odcień skóry",
+        "typ 5"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "karnacja ciemna",
+      "searchTokens" : [
+        "karnacja",
+        "karnacja ciemna",
+        "odcień skóry",
+        "typ 6"
+      ]
+    },
     "1F400" : {
       "name" : "szczur",
       "searchTokens" : [
@@ -12756,6 +12801,33 @@
         "wyciąg pionowy"
       ]
     },
+    "1F6D8" : {
+      "name" : "osuwisko",
+      "searchTokens" : [
+        "góra",
+        "katastrofa",
+        "lawina",
+        "lawina błotna",
+        "niebezpieczeństwo",
+        "skały",
+        "trzęsienie ziemi",
+        "osuwisko"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "latarnia morska",
+      "searchTokens" : [
+        "kierować",
+        "latarnia morska",
+        "morska",
+        "morze",
+        "nadzieja",
+        "nawigacja",
+        "oświecenie",
+        "światło",
+        "sygnał"
+      ]
+    },
     "1F6DC" : {
       "name" : "bezprzewodowy",
       "searchTokens" : [
@@ -15249,6 +15321,47 @@
         "niewidomy"
       ]
     },
+    "1F9B0" : {
+      "name" : "rude włosy",
+      "searchTokens" : [
+        "ruda",
+        "rude",
+        "rude włosy",
+        "rudy"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "kręcone włosy",
+      "searchTokens" : [
+        "afro",
+        "kędzierzawe",
+        "kędzierzawy",
+        "kręcone",
+        "kręcone włosy"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "łysy",
+      "searchTokens" : [
+        "bez włosów",
+        "bezwłosa",
+        "bezwłosy",
+        "chemioterapia",
+        "łysy",
+        "ogolona"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "białe włosy",
+      "searchTokens" : [
+        "białe",
+        "siwe",
+        "starsza",
+        "starszy",
+        "włosy",
+        "białe włosy"
+      ]
+    },
     "1F9B4" : {
       "name" : "kość",
       "searchTokens" : [
@@ -15977,6 +16090,15 @@
         "dorosły",
         "dziecko",
         "rodzina: dorosły, dziecko, dziecko"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "baletnica",
+      "searchTokens" : [
+        "balet",
+        "tancerka",
+        "tancerz",
+        "baletnica"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -17036,6 +17158,72 @@
         "orkiestra"
       ]
     },
+    "1FA8A" : {
+      "name" : "puzon",
+      "searchTokens" : [
+        "instrument",
+        "instrument dęty blaszany",
+        "jazz",
+        "muzyka",
+        "smutek",
+        "suwak",
+        "puzon"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteor",
+      "searchTokens" : [
+        "apokalipsa",
+        "grawitacja",
+        "gwiazda",
+        "kula ognia",
+        "przestrzeń",
+        "skała",
+        "spadać",
+        "meteor"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "gumka",
+      "searchTokens" : [
+        "błąd",
+        "cofnąć",
+        "kasować",
+        "pisanie",
+        "pomyłka",
+        "poprawka",
+        "rysunek",
+        "usuwać",
+        "wycierać",
+        "zmazać",
+        "gumka"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "siatka z rączką",
+      "searchTokens" : [
+        "łapać",
+        "pułapka",
+        "siatka",
+        "zbierać",
+        "siatka z rączką"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "skrzynia skarbów",
+      "searchTokens" : [
+        "bogactwo",
+        "kamień szlachetny",
+        "klejnot",
+        "kosztowności",
+        "łup",
+        "nagroda",
+        "pieniądze",
+        "srebro",
+        "złoto",
+        "skrzynia skarbów"
+      ]
+    },
     "1FA8F" : {
       "name" : "łopata",
       "searchTokens" : [
@@ -17754,6 +17942,44 @@
         "tożsamość"
       ]
     },
+    "1FAC8" : {
+      "name" : "włochate stworzenie",
+      "searchTokens" : [
+        "człowiek z lasu",
+        "gigant",
+        "kryptyda",
+        "las",
+        "sasquatch",
+        "wielka stopa",
+        "włochate",
+        "yeti",
+        "włochate stworzenie"
+      ]
+    },
+    "1FACC" : {
+      "name" : "monarcha",
+      "searchTokens" : [
+        "delikatność",
+        "gąsienica",
+        "metamorfoza",
+        "migracja",
+        "motyl",
+        "nadzieja",
+        "owad",
+        "transformacja",
+        "zmiana",
+        "monarcha"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orka",
+      "searchTokens" : [
+        "morski",
+        "ocean",
+        "wieloryb",
+        "orka"
+      ]
+    },
     "1FACE" : {
       "name" : "łoś",
       "searchTokens" : [
@@ -17938,6 +18164,19 @@
         "warzywo korzeniowe"
       ]
     },
+    "1FADD" : {
+      "name" : "ogórek kiszony",
+      "searchTokens" : [
+        "fermentacja",
+        "korniszon",
+        "ogórek",
+        "przyprawa",
+        "przyprawiać",
+        "sezon ogórkowy",
+        "solanka",
+        "ogórek kiszony"
+      ]
+    },
     "1FADF" : {
       "name" : "rozbryzg",
       "searchTokens" : [
@@ -18086,6 +18325,43 @@
         "twarz z workami pod oczami"
       ]
     },
+    "1FAEA" : {
+      "name" : "wykrzywiona twarz",
+      "searchTokens" : [
+        "bezradność",
+        "niepokój",
+        "opuchlizna",
+        "panika",
+        "szok",
+        "zaskoczenie",
+        "wykrzywiona twarz"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "popękana twarz",
+      "searchTokens" : [
+        "maskowanie",
+        "napięcie",
+        "odporność",
+        "pokruszona",
+        "połamana",
+        "transformacja",
+        "ujawniać",
+        "popękana twarz"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "chmura walki",
+      "searchTokens" : [
+        "awantura",
+        "dyskusja",
+        "kłótnia",
+        "raban",
+        "różnica zdań",
+        "walka",
+        "chmura walki"
+      ]
+    },
     "1FAF0" : {
       "name" : "dłoń ze skrzyżowanym palcem wskazującym i kciukiem",
       "searchTokens" : [
@@ -18188,6 +18464,30 @@
         "stop",
         "w prawo",
         "wstrzymać"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "gest kciuka w lewo",
+      "searchTokens" : [
+        "chwyt",
+        "lewo",
+        "neutralny",
+        "punkt",
+        "ten",
+        "to",
+        "gest kciuka w lewo"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "gest kciuka w prawo",
+      "searchTokens" : [
+        "chwyt",
+        "neutralny",
+        "prawo",
+        "punkt",
+        "ten",
+        "to",
+        "gest kciuka w prawo"
       ]
     },
     "203C-FE0F" : {

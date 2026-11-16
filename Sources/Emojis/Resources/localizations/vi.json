@@ -4540,6 +4540,46 @@
         "vò hai quai"
       ]
     },
+    "1F3FB" : {
+      "name" : "màu da sáng",
+      "searchTokens" : [
+        "loại 1–2",
+        "màu da",
+        "màu da sáng"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "màu da sáng trung bình",
+      "searchTokens" : [
+        "loại 3",
+        "màu da",
+        "màu da sáng trung bình"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "màu da trung bình",
+      "searchTokens" : [
+        "loại 4",
+        "màu da",
+        "màu da trung bình"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "màu da tối trung bình",
+      "searchTokens" : [
+        "loại 5",
+        "màu da",
+        "màu da tối trung bình"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "màu da tối",
+      "searchTokens" : [
+        "loại 6",
+        "màu da",
+        "màu da tối"
+      ]
+    },
     "1F400" : {
       "name" : "chuột cống",
       "searchTokens" : [
@@ -11083,6 +11123,33 @@
         "thang máy"
       ]
     },
+    "1F6D8" : {
+      "name" : "lở đất",
+      "searchTokens" : [
+        "đá",
+        "động đất",
+        "lở đất",
+        "nguy hiểm",
+        "núi",
+        "thảm họa",
+        "tuyết lở"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "hải đăng",
+      "searchTokens" : [
+        "ánh sáng",
+        "biển",
+        "đèn biển",
+        "điều hướng",
+        "giác ngộ",
+        "hàng hải",
+        "hướng dẫn",
+        "hy vọng",
+        "tín hiệu",
+        "hải đăng"
+      ]
+    },
     "1F6DC" : {
       "name" : "không dây",
       "searchTokens" : [
@@ -13069,6 +13136,43 @@
         "mù"
       ]
     },
+    "1F9B0" : {
+      "name" : "tóc đỏ",
+      "searchTokens" : [
+        "tóc đỏ",
+        "tóc màu cam đỏ",
+        "tóc màu đỏ"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "tóc xoăn",
+      "searchTokens" : [
+        "quăn",
+        "tóc xoăn",
+        "xoăn",
+        "xù"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "hói",
+      "searchTokens" : [
+        "cạo nhẵn",
+        "hóa trị",
+        "hói",
+        "không có tóc",
+        "trụi tóc"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "tóc trắng",
+      "searchTokens" : [
+        "bạc",
+        "tóc",
+        "trắng",
+        "xám",
+        "tóc trắng"
+      ]
+    },
     "1F9B4" : {
       "name" : "xương",
       "searchTokens" : [
@@ -13737,6 +13841,14 @@
         "gia đình: người lớn",
         "gia đình: người lớn, trẻ em, trẻ em",
         "trẻ em"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "vũ công ba lê",
+      "searchTokens" : [
+        "ba lê",
+        "vũ công",
+        "vũ công ba lê"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -14655,6 +14767,72 @@
         "đàn hạc"
       ]
     },
+    "1FA8A" : {
+      "name" : "kèn trombone",
+      "searchTokens" : [
+        "âm nhạc",
+        "buồn",
+        "đồng",
+        "jazz",
+        "nhạc cụ",
+        "trượt",
+        "kèn trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "thiên thạch",
+      "searchTokens" : [
+        "đá",
+        "không gian",
+        "ngôi sao",
+        "rơi",
+        "sao băng",
+        "tận thế",
+        "trọng lực",
+        "thiên thạch"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "cục tẩy",
+      "searchTokens" : [
+        "chà xát",
+        "hoàn tác",
+        "loại bỏ",
+        "lỗi",
+        "sai sót",
+        "sửa đổi",
+        "tẩy",
+        "vẽ",
+        "viết",
+        "xoá",
+        "cục tẩy"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "vợt bắt côn trùng",
+      "searchTokens" : [
+        "bắt",
+        "bẫy",
+        "lưới",
+        "thu thập",
+        "vợt bắt côn trùng"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "rương báu",
+      "searchTokens" : [
+        "bạc",
+        "chiến lợi phẩm",
+        "đá quý",
+        "đồ trang sức",
+        "đồ vật có giá trị",
+        "giải thưởng",
+        "sự giàu có",
+        "tiền",
+        "vàng",
+        "rương báu"
+      ]
+    },
     "1FA8F" : {
       "name" : "xẻng",
       "searchTokens" : [
@@ -15273,6 +15451,43 @@
         "sự an toàn"
       ]
     },
+    "1FAC8" : {
+      "name" : "sinh vật nhiều lông",
+      "searchTokens" : [
+        "chân to",
+        "khổng lồ",
+        "người rừng",
+        "người tuyết",
+        "nhiều lông",
+        "rừng",
+        "sinh vật bí ẩn",
+        "yeti",
+        "sinh vật nhiều lông"
+      ]
+    },
+    "1FACC" : {
+      "name" : "bướm chúa",
+      "searchTokens" : [
+        "biến đổi",
+        "côn trùng",
+        "di cư",
+        "hoá bướm",
+        "hy vọng",
+        "mỏng manh",
+        "sâu bướm",
+        "thay đổi",
+        "bướm chúa"
+      ]
+    },
+    "1FACD" : {
+      "name" : "cá voi sát thủ",
+      "searchTokens" : [
+        "biển",
+        "cá voi",
+        "đại dương",
+        "cá voi sát thủ"
+      ]
+    },
     "1FACE" : {
       "name" : "nai sừng tấm Bắc Mỹ",
       "searchTokens" : [
@@ -15432,6 +15647,19 @@
         "rau củ"
       ]
     },
+    "1FADD" : {
+      "name" : "dưa muối",
+      "searchTokens" : [
+        "dưa chuột",
+        "dưa chuột bao tử",
+        "gia vị",
+        "lên men",
+        "nước muối",
+        "rắc rối",
+        "tương ớt ngọt",
+        "dưa muối"
+      ]
+    },
     "1FADF" : {
       "name" : "bắn tung tóe",
       "searchTokens" : [
@@ -15555,6 +15783,44 @@
         "mệt mỏi"
       ]
     },
+    "1FAEA" : {
+      "name" : "mặt méo",
+      "searchTokens" : [
+        "căng phồng",
+        "dễ tổn thương",
+        "hoảng loạn",
+        "lo lắng",
+        "ngạc nhiên",
+        "sốc",
+        "mặt méo"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "mặt rạn nứt",
+      "searchTokens" : [
+        "sự căng thẳng",
+        "sự che giấu",
+        "sự chuyển hoá",
+        "sự hé lộ",
+        "sự kiên cường",
+        "sự sụp đổ",
+        "sự tan vỡ",
+        "mặt rạn nứt"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "đám mây chiến đấu",
+      "searchTokens" : [
+        "bất đồng quan điểm",
+        "cãi nhau",
+        "cãi vã",
+        "đánh nhau",
+        "náo loạn",
+        "tranh luận",
+        "vật lộn",
+        "đám mây chiến đấu"
+      ]
+    },
     "1FAF0" : {
       "name" : "bàn tay với ngón trỏ và ngón cái bắt chéo",
       "searchTokens" : [
@@ -15649,6 +15915,30 @@
         "sang phải",
         "thôi",
         "từ chối"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "biểu tượng ngón tay cái chỉ sang trái",
+      "searchTokens" : [
+        "cầm",
+        "chỉ",
+        "đó",
+        "này",
+        "trái",
+        "trung lập",
+        "biểu tượng ngón tay cái chỉ sang trái"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "biểu tượng ngón tay cái chỉ sang phải",
+      "searchTokens" : [
+        "cầm",
+        "chỉ",
+        "đó",
+        "này",
+        "phải",
+        "trung lập",
+        "biểu tượng ngón tay cái chỉ sang phải"
       ]
     },
     "203C-FE0F" : {

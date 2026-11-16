@@ -4846,6 +4846,46 @@
         "silah"
       ]
     },
+    "1F3FB" : {
+      "name" : "açık cilt tonu",
+      "searchTokens" : [
+        "açık cilt tonu",
+        "cilt tonu",
+        "tip 1–2"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "orta açık cilt tonu",
+      "searchTokens" : [
+        "cilt tonu",
+        "orta açık cilt tonu",
+        "tip 3"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "orta cilt tonu",
+      "searchTokens" : [
+        "cilt tonu",
+        "orta cilt tonu",
+        "tip 4"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "orta koyu cilt tonu",
+      "searchTokens" : [
+        "cilt tonu",
+        "orta koyu cilt tonu",
+        "tip 5"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "koyu cilt tonu",
+      "searchTokens" : [
+        "cilt tonu",
+        "koyu cilt tonu",
+        "tip 6"
+      ]
+    },
     "1F400" : {
       "name" : "sıçan",
       "searchTokens" : [
@@ -12049,6 +12089,35 @@
         "yukarı"
       ]
     },
+    "1F6D8" : {
+      "name" : "heyelan",
+      "searchTokens" : [
+        "çığ",
+        "dağ",
+        "deprem",
+        "felaket",
+        "kayalar",
+        "taşlar",
+        "tehlike",
+        "toprak kayması",
+        "heyelan"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "deniz feneri",
+      "searchTokens" : [
+        "aydınlanma",
+        "deniz",
+        "denizcilik",
+        "fener",
+        "ışık",
+        "navigasyon",
+        "rehberlik",
+        "sinyal",
+        "umut",
+        "deniz feneri"
+      ]
+    },
     "1F6DC" : {
       "name" : "kablosuz",
       "searchTokens" : [
@@ -14454,6 +14523,43 @@
         "görme engelli bastonu"
       ]
     },
+    "1F9B0" : {
+      "name" : "kızıl saç",
+      "searchTokens" : [
+        "kırmızı",
+        "kızıl",
+        "kızıl saç"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "kıvırcık saç",
+      "searchTokens" : [
+        "afro",
+        "kıvırcık",
+        "kıvırcık saç",
+        "lüle"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "kel",
+      "searchTokens" : [
+        "kel",
+        "kemoterapi",
+        "saç yok",
+        "saçsız",
+        "tıraşlı"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "beyaz saç",
+      "searchTokens" : [
+        "beyaz",
+        "gri",
+        "saç",
+        "yaşlı",
+        "beyaz saç"
+      ]
+    },
     "1F9B4" : {
       "name" : "kemik",
       "searchTokens" : [
@@ -15189,6 +15295,14 @@
         "aile: yetişkin, çocuk, çocuk"
       ]
     },
+    "1F9D1-200D-1FA70" : {
+      "name" : "bale dansçısı",
+      "searchTokens" : [
+        "bale",
+        "dansçı",
+        "bale dansçısı"
+      ]
+    },
     "1F9D1-200D-2695-FE0F" : {
       "name" : "health worker",
       "searchTokens" : [
@@ -15896,17 +16010,12 @@
       "searchTokens" : [
         "banyo",
         "banyo yapmak",
-        "el sabunu",
         "el yıkamak",
-        "kalıp",
-        "katı sabun",
         "köpük",
         "köpürmek",
-        "köpürtmek",
         "sabun",
         "sabun köpüğü",
         "sabunlamak",
-        "sabunluk",
         "temiz",
         "temizlik",
         "yıkamak",
@@ -15918,16 +16027,12 @@
       "searchTokens" : [
         "banyo",
         "banyo yapmak",
-        "bulaşık",
         "emici",
         "emmek",
-        "ev işi",
         "gözenek",
         "gözenekli",
         "keselemek",
-        "köpürmek",
         "köpürtmek",
-        "silmek",
         "sünger",
         "temizlik",
         "yıkamak",
@@ -15956,18 +16061,12 @@
       "name" : "nazarlık",
       "searchTokens" : [
         "boncuk",
-        "göz",
-        "iyi şans",
-        "kem göz",
-        "kötü şans",
         "maşallah",
-        "mavi boncuk",
+        "mavi",
         "muska",
         "nazar",
-        "nazar boncuğu",
-        "nazar değmesin",
-        "nazarlık",
-        "tılsım"
+        "tılsım",
+        "nazarlık"
       ]
     },
     "1FA70" : {
@@ -16271,6 +16370,71 @@
         "eros",
         "müzik",
         "orkestra"
+      ]
+    },
+    "1FA8A" : {
+      "name" : "trombon",
+      "searchTokens" : [
+        "bakır",
+        "çalgı",
+        "caz",
+        "enstrüman",
+        "hüzünlü",
+        "müzik",
+        "sürgü",
+        "üzgün",
+        "trombon"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "gök taşı",
+      "searchTokens" : [
+        "ateş topu",
+        "düşüş",
+        "kaya",
+        "kıyamet",
+        "uzay",
+        "yerçekimi",
+        "yıldız",
+        "gök taşı"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "silgi",
+      "searchTokens" : [
+        "çizim",
+        "düzeltme",
+        "geri al",
+        "hata",
+        "kaldırmak",
+        "silgi",
+        "silme",
+        "yanlışlık",
+        "yazma"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "kelebek ağı",
+      "searchTokens" : [
+        "ağ",
+        "toplamak",
+        "tuzak",
+        "yakalamak",
+        "kelebek ağı"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "hazine sandığı",
+      "searchTokens" : [
+        "altın",
+        "değerli",
+        "ganimet",
+        "gümüş",
+        "mücevher",
+        "ödül",
+        "para",
+        "zenginlik",
+        "hazine sandığı"
       ]
     },
     "1FA8F" : {
@@ -16973,22 +17137,17 @@
       "searchTokens" : [
         "aşk",
         "elveda",
-        "güle güle",
         "hoşçakal",
-        "hoşçakalın",
         "insan",
-        "kucaklaşan insanlar",
         "kucaklaşma",
         "merhaba",
         "sağol",
-        "sağolun",
         "sarılma",
-        "selam",
         "sevgi",
         "teşekkür",
-        "teşekkürler",
         "teselli",
-        "veda"
+        "veda",
+        "kucaklaşan insanlar"
       ]
     },
     "1FAC3" : {
@@ -17043,6 +17202,41 @@
         "güvenlik",
         "kimlik",
         "parmak izi"
+      ]
+    },
+    "1FAC8" : {
+      "name" : "tüylü yaratık",
+      "searchTokens" : [
+        "dev",
+        "efsanevi yaratık",
+        "koca ayak",
+        "orman",
+        "tüylü",
+        "yeti",
+        "tüylü yaratık"
+      ]
+    },
+    "1FACC" : {
+      "name" : "kral kelebeği",
+      "searchTokens" : [
+        "başkalaşım",
+        "böcek",
+        "değişim",
+        "dönüşüm",
+        "göç",
+        "kırılgan",
+        "tırtıl",
+        "umut",
+        "kral kelebeği"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orka",
+      "searchTokens" : [
+        "balina",
+        "deniz",
+        "okyanus",
+        "orka"
       ]
     },
     "1FACE" : {
@@ -17247,6 +17441,18 @@
         "kök sebze"
       ]
     },
+    "1FADD" : {
+      "name" : "turşu",
+      "searchTokens" : [
+        "çeşni",
+        "fermente",
+        "kornişon",
+        "salatalık",
+        "sorun",
+        "tuzlu su",
+        "turşu"
+      ]
+    },
     "1FADF" : {
       "name" : "sıçratma",
       "searchTokens" : [
@@ -17417,6 +17623,44 @@
         "yorgun"
       ]
     },
+    "1FAEA" : {
+      "name" : "biçimsiz yüz",
+      "searchTokens" : [
+        "kaygı",
+        "panik",
+        "şaşırmış",
+        "şaşkın",
+        "savunmasız",
+        "şişkin",
+        "biçimsiz yüz"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "çatlayan yüz",
+      "searchTokens" : [
+        "açığa çıkarma",
+        "dayanıklılık",
+        "dönüşüm",
+        "gerginlik",
+        "kırılma",
+        "maskeleme",
+        "parçalanma",
+        "çatlayan yüz"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "dövüş bulutu",
+      "searchTokens" : [
+        "anlaşmazlık",
+        "arbede",
+        "çekişme",
+        "dövüş",
+        "güreş",
+        "kavga",
+        "tartışma",
+        "dövüş bulutu"
+      ]
+    },
     "1FAF0" : {
       "name" : "işaret parmağı ve baş parmak birbirine geçmiş el",
       "searchTokens" : [
@@ -17553,6 +17797,30 @@
         "reddetme",
         "sağa",
         "sağa iten el"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "baş parmak solda",
+      "searchTokens" : [
+        "bu",
+        "gösterme",
+        "kavrama",
+        "nötr",
+        "sol",
+        "şu",
+        "baş parmak solda"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "başparmak sağda",
+      "searchTokens" : [
+        "bu",
+        "gösterme",
+        "kavrama",
+        "nötr",
+        "sağ",
+        "şu",
+        "başparmak sağda"
       ]
     },
     "203C-FE0F" : {

@@ -4,6 +4,25 @@ import Testing
 @testable import Emojis
 
 @Suite struct EmojisTests {
+  @Test func bundledCatalogLoadsEveryDeclaredLocaleAndVariant() throws {
+    let metadata = try Emojis.metadata()
+    let reference = try Emojis.fetch(locale: Locale(identifier: metadata.defaultLocaleIdentifier))
+    let expectedIDs = reference.map(\.id)
+    #expect(!expectedIDs.isEmpty)
+    for identifier in metadata.availableLocaleIdentifiers {
+      let localized = try Emojis.fetch(locale: Locale(identifier: identifier))
+      #expect(localized.map(\.id) == expectedIDs)
+      #expect(
+        localized.allSatisfy {
+          !$0.localization.name.isEmpty && !$0.localization.searchTokens.isEmpty
+        })
+    }
+    let concreteIDs = reference.flatMap { [$0.id] + $0.skinToneVariants.map(\.id) }
+    #expect(Set(concreteIDs).count == concreteIDs.count)
+    #expect(reference.contains { $0.value == "🕵️" && !$0.skinToneVariants.isEmpty })
+    #expect(reference.contains { $0.value == "🕵️‍♂️" && !$0.skinToneVariants.isEmpty })
+  }
+
   @Test func metadataDecodesFromFixtureResources() throws {
     let metadata = try testCatalog().metadata()
 

@@ -1,9 +1,10 @@
 import ArgumentParser
 import Foundation
 
-/// Remote source locations used to build the generated emoji bundle.
 internal enum EmojiDataSource {
   static let unicodeDirectoryURL = requiredURL("https://unicode.org/Public/emoji/")
+  static let unicodeLatestTestURL = requiredURL(
+    "https://unicode.org/Public/emoji/latest/emoji-test.txt")
   static let cldrTagsURL = requiredURL(
     "https://api.github.com/repos/unicode-org/cldr-json/tags?per_page=100"
   )
@@ -19,7 +20,14 @@ internal enum EmojiDataSource {
   }
 
   static func unicodeBaseURL(for version: String) -> URL {
-    unicodeDirectoryURL.appending(path: version)
+    if (Int(version.split(separator: ".")[0]) ?? 0) >= 17 {
+      return requiredURL("https://unicode.org/Public/\(version).0/emoji/")
+    }
+    return unicodeDirectoryURL.appending(path: version)
+  }
+
+  static func unicodePropertiesBaseURL(for version: String) -> URL {
+    requiredURL("https://unicode.org/Public/\(version).0/ucd/emoji/")
   }
 
   static func cldrBaseURL(for tag: String) -> URL {
@@ -52,37 +60,15 @@ internal struct EmojiDataRelease: Equatable, Sendable {
 }
 
 internal enum UnicodeReleaseResolver {
-  internal static func latestVersion(fromDirectoryListingHTML html: String) throws -> String {
-    let pattern = #"(?:href="|>)(\d+\.\d+)/"#
-    let regex = try NSRegularExpression(pattern: pattern)
-    let range = NSRange(html.startIndex..<html.endIndex, in: html)
-    let versions = regex.matches(in: html, range: range)
-      .compactMap { match -> String? in
-        guard let range = Range(match.range(at: 1), in: html) else {
-          return nil
-        }
-        return String(html[range])
-      }
-
-    guard let latest = versions.max(by: isOrderedVersion(_:lessThan:)) else {
-      throw ValidationError("Unable to resolve the latest Unicode emoji release.")
-    }
-
-    return latest
-  }
-
-  private static func isOrderedVersion(_ lhs: String, lessThan rhs: String) -> Bool {
-    let left = lhs.split(separator: ".").compactMap { Int($0) }
-    let right = rhs.split(separator: ".").compactMap { Int($0) }
-    let count = max(left.count, right.count)
-    for index in 0..<count {
-      let l = index < left.count ? left[index] : 0
-      let r = index < right.count ? right[index] : 0
-      if l != r {
-        return l < r
-      }
-    }
-    return false
+  internal static func version(fromEmojiTest data: Data) throws -> String {
+    let text = String(decoding: data, as: UTF8.self)
+    guard
+      let line = text.split(whereSeparator: \.isNewline)
+        .first(where: { $0.hasPrefix("# Version: ") }),
+      let version = line.split(separator: " ").last,
+      version.range(of: #"^\d+\.\d+$"#, options: .regularExpression) != nil
+    else { throw ValidationError("Missing Unicode emoji release header.") }
+    return String(version)
   }
 }
 
@@ -94,6 +80,9 @@ internal enum CLDRReleaseResolver {
     }
 
     let names = tags.compactMap { $0["name"] as? String }
+      .filter {
+        $0.range(of: #"^\d+\.\d+\.\d+$"#, options: .regularExpression) != nil
+      }
     guard let latest = names.max(by: isOrderedTag(_:lessThan:)) else {
       throw ValidationError("Unable to resolve the latest CLDR JSON tag.")
     }

@@ -27,7 +27,7 @@ internal struct EmojiGenerator {
       case .all:
         allLocales
       case .explicit(let locales):
-        locales.sorted()
+        Set(locales).sorted()
       }
 
     guard selectedLocales.contains(defaultLocale) else {
@@ -57,15 +57,18 @@ internal struct EmojiGenerator {
         GeneratedMetadata.SourceFile(name: $0.name, url: $0.url.absoluteString, sha256: $0.sha256)
       }
 
+    let sortedSourceFiles = sourceFiles.sorted { ($0.url, $0.name) < ($1.url, $1.name) }
+    let generatedAt = generationDate(
+      paths: paths, release: release, locales: selectedLocales, sourceFiles: sortedSourceFiles)
     let bundle = GeneratedBundle(
       metadata: GeneratedMetadata(
         schemaVersion: 2,
         unicodeEmojiVersion: release.unicodeEmojiVersion,
         cldrVersion: release.cldrVersion,
-        generatedAt: Date(),
+        generatedAt: generatedAt,
         defaultLocaleIdentifier: defaultLocale,
         availableLocaleIdentifiers: selectedLocales,
-        sourceFiles: sourceFiles.sorted { ($0.url, $0.name) < ($1.url, $1.name) }
+        sourceFiles: sortedSourceFiles
       ),
       emojis: baseEmojis.sorted { $0.sortOrder < $1.sortOrder },
       localizations: Dictionary(
@@ -91,6 +94,26 @@ internal struct EmojiGenerator {
         force: force,
         dryRun: dryRun
       )
+  }
+
+  private func generationDate(
+    paths: CLIOutputPaths,
+    release: EmojiDataRelease,
+    locales: [String],
+    sourceFiles: [GeneratedMetadata.SourceFile]
+  ) -> Date {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    if let data = try? Data(contentsOf: URL(fileURLWithPath: paths.metadataPath)),
+      let existing = try? decoder.decode(GeneratedMetadata.self, from: data),
+      existing.unicodeEmojiVersion == release.unicodeEmojiVersion,
+      existing.cldrVersion == release.cldrVersion,
+      existing.availableLocaleIdentifiers == locales,
+      existing.sourceFiles == sourceFiles
+    {
+      return existing.generatedAt
+    }
+    return Date()
   }
 
   private func generateLocalizations(
@@ -174,7 +197,7 @@ internal struct EmojiGenerator {
       let name = directEntry?.name.isEmpty == false ? directEntry?.name : derivedEntry?.name
       let tokensSource = directEntry?.searchTokens.isEmpty == false ? directEntry : derivedEntry
 
-      guard let name, let tokens = tokensSource?.searchTokens, !tokens.isEmpty else {
+      guard let name, !name.isEmpty, let tokens = tokensSource?.searchTokens, !tokens.isEmpty else {
         throw ValidationError("Missing localization values for \(emojiID) in locale \(locale)")
       }
 
@@ -200,7 +223,7 @@ internal struct EmojiGenerator {
     let name = directEntry?.name.isEmpty == false ? directEntry?.name : derivedEntry?.name
     let tokensSource = directEntry?.searchTokens.isEmpty == false ? directEntry : derivedEntry
 
-    if let name, let tokens = tokensSource?.searchTokens, !tokens.isEmpty {
+    if let name, !name.isEmpty, let tokens = tokensSource?.searchTokens, !tokens.isEmpty {
       return GeneratedLocalizationEntry(
         name: name,
         searchTokens: stableDeduplicatedTokens(tokens + [name])
@@ -302,6 +325,11 @@ internal struct EmojiGenerator {
     let expectedIDs = Set(ids)
     for (locale, localization) in localizations {
       let localizedIDs = Set(localization.entries.keys)
+      guard localization.entries.values.allSatisfy({ !$0.name.isEmpty && !$0.searchTokens.isEmpty })
+      else {
+        throw ValidationError(
+          "Generated localization values must be nonempty for locale \(locale).")
+      }
       guard localizedIDs == expectedIDs else {
         throw ValidationError("Localization IDs do not match base emoji IDs for locale \(locale).")
       }

@@ -2159,19 +2159,12 @@
     "1F234" : {
       "name" : "Japanese na button para sa \"pasadong grado\"",
       "searchTokens" : [
-        "button na pasadong marka",
+        "button",
         "grado",
-        "Hapones",
         "ideograph",
-        "ideograpya",
         "Japanese",
-        "Japanese na button para sa \"pasadong grado\"",
-        "nakaparisukat na ideograph ng magkasama",
-        "nakaparisukat na ideograph ng pasado na grado",
         "pasado",
-        "pasadong marka",
-        "pindutan",
-        "合"
+        "Japanese na button para sa \"pasadong grado\""
       ]
     },
     "1F235" : {
@@ -4866,6 +4859,46 @@
         "langis",
         "sisidlan",
         "zodiac"
+      ]
+    },
+    "1F3FB" : {
+      "name" : "light na kulay ng balat",
+      "searchTokens" : [
+        "kulay ng balat",
+        "light na kulay ng balat",
+        "type 1–2"
+      ]
+    },
+    "1F3FC" : {
+      "name" : "katamtamang light na kulay ng balat",
+      "searchTokens" : [
+        "katamtamang light na kulay ng balat",
+        "kulay ng balat",
+        "type 3"
+      ]
+    },
+    "1F3FD" : {
+      "name" : "katamtamang kulay ng balat",
+      "searchTokens" : [
+        "katamtamang kulay ng balat",
+        "kulay ng balat",
+        "type 4"
+      ]
+    },
+    "1F3FE" : {
+      "name" : "katamtamang dark na kulay ng balat",
+      "searchTokens" : [
+        "katamtamang dark na kulay ng balat",
+        "kulay ng balat",
+        "type 5"
+      ]
+    },
+    "1F3FF" : {
+      "name" : "dark na kulay ng balat",
+      "searchTokens" : [
+        "dark na kulay ng balat",
+        "kulay ng balat",
+        "type 6"
       ]
     },
     "1F400" : {
@@ -12395,6 +12428,34 @@
         "pagiging naa-access"
       ]
     },
+    "1F6D8" : {
+      "name" : "landslide",
+      "searchTokens" : [
+        "avalanche",
+        "bundok",
+        "delubyo",
+        "lindol",
+        "mga bato",
+        "mudslide",
+        "panganib",
+        "landslide"
+      ]
+    },
+    "1F6D9" : {
+      "name" : "parola",
+      "searchTokens" : [
+        "dagat",
+        "gabay",
+        "ilaw",
+        "liwanag",
+        "ningas",
+        "pag-asa",
+        "pagdaragat",
+        "paglalayag",
+        "signal",
+        "parola"
+      ]
+    },
     "1F6DC" : {
       "name" : "wireless",
       "searchTokens" : [
@@ -14422,6 +14483,42 @@
         "pwd"
       ]
     },
+    "1F9B0" : {
+      "name" : "pulang buhok",
+      "searchTokens" : [
+        "ginger",
+        "pulang buhok",
+        "pulang ulo"
+      ]
+    },
+    "1F9B1" : {
+      "name" : "kulot na buhok",
+      "searchTokens" : [
+        "afro",
+        "kulot",
+        "kulot na buhok",
+        "ringlets"
+      ]
+    },
+    "1F9B2" : {
+      "name" : "kalbo",
+      "searchTokens" : [
+        "kalbo",
+        "kimoterapya",
+        "kinalbo",
+        "walang buhok"
+      ]
+    },
+    "1F9B3" : {
+      "name" : "puting buhok",
+      "searchTokens" : [
+        "buhok",
+        "kulay abo",
+        "matanda",
+        "puti",
+        "puting buhok"
+      ]
+    },
     "1F9B4" : {
       "name" : "buto",
       "searchTokens" : [
@@ -15095,6 +15192,14 @@
         "bata",
         "pamilya: adulto",
         "pamilya: adulto, bata, bata"
+      ]
+    },
+    "1F9D1-200D-1FA70" : {
+      "name" : "ballet dancer",
+      "searchTokens" : [
+        "ballet",
+        "dancer",
+        "ballet dancer"
       ]
     },
     "1F9D1-200D-2695-FE0F" : {
@@ -15995,6 +16100,71 @@
         "pag-ibig"
       ]
     },
+    "1FA8A" : {
+      "name" : "trombone",
+      "searchTokens" : [
+        "brass",
+        "instrumento",
+        "jazz",
+        "malungkot",
+        "musika",
+        "slide",
+        "trombone"
+      ]
+    },
+    "1FA8B" : {
+      "name" : "meteor",
+      "searchTokens" : [
+        "apocalypse",
+        "bato",
+        "bituin",
+        "bola ng apoy",
+        "gravity",
+        "kalawakan",
+        "nahuhulog",
+        "meteor"
+      ]
+    },
+    "1FA8C" : {
+      "name" : "pambura",
+      "searchTokens" : [
+        "alisin",
+        "burahin",
+        "guhit",
+        "ibalik",
+        "kuskos",
+        "mali",
+        "pagkakamali",
+        "pagsulat",
+        "pagwawasto",
+        "tanggalin",
+        "pambura"
+      ]
+    },
+    "1FA8D" : {
+      "name" : "lambat",
+      "searchTokens" : [
+        "hulihin",
+        "kolektahin",
+        "lambat",
+        "patibong"
+      ]
+    },
+    "1FA8E" : {
+      "name" : "kaban ng kayamanan",
+      "searchTokens" : [
+        "alahas",
+        "dyamanete",
+        "ginto",
+        "kayamanan",
+        "loot",
+        "mahahalaga",
+        "pera",
+        "pilak",
+        "premyo",
+        "kaban ng kayamanan"
+      ]
+    },
     "1FA8F" : {
       "name" : "pala",
       "searchTokens" : [
@@ -16546,6 +16716,43 @@
         "pagkakakilanlan"
       ]
     },
+    "1FAC8" : {
+      "name" : "mabalahibong nilalang",
+      "searchTokens" : [
+        "bigfoot",
+        "cryptid",
+        "higante",
+        "kagubatan",
+        "mabalahibo",
+        "sasquatch",
+        "woodwose",
+        "yeti",
+        "mabalahibong nilalang"
+      ]
+    },
+    "1FACC" : {
+      "name" : "monarch butterfly",
+      "searchTokens" : [
+        "higad",
+        "insekto",
+        "marupok",
+        "metamorphosis",
+        "pag-asa",
+        "pagbabago",
+        "pagbabagong-anyo",
+        "pagdayo",
+        "monarch butterfly"
+      ]
+    },
+    "1FACD" : {
+      "name" : "orca",
+      "searchTokens" : [
+        "balyena",
+        "dagat",
+        "marine",
+        "orca"
+      ]
+    },
     "1FACE" : {
       "name" : "moose",
       "searchTokens" : [
@@ -16701,6 +16908,19 @@
         "ugat na gulay"
       ]
     },
+    "1FADD" : {
+      "name" : "atsara",
+      "searchTokens" : [
+        "brine",
+        "ferment",
+        "gherkin",
+        "pampalasa",
+        "pipino",
+        "problema",
+        "sawsawan",
+        "atsara"
+      ]
+    },
     "1FADF" : {
       "name" : "tilamsik",
       "searchTokens" : [
@@ -16823,6 +17043,43 @@
         "mukha na nangangalumata"
       ]
     },
+    "1FAEA" : {
+      "name" : "distorted na mukha",
+      "searchTokens" : [
+        "balisa",
+        "bloated",
+        "gulat",
+        "marupok",
+        "nasurpresa",
+        "panic",
+        "distorted na mukha"
+      ]
+    },
+    "1FAEB" : {
+      "name" : "nababasag na mukha",
+      "searchTokens" : [
+        "katatagan",
+        "nababasag",
+        "nadudurog",
+        "pagbabago",
+        "pagbunyag",
+        "tensyon",
+        "nababasag na mukha"
+      ]
+    },
+    "1FAEF" : {
+      "name" : "cloud ng away",
+      "searchTokens" : [
+        "away",
+        "bugbugan",
+        "debate",
+        "hindi pagkakasundo",
+        "pagtatalo",
+        "sapakan",
+        "suntukan",
+        "cloud ng away"
+      ]
+    },
     "1FAF0" : {
       "name" : "kamay na magkakrus ang hintuturo at hinlalaki",
       "searchTokens" : [
@@ -16930,6 +17187,30 @@
         "tanggi",
         "tigil",
         "tulak"
+      ]
+    },
+    "1FAF9" : {
+      "name" : "pakaliwang thumb sign",
+      "searchTokens" : [
+        "ito",
+        "iyon",
+        "kaliwa",
+        "kapit",
+        "neutral",
+        "turo",
+        "pakaliwang thumb sign"
+      ]
+    },
+    "1FAFA" : {
+      "name" : "pakanang thumb sign",
+      "searchTokens" : [
+        "ito",
+        "iyon",
+        "kanan",
+        "kapit",
+        "neutral",
+        "turo",
+        "pakanang thumb sign"
       ]
     },
     "203C-FE0F" : {
