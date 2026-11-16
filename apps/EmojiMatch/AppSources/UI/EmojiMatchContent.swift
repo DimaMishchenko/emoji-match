@@ -22,7 +22,8 @@ struct EmojiMatchContent {
 
   init(
     query: String, searchStore: EmojiSearchStore, usageStore: EmojiUsageStore,
-    catalog: EmojiBrowserCatalog = .shared, page: Int = 0, allowsRichContent: Bool = true
+    catalog: EmojiBrowserCatalog = .shared, page: Int = 0, allowsRichContent: Bool = true,
+    defaultSkinTone: DefaultSkinTone = .yellow
   ) {
     let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
     if !query.isEmpty {
@@ -45,7 +46,8 @@ struct EmojiMatchContent {
         .map { result in
           var item = EmojiMatchItem.searchResult(result)
           item.familyBase = catalog.base(for: item.selection)
-          return catalog.preferredItem(item, usageStore: usageStore)
+          return catalog.preferredItem(
+            item, usageStore: usageStore, defaultSkinTone: defaultSkinTone)
         }
       let symbols = catalog.symbolSections.flatMap(\.items)
         .filter {
@@ -59,7 +61,7 @@ struct EmojiMatchContent {
         }
       let browse = EmojiMatchContent(
         query: "", searchStore: searchStore, usageStore: usageStore, catalog: catalog, page: page,
-        allowsRichContent: allowsRichContent)
+        allowsRichContent: allowsRichContent, defaultSkinTone: defaultSkinTone)
       categories = browse.categories
       sections = [
         Section(
@@ -72,7 +74,9 @@ struct EmojiMatchContent {
       .map { section in
         Section(
           id: section.id, title: String(localized: section.title), symbolName: section.symbolName,
-          items: section.items.map { catalog.preferredItem($0, usageStore: usageStore) })
+          items: section.items.map {
+            catalog.preferredItem($0, usageStore: usageStore, defaultSkinTone: defaultSkinTone)
+          })
       }
     if page == 1 {
       sections = catalogSections
@@ -99,7 +103,7 @@ struct EmojiMatchContent {
       usageStore.importedSelections.filter { $0.asset?.kind == .image }
     )
     append(
-      "genmoji", String(localized: "Genmoji"), "apple.intelligence",
+      "genmoji", String(localized: "Emoji Stickers"), "apple.intelligence",
       usageStore.importedSelections.filter { $0.asset?.kind == .adaptiveGlyph })
     sections += catalogSections
     self.sections = sections
@@ -109,7 +113,8 @@ struct EmojiMatchContent {
           id: "imported", title: String(localized: "Stickers"), symbolName: "face.smiling.inverse",
           items: sections.first { $0.id == "imported" }?.items ?? []),
         Section(
-          id: "genmoji", title: String(localized: "Genmoji"), symbolName: "apple.intelligence",
+          id: "genmoji", title: String(localized: "Emoji Stickers"),
+          symbolName: "apple.intelligence",
           items: sections.first { $0.id == "genmoji" }?.items ?? []),
         Section(
           id: "recent", title: String(localized: .emRecentSectionTitle), symbolName: "clock",

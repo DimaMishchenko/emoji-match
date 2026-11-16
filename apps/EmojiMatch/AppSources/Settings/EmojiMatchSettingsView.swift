@@ -7,7 +7,6 @@ import SwiftUI
 struct EmojiMatchSettingsView: View {
   @Bindable var settings: AppSettings
   let clearHistory: () -> Void
-  let openSystemPicker: () -> Void
   let setShortcutRecording: (Bool) -> Void
   @State private var recording = false
   @State private var keyboardMonitor: Any?
@@ -15,45 +14,57 @@ struct EmojiMatchSettingsView: View {
   @State private var recordingWindowNumber: Int?
   @State private var hasAccessibility = AccessibilityPermission.isGranted
 
-  var body: some View {
-    Form {
-      Section {
-        LabeledContent("Open Emoji Match") {
-          Button(recording ? "Press a shortcut…" : settings.openShortcut.label) { startRecording() }
-            .accessibilityLabel("Record opening shortcut")
-          Button("Reset") { settings.openShortcut = .defaultOpen }
-            .disabled(recording)
-        }
-        if let error = shortcutError ?? settings.registrationError {
-          Text(error).foregroundStyle(.red).font(.caption)
-        }
-        Toggle("Use selected text as the initial search", isOn: $settings.prefillSelectedText)
-      }
-      Section("Accessibility") {
-        LabeledContent("Access", value: hasAccessibility ? "Granted" : "Not granted")
-        Button("Open Accessibility Settings…") {
-          if let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-          {
-            NSWorkspace.shared.open(url)
-          }
-        }
-        Text("Accessibility access enables caret placement and insertion into other apps.")
-          .font(.caption).foregroundStyle(Color.ds.textSecondary)
-      }
-      Section {
-        Button("Clear Recent History", action: clearHistory)
-        Text("Saved items and favorites are kept.")
-          .font(.caption).foregroundStyle(Color.ds.textSecondary)
-        Button("Open System Emoji & Symbols…", action: openSystemPicker)
-        if !NativeGenmoji.isAvailable {
-          Text("Genmoji creation requires Apple Intelligence and supported system settings.")
-            .font(.caption).foregroundStyle(Color.ds.textSecondary)
-        }
+  private enum Page: String, CaseIterable, Identifiable {
+    case general = "General"
+    case stickers = "Stickers"
+    case genmoji = "Genmoji"
+    case accessibility = "Accessibility"
+
+    var id: Self { self }
+    var symbol: String {
+      switch self {
+      case .general: "gearshape"
+      case .stickers: "square.grid.2x2"
+      case .genmoji: "face.smiling"
+      case .accessibility: "accessibility"
       }
     }
-    .formStyle(.grouped)
-    .frame(width: 460, height: 390)
+  }
+
+  @State private var page: Page? = .general
+  @State private var confirmsClearHistory = false
+  let library: StickerLibraryModel
+  let genmojiLibrary: StickerLibraryModel
+  let onCreateGenmoji: ((CGRect) -> Void)?
+
+  var body: some View {
+    NavigationSplitView(columnVisibility: .constant(.all)) {
+      List(Page.allCases, selection: $page) { page in
+        NavigationLink(value: page) {
+          Label(page.rawValue, systemImage: page.symbol)
+        }
+      }
+      .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+      .toolbar(removing: .sidebarToggle)
+      .safeAreaInset(edge: .bottom, alignment: .leading) {
+        Text("Emoji Match").font(.caption).foregroundStyle(Color.ds.textSecondary)
+          .padding(.horizontal, CGFloat.ds.spacing.md).padding(.vertical, CGFloat.ds.spacing.sm)
+      }
+    } detail: {
+      Group {
+        switch page ?? .general {
+        case .general: generalSettings
+        case .stickers: StickerLibrarySettingsView(model: library)
+        case .genmoji:
+          StickerLibrarySettingsView(model: genmojiLibrary, onCreateGenmoji: onCreateGenmoji)
+        case .accessibility: accessibilitySettings
+        }
+      }
+      .id(page)
+      .navigationTitle((page ?? .general).rawValue)
+    }
+    .frame(minWidth: 740, minHeight: 520)
+    .onChange(of: page) { _, _ in stopRecording() }
     .onDisappear { stopRecording() }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) {
       notification in
@@ -68,6 +79,60 @@ struct EmojiMatchSettingsView: View {
     { _ in
       hasAccessibility = AccessibilityPermission.isGranted
     }
+  }
+
+  private var generalSettings: some View {
+    Form {
+      Section("Opening the Picker") {
+        LabeledContent("Keyboard shortcut") {
+          Button(recording ? "Press a shortcut…" : settings.openShortcut.label) { startRecording() }
+            .accessibilityLabel("Record opening shortcut")
+          Button("Reset") { settings.openShortcut = .defaultOpen }
+            .disabled(recording)
+        }
+        if let error = shortcutError ?? settings.registrationError {
+          Text(error).foregroundStyle(.red).font(.caption)
+        }
+        Toggle("Use selected text as the initial search", isOn: $settings.prefillSelectedText)
+      }
+      Section("Emoji") {
+        Picker("Default skin tone", selection: $settings.defaultSkinTone) {
+          ForEach(DefaultSkinTone.allCases) { tone in
+            Text(tone.hand).tag(tone).accessibilityLabel(tone.label)
+          }
+        }
+        .pickerStyle(.segmented)
+      }
+      Section("History") {
+        LabeledContent("Clear Recent") {
+          Button("Clear…") { confirmsClearHistory = true }
+        }
+      }
+    }
+    .formStyle(.grouped)
+    .confirmationDialog("Clear recent history?", isPresented: $confirmsClearHistory) {
+      Button("Clear History", role: .destructive, action: clearHistory)
+    } message: {
+      Text("Your saved items and favorites will remain in the library.")
+    }
+  }
+
+  private var accessibilitySettings: some View {
+    Form {
+      Section("Accessibility Access") {
+        LabeledContent("Status", value: hasAccessibility ? "Granted" : "Not granted")
+        Button("Open Accessibility Settings…") {
+          if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+          {
+            NSWorkspace.shared.open(url)
+          }
+        }
+        Text("Allows Emoji Match to position the picker and insert items into your current app.")
+          .font(.caption).foregroundStyle(Color.ds.textSecondary)
+      }
+    }
+    .formStyle(.grouped)
   }
 
   private func startRecording() {

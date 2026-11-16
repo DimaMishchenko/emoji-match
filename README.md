@@ -24,4 +24,6 @@ swift test
 swift format lint Sources Tests apps -r -p
 ```
 
+For app changes, follow [real-app verification](apps/EmojiMatch/Documentation/Verification.md).
+
 See the [emoji data contract](docs/specs/emojis-spec.md) for generation and resource details.

@@ -3,14 +3,6 @@ import ApplicationServices
 import ImagePlayground
 
 enum NativeGenmoji {
-  struct Destination {
-    let application: NSRunningApplication
-
-    static func capture() -> Destination? {
-      NSWorkspace.shared.frontmostApplication.map { Destination(application: $0) }
-    }
-  }
-
   static var isAvailable: Bool {
     ImagePlaygroundViewController.isAvailable
   }

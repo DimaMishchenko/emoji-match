@@ -196,7 +196,7 @@ import Testing
     )
 
     #expect(store.results(for: "").isEmpty)
-    #expect(store.topResult(for: "   ") == nil)
+    #expect(store.results(for: "   ", limit: 1).first == nil)
   }
 
   @Test func framingPrefixDoesNotOutrankMeaningfulQuery() {

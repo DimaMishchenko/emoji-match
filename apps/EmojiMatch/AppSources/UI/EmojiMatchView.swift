@@ -10,6 +10,7 @@ struct EmojiMatchView: View {
   let onSubmit: (EmojiSelection) -> Void
   let onSelectEmoji: (EmojiSelection) -> Void
   let onCreateGenmoji: ((String) -> Void)?
+  let defaultSkinTone: DefaultSkinTone
   let allowsRichContent: Bool
   let onClose: () -> Void
   let onCopySelection: ((EmojiSelection) -> Void)?
@@ -17,6 +18,8 @@ struct EmojiMatchView: View {
   @State private var query = ""
   @FocusState private var isGridFocused: Bool
   @Environment(\.layoutDirection) private var layoutDirection
+  @Environment(\.emojiMatchPresentation) private var presentation
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var gridNavigationActive = false
   @State private var categoryPage = 0
   @State private var variantRequestID: String?
@@ -32,8 +35,10 @@ struct EmojiMatchView: View {
     onClose: @escaping () -> Void,
     initialQuery: String = "",
     allowsRichContent: Bool = true,
+    defaultSkinTone: DefaultSkinTone = .yellow,
     onCopySelection: ((EmojiSelection) -> Void)? = nil
   ) {
+    self.defaultSkinTone = defaultSkinTone
     self.allowsRichContent = allowsRichContent
     self.contentWidth = contentWidth
     self.searchStore = searchStore
@@ -105,8 +110,12 @@ struct EmojiMatchView: View {
     }
   }
 
+  private var showsHeaderClose: Bool {
+    presentation?.showsHeaderClose == true
+  }
+
   private var topBar: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: EmojiPickerMetrics.headerControlSpacing) {
       NativeEmojiSearchField(
         text: Binding(get: { query }, set: updateQuery),
         onFocusSearch: { gridNavigationActive = false }, onKeyDown: handleSearchKey
@@ -129,10 +138,29 @@ struct EmojiMatchView: View {
         .background(Color.primary.opacity(0.15), in: Circle())
       }
     }
+    .padding(.leading, showsHeaderClose ? EmojiPickerMetrics.headerCloseInset : 0)
+    .overlay(alignment: .leading) {
+      EmojiMatchNativeCloseButton(presentation: presentation)
+        .frame(
+          width: EmojiPickerMetrics.headerCloseSize,
+          height: EmojiPickerMetrics.headerCloseSize
+        )
+    }
+    .animation(
+      reduceMotion ? nil : .easeInOut(duration: .ds.motion.quick),
+      value: showsHeaderClose
+    )
     .padding(.horizontal, EmojiPickerMetrics.searchHorizontalInset)
     .padding(.top, EmojiPickerMetrics.searchTopInset)
     .frame(width: contentWidth, height: EmojiPickerMetrics.topBarHeight, alignment: .topLeading)
     .background(Color.primary.opacity(0.015))
+    .overlay(alignment: .top) {
+      Color.clear
+        .frame(height: EmojiPickerMetrics.searchTopInset)
+        .contentShape(Rectangle())
+        .gesture(WindowDragGesture().onChanged { _ in presentation?.beginDrag() })
+        .accessibilityHidden(true)
+    }
     .overlay(alignment: .bottom) {
       Rectangle().fill(Color.primary.opacity(0.08)).frame(height: .ds.stroke.hairline)
     }
@@ -144,7 +172,7 @@ struct EmojiMatchView: View {
     gridNavigationActive = false
     let content = EmojiMatchContent(
       query: value, searchStore: searchStore, usageStore: usageStore, page: categoryPage,
-      allowsRichContent: allowsRichContent)
+      allowsRichContent: allowsRichContent, defaultSkinTone: defaultSkinTone)
     navigation.resetSelection(in: content.navigationLayout)
   }
 
@@ -198,7 +226,7 @@ struct EmojiMatchView: View {
   private var currentContent: EmojiMatchContent {
     EmojiMatchContent(
       query: query, searchStore: searchStore, usageStore: usageStore, page: categoryPage,
-      allowsRichContent: allowsRichContent)
+      allowsRichContent: allowsRichContent, defaultSkinTone: defaultSkinTone)
   }
 
   private var currentLayout: EmojiMatchNavigationLayout {

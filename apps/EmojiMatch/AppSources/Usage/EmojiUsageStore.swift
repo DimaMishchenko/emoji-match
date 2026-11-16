@@ -71,9 +71,10 @@ final class EmojiUsageStore {
     favorites.contains(selection)
   }
 
-  func toggleFavorite(_ selection: EmojiSelection) {
-    guard Self.isValid(selection), isAvailable(selection) else { return }
-    library.toggleFavorite(selection)
+  @discardableResult
+  func toggleFavorite(_ selection: EmojiSelection) -> Bool {
+    guard Self.isValid(selection), isAvailable(selection) else { return false }
+    return library.toggleFavorite(selection)
   }
 
   func removeRecent(_ selection: EmojiSelection) {
@@ -86,21 +87,30 @@ final class EmojiUsageStore {
     normalizeAndPersist()
   }
 
-  func preferredSelection(for base: EmojiSelection) -> EmojiSelection {
-    guard let selection = library.preferences[base.id], isAvailable(selection) else { return base }
+  func explicitPreferredSelection(for base: EmojiSelection) -> EmojiSelection? {
+    guard let selection = library.preferences[base.id], isAvailable(selection) else { return nil }
     return selection
   }
 
-  func setPreferredSelection(_ selection: EmojiSelection, for base: EmojiSelection) {
-    guard Self.isValid(base), Self.isValid(selection), isAvailable(selection) else { return }
-    library.setPreferredSelection(selection, for: base)
+  @discardableResult
+  func setPreferredSelection(_ selection: EmojiSelection, for base: EmojiSelection) -> Bool {
+    guard Self.isValid(base), Self.isValid(selection), isAvailable(selection) else { return false }
+    return library.setPreferredSelection(selection, for: base)
   }
 
-  func importAdaptiveGlyph(_ glyph: NSAdaptiveImageGlyph) throws -> EmojiSelection {
+  func isGenmoji(_ selection: EmojiSelection) -> Bool {
+    library.isGenmoji(selection)
+  }
+
+  func importAdaptiveGlyph(
+    _ glyph: NSAdaptiveImageGlyph, asGenmoji: Bool = false
+  ) throws
+    -> EmojiSelection
+  {
     try library.importData(
       glyph.imageContent, kind: .adaptiveGlyph, identifier: glyph.contentIdentifier,
       typeIdentifier: NSAdaptiveImageGlyph.contentType.identifier,
-      description: glyph.contentDescription
+      description: glyph.contentDescription, asGenmoji: asGenmoji
     )
   }
 
@@ -123,17 +133,25 @@ final class EmojiUsageStore {
     library.image(for: selection)
   }
 
-  func deleteImported(_ selection: EmojiSelection) {
-    guard library.deleteImported(selection) else { return }
+  func renameImported(_ selection: EmojiSelection, to name: String) throws -> EmojiSelection {
+    let renamed = try library.renameImported(selection, to: name)
+    records = records.map {
+      $0.selection == selection
+        ? Record(selection: renamed, count: $0.count, lastUsedAt: $0.lastUsedAt) : $0
+    }
+    normalizeAndPersist()
+    return renamed
+  }
+
+  @discardableResult
+  func deleteImported(_ selection: EmojiSelection) -> Bool {
+    guard library.deleteImported(selection) else { return false }
     removeRecent(selection)
+    return true
   }
 
   private func isAvailable(_ selection: EmojiSelection) -> Bool {
     library.isAvailable(selection)
-  }
-
-  var isEmpty: Bool {
-    suggestions(limit: 1).isEmpty
   }
 
   func record(_ selection: EmojiSelection, at date: Date? = nil) {
@@ -168,9 +186,6 @@ final class EmojiUsageStore {
       .map(EmojiUsageEntry.init(record:))
   }
 
-  func topSelection() -> EmojiSelection? {
-    suggestions(limit: 1).first?.selection
-  }
 }
 
 private extension EmojiUsageStore {

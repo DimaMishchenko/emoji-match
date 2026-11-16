@@ -13,12 +13,22 @@ enum RichContentImport {
     case invalidContent
   }
 
+  struct ReadReport {
+    let contents: [ImportedContent]
+    let failures: [String]
+  }
+
   static func read(from pasteboard: NSPasteboard = .general) throws -> [ImportedContent] {
+    try readReport(from: pasteboard).contents
+  }
+
+  static func readReport(from pasteboard: NSPasteboard = .general) throws -> ReadReport {
     _ = NSApplication.shared
     var result: [ImportedContent] = []
     var seen = Set<Identity>()
     var malformed = false
-    for item in pasteboard.pasteboardItems ?? [] {
+    var failures: [String] = []
+    for (itemIndex, item) in (pasteboard.pasteboardItems ?? []).enumerated() {
       var contents: [ImportedContent] = []
       for (type, documentType) in [
         (NSPasteboard.PasteboardType.rtfd, NSAttributedString.DocumentType.rtfd),
@@ -72,6 +82,9 @@ enum RichContentImport {
         }
         break
       }
+      if contents.isEmpty {
+        failures.append("Clipboard item \(itemIndex + 1) is not a readable image or Genmoji.")
+      }
       for content in contents where seen.insert(identity(of: content)).inserted {
         result.append(content)
       }
@@ -79,7 +92,7 @@ enum RichContentImport {
     guard !result.isEmpty else {
       throw malformed ? ImportError.invalidContent : ImportError.unsupportedContent
     }
-    return result
+    return ReadReport(contents: result, failures: failures)
   }
 
   private static func frameCount(_ data: Data) -> Int {

@@ -164,36 +164,57 @@ enum TextPasteController {
           return nil
         }
         let glyph = NSAdaptiveImageGlyph(imageContent: data)
-        guard glyph.contentIdentifier == asset.identifier, glyph.imageContent == data,
-          let png = pngRepresentation(of: data)
-        else {
+        guard glyph.contentIdentifier == asset.identifier, glyph.imageContent == data else {
           return nil
         }
-        let attributed = NSAttributedString(adaptiveImageGlyph: glyph, attributes: [:])
-        guard
-          let rtfd = try? attributed.data(
-            from: NSRange(location: 0, length: attributed.length),
-            documentAttributes: [.documentType: NSAttributedString.DocumentType.rtfd]
-          ), item.setData(rtfd, forType: .rtfd),
-          item.setData(data, forType: NSPasteboard.PasteboardType(asset.typeIdentifier)),
-          item.setData(png, forType: .png)
-        else { return nil }
+        guard write(glyph, to: item) else { return nil }
       case .image:
-        guard RichContentImport.isValidImage(data, typeIdentifier: asset.typeIdentifier),
-          item.setData(data, forType: NSPasteboard.PasteboardType(asset.typeIdentifier))
-        else { return nil }
+        guard RichContentImport.isValidImage(data, typeIdentifier: asset.typeIdentifier) else {
+          return nil
+        }
+        if let glyph = try? InlineStickerImage.convert(
+          data, identifier: InlineStickerImage.stableIdentifier(for: data),
+          description: selection.value)
+        {
+          guard write(glyph, to: item) else { return nil }
+        } else {
+          guard item.setData(data, forType: NSPasteboard.PasteboardType(asset.typeIdentifier))
+          else {
+            return nil
+          }
+        }
       }
       return item
     }
 
-    private static func pngRepresentation(of data: Data) -> Data? {
+    private static func write(_ glyph: NSAdaptiveImageGlyph, to item: NSPasteboardItem) -> Bool {
+      guard let png = pngRepresentation(of: glyph.imageContent) else { return false }
+      let html = """
+        <img src="data:image/png;base64,\(png.data.base64EncodedString())" \
+        style="width:\(png.size.width)px;height:\(png.size.height)px;vertical-align:middle">
+        """
+      let attributed = NSAttributedString(adaptiveImageGlyph: glyph, attributes: [:])
+      guard
+        let rtfd = try? attributed.data(
+          from: NSRange(location: 0, length: attributed.length),
+          documentAttributes: [.documentType: NSAttributedString.DocumentType.rtfd])
+      else { return false }
+      return item.setData(rtfd, forType: .rtfd)
+        && item.setData(
+          glyph.imageContent,
+          forType: NSPasteboard.PasteboardType(NSAdaptiveImageGlyph.contentType.identifier))
+        && item.setData(png.data, forType: .png)
+        && item.setString(html, forType: .html)
+    }
+
+    private static func pngRepresentation(of data: Data) -> (data: Data, size: CGSize)? {
       guard let source = CGImageSourceCreateWithData(data as CFData, nil),
         let image = CGImageSourceCreateThumbnailAtIndex(
           source, 0,
           [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: 24
+            kCGImageSourceThumbnailMaxPixelSize: 512
           ] as CFDictionary)
       else { return nil }
       let result = NSMutableData()
@@ -201,9 +222,16 @@ enum TextPasteController {
         let destination = CGImageDestinationCreateWithData(
           result, UTType.png.identifier as CFString, 1, nil)
       else { return nil }
-      CGImageDestinationAddImage(destination, image, nil)
+      let scale = 24.0 / Double(max(image.width, image.height))
+      let size = CGSize(width: Double(image.width) * scale, height: Double(image.height) * scale)
+      CGImageDestinationAddImage(
+        destination, image,
+        [
+          kCGImagePropertyDPIWidth: 72 / scale,
+          kCGImagePropertyDPIHeight: 72 / scale
+        ] as CFDictionary)
       guard CGImageDestinationFinalize(destination) else { return nil }
-      return result as Data
+      return (result as Data, size)
     }
   }
 }

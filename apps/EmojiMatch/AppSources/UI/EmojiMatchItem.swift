@@ -160,14 +160,39 @@ extension EmojiBrowserCatalog {
     return "\(emoji.localization.name), \(tones) \(variant.value)"
   }
 
-  func preferredItem(_ item: EmojiMatchItem, usageStore: EmojiUsageStore) -> EmojiMatchItem {
+  func preferredItem(
+    _ item: EmojiMatchItem, usageStore: EmojiUsageStore, defaultSkinTone: DefaultSkinTone = .yellow
+  ) -> EmojiMatchItem {
     guard let base = item.familyBase else { return item }
-    let preferred = usageStore.preferredSelection(for: base)
-    guard preferred.id != base.id, variants(for: base).contains(preferred) else { return item }
+    let available = variants(for: base)
+    let explicit = usageStore.explicitPreferredSelection(for: base)
+    let preferred: EmojiSelection?
+    if let explicit, available.contains(explicit) {
+      preferred = explicit
+    } else {
+      preferred = defaultVariant(for: base, tone: defaultSkinTone)
+    }
+    guard let preferred else { return item }
     return EmojiMatchItem(
       id: item.id, selection: preferred,
       accessibilityLabel: label(for: preferred), familyBase: base
     )
+  }
+
+  func defaultVariant(for base: EmojiSelection, tone: DefaultSkinTone) -> EmojiSelection? {
+    guard let modifier = tone.modifier else { return nil }
+    func structure(_ value: String) -> [Unicode.Scalar] {
+      value.unicodeScalars.filter { $0.value != 0xFE0F && !(0x1F3FB...0x1F3FF).contains($0.value) }
+    }
+    let baseStructure = structure(base.value)
+    return variants(for: base).dropFirst()
+      .first { variant in
+        let modifiers = variant.value.unicodeScalars.filter {
+          (0x1F3FB...0x1F3FF).contains($0.value)
+        }
+        return !modifiers.isEmpty && modifiers.allSatisfy { $0 == modifier }
+          && structure(variant.value) == baseStructure
+      }
   }
 
   private func supports(_ value: String) -> Bool {
@@ -267,15 +292,7 @@ private extension EmojiBrowserCatalog {
   }
 
   static func loadAvailableEmojis() throws -> [Emoji] {
-    let filter: Emojis.Filter
-
-    #if canImport(CoreText)
-      filter = .apple
-    #else
-      filter = .none
-    #endif
-
-    let emojis = try Emojis.fetch(filter: filter)
+    let emojis = try Emojis.fetch(filter: .apple)
     return emojis.filter { $0.group != .component }
   }
 }

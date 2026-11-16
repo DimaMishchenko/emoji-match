@@ -143,23 +143,12 @@ final class EmojiSearchStore {
     return ranked.prefix(max(0, limit)).map(\.result)
   }
 
-  func topResult(for query: String) -> EmojiSearchResult? {
-    results(for: query, limit: 1).first
-  }
 }
 
 private extension EmojiSearchStore {
   private static func loadEntries() throws -> [Entry] {
     let keywordExtensions = try BundleEmojiKeywordExtensionsLoader().load()
-    let filter: Emojis.Filter
-
-    #if canImport(CoreText)
-      filter = .apple
-    #else
-      filter = .none
-    #endif
-
-    let displayEmojis = try Emojis.fetch(filter: filter)
+    let displayEmojis = try Emojis.fetch(filter: .apple)
     let displayNamesByID = Dictionary(
       uniqueKeysWithValues: displayEmojis.map { emoji in
         (emoji.id.rawValue, emoji.localization.name)

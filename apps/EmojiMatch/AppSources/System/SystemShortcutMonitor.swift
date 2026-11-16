@@ -13,7 +13,6 @@ final class SystemShortcutMonitor {
   private var eventHandler: EventHandlerRef?
   private var hotKey: EventHotKeyRef?
   private var isStarted = false
-  private var nativePickerRequestID: UUID?
   private var onKeyDown: (() -> Void)?
   var shortcut = AppSettings.Shortcut.defaultOpen {
     didSet {
@@ -22,7 +21,7 @@ final class SystemShortcutMonitor {
       }
 
       unregisterHotKey()
-      if nativePickerRequestID == nil { registerHotKey() }
+      registerHotKey()
     }
   }
 
@@ -54,33 +53,12 @@ final class SystemShortcutMonitor {
     registerHotKey()
   }
 
-  func openNativeEmojiPicker() {
-    let requestID = UUID()
-    nativePickerRequestID = requestID
-    unregisterHotKey()
-    let source = CGEventSource(stateID: .combinedSessionState)
-    for isDown in [true, false] {
-      guard
-        let event = CGEvent(
-          keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Space), keyDown: isDown
-        )
-      else { continue }
-      event.flags = [.maskControl, .maskCommand]
-      event.post(tap: .cghidEventTap)
-    }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-      guard let self, isStarted, nativePickerRequestID == requestID else { return }
-      nativePickerRequestID = nil
-      registerHotKey()
-    }
-  }
-
   fileprivate func handleHotKey() {
     onKeyDown?()
   }
 
   private func registerHotKey() {
-    guard isStarted, !isSuspended, nativePickerRequestID == nil, hotKey == nil else { return }
+    guard isStarted, !isSuspended, hotKey == nil else { return }
     let hotKeyID = EventHotKeyID(
       signature: emojiMatchShortcutSignature,
       id: systemShortcutIdentifier

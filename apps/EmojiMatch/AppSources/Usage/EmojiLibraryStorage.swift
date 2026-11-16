@@ -8,14 +8,16 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class EmojiLibraryStorage {
-  enum LibraryError: Error, LocalizedError {
+  enum LibraryError: Error, LocalizedError, Equatable {
     case invalidContent
+    case invalidName
     case quotaExceeded
     case unreadableManifest
 
     var errorDescription: String? {
       switch self {
       case .invalidContent: "This item does not contain a supported image and description."
+      case .invalidName: "Enter a short, single-line name."
       case .quotaExceeded:
         "The local library is full. Delete an imported item before importing more."
       case .unreadableManifest:
@@ -35,10 +37,11 @@ final class EmojiLibraryStorage {
     var assets: [Asset] = []
     var favorites: [EmojiSelection] = []
     var preferences: [String: EmojiSelection] = [:]
+    var genmojiIDs: Set<String> = []
     var hasUnreadableEntries = false
 
     private enum CodingKeys: String, CodingKey {
-      case version, assets, favorites, preferences
+      case version, assets, favorites, preferences, genmojiIDs
     }
 
     init() {}
@@ -54,6 +57,7 @@ final class EmojiLibraryStorage {
       assets = decodedAssets.compactMap(\.value)
       favorites = decodedFavorites.compactMap(\.value)
       preferences = decodedPreferences.compactMapValues(\.value)
+      genmojiIDs = try container.decodeIfPresent(Set<String>.self, forKey: .genmojiIDs) ?? []
       hasUnreadableEntries =
         assets.count != decodedAssets.count
         || favorites.count != decodedFavorites.count
@@ -110,25 +114,31 @@ final class EmojiLibraryStorage {
   var preferences: [String: EmojiSelection] { manifest.preferences }
   var importedSelections: [EmojiSelection] { manifest.assets.map(\.selection) }
 
-  func toggleFavorite(_ selection: EmojiSelection) {
+  func isGenmoji(_ selection: EmojiSelection) -> Bool {
+    selection.asset?.kind == .adaptiveGlyph && manifest.genmojiIDs.contains(selection.id)
+  }
+
+  @discardableResult
+  func toggleFavorite(_ selection: EmojiSelection) -> Bool {
     var next = manifest
     if next.favorites.contains(selection) {
       next.favorites.removeAll { $0 == selection }
     } else {
       next.favorites.append(selection)
     }
-    try? save(next)
+    do { try save(next); return true } catch { return false }
   }
 
-  func setPreferredSelection(_ selection: EmojiSelection, for base: EmojiSelection) {
+  @discardableResult
+  func setPreferredSelection(_ selection: EmojiSelection, for base: EmojiSelection) -> Bool {
     var next = manifest
-    next.preferences[base.id] = selection == base ? nil : selection
-    try? save(next)
+    next.preferences[base.id] = selection
+    do { try save(next); return true } catch { return false }
   }
 
   func importData(
     _ data: Data, kind: EmojiAssetReference.Kind, identifier: String?,
-    typeIdentifier: String, description: String
+    typeIdentifier: String, description: String, asGenmoji: Bool = false
   ) throws -> EmojiSelection {
     guard writable else { throw LibraryError.unreadableManifest }
     guard !data.isEmpty, data.count <= byteLimit,
@@ -147,6 +157,11 @@ final class EmojiLibraryStorage {
       if self.data(for: existing.selection) == nil {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try data.write(to: assetURL(hash), options: .atomic)
+      }
+      if asGenmoji, kind == .adaptiveGlyph, !manifest.genmojiIDs.contains(existing.selection.id) {
+        var next = manifest
+        next.genmojiIDs.insert(existing.selection.id)
+        try save(next)
       }
       updatePreview(for: existing.selection, data: data)
       return existing.selection
@@ -167,6 +182,7 @@ final class EmojiLibraryStorage {
     try data.write(to: url, options: .atomic)
     var next = manifest
     next.assets.append(Asset(selection: selection, digest: hash, byteCount: data.count))
+    if asGenmoji, kind == .adaptiveGlyph { next.genmojiIDs.insert(selection.id) }
     do {
       try save(next)
     } catch {
@@ -211,7 +227,7 @@ final class EmojiLibraryStorage {
       [
         kCGImageSourceCreateThumbnailFromImageAlways: true,
         kCGImageSourceCreateThumbnailWithTransform: true,
-        kCGImageSourceThumbnailMaxPixelSize: 80
+        kCGImageSourceThumbnailMaxPixelSize: 256
       ] as CFDictionary)
     {
       thumbnails[selection.id] = NSImage(cgImage: image, size: .zero)
@@ -233,6 +249,24 @@ final class EmojiLibraryStorage {
     return bytes
   }
 
+  func renameImported(_ selection: EmojiSelection, to name: String) throws -> EmojiSelection {
+    let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !name.isEmpty, name.utf16.count <= 256,
+      name.rangeOfCharacter(from: .newlines) == nil, !name.contains("\u{FFFC}")
+    else { throw LibraryError.invalidName }
+    guard let index = manifest.assets.firstIndex(where: { $0.selection == selection }) else {
+      throw LibraryError.invalidContent
+    }
+    let asset = manifest.assets[index]
+    let renamed = EmojiSelection(id: asset.selection.id, value: name, asset: asset.selection.asset)
+    var next = manifest
+    next.assets[index] = Asset(selection: renamed, digest: asset.digest, byteCount: asset.byteCount)
+    next.favorites = next.favorites.map { $0 == selection ? renamed : $0 }
+    next.preferences = next.preferences.mapValues { $0 == selection ? renamed : $0 }
+    try save(next)
+    return renamed
+  }
+
   func deleteImported(_ selection: EmojiSelection) -> Bool {
     guard let asset = manifest.assets.first(where: { $0.selection == selection }) else {
       return false
@@ -241,6 +275,7 @@ final class EmojiLibraryStorage {
     next.assets.removeAll { $0.selection == selection }
     next.favorites.removeAll { $0 == selection }
     next.preferences = next.preferences.filter { $0.value != selection }
+    next.genmojiIDs.remove(selection.id)
     do { try save(next) } catch { return false }
     availableIDs.remove(selection.id)
     thumbnails.removeValue(forKey: selection.id)

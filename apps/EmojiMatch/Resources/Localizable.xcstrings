@@ -34,6 +34,17 @@
         }
       }
     },
+    "Add Images" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Images"
+          }
+        }
+      }
+    },
     "Add to Favorites" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -111,6 +122,17 @@
         }
       }
     },
+    "Default skin tone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default skin tone"
+          }
+        }
+      }
+    },
     "Delete from Custom" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -118,6 +140,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete from Custom"
+          }
+        }
+      }
+    },
+    "Emoji" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emoji"
           }
         }
       }
@@ -260,7 +293,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Emoji Match"
+            "value" : "Open"
           }
         }
       }
@@ -393,6 +426,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Variants"
+          }
+        }
+      }
+    },
+    "Yellow (default)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yellow (default)"
           }
         }
       }
@@ -557,7 +601,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open Emoji Match"
+            "value" : "Open"
           }
         }
       }
@@ -568,7 +612,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quit Emoji Match"
+            "value" : "Quit"
           }
         }
       }

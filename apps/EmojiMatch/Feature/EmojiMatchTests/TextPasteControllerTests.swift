@@ -2,11 +2,69 @@ import AppKit
 import ApplicationServices
 import ImageIO
 import Testing
-import WebKit
 
 @testable import EmojiMatch
 
 @Suite struct TextPasteControllerTests {
+  @Test func staticImageCopyAndPasteDeliverInlineGlyphWithStableIdentityAndImageFallback() throws {
+    _ = NSApplication.shared
+    let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+      .appendingPathComponent("Fixtures/InsertionOriginalAdaptiveGlyph.heic")
+    let source = try #require(
+      CGImageSourceCreateWithData(try Data(contentsOf: fixture) as CFData, nil))
+    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+    let context = try #require(
+      CGContext(
+        data: nil, width: 1024, height: 1024, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    context.draw(image, in: CGRect(x: 0, y: 0, width: 1024, height: 1024))
+    let largeImage = try #require(context.makeImage())
+    let encoded = NSMutableData()
+    let encoder = try #require(
+      CGImageDestinationCreateWithData(encoded, "public.png" as CFString, 1, nil))
+    CGImageDestinationAddImage(encoder, largeImage, nil)
+    #expect(CGImageDestinationFinalize(encoder))
+    let original = encoded as Data
+    let selection = EmojiSelection(
+      id: "image-sticker", value: "Photo sticker",
+      asset: .init(kind: .image, identifier: "original-image", typeIdentifier: "public.png"))
+    let harness = PasteHarness()
+    defer { harness.board.releaseGlobally() }
+    var identifiers: [String] = []
+    for copying in [true, false] {
+      if copying {
+        #expect(harness.session.copy(selection, data: original))
+      } else {
+        #expect(harness.session.paste(selection, data: original, to: try destination()))
+      }
+      let rtfd = try #require(harness.board.data(forType: .rtfd))
+      let attributed = try #require(NSAttributedString(rtfd: rtfd, documentAttributes: nil))
+      let glyph = try #require(
+        attributed.attribute(.adaptiveImageGlyph, at: 0, effectiveRange: nil)
+          as? NSAdaptiveImageGlyph)
+      #expect(glyph.contentDescription == "Photo sticker")
+      #expect(glyph.contentIdentifier == InlineStickerImage.stableIdentifier(for: original))
+      identifiers.append(glyph.contentIdentifier)
+      #expect(attributed.attribute(.attachment, at: 0, effectiveRange: nil) == nil)
+      let receiver = NSTextView()
+      receiver.isRichText = true
+      receiver.importsGraphics = true
+      #expect(receiver.readSelection(from: harness.board))
+      let inserted = try #require(
+        receiver.attributedString().attribute(.adaptiveImageGlyph, at: 0, effectiveRange: nil)
+          as? NSAdaptiveImageGlyph)
+      #expect(inserted.contentIdentifier == glyph.contentIdentifier)
+      #expect(inserted.imageContent == glyph.imageContent)
+      let png = try #require(harness.board.data(forType: .png))
+      let fallbackSource = try #require(CGImageSourceCreateWithData(png as CFData, nil))
+      let fallback = try #require(CGImageSourceCreateImageAtIndex(fallbackSource, 0, nil))
+      #expect(max(fallback.width, fallback.height) == 512)
+    }
+    #expect(identifiers[0] == identifiers[1])
+    #expect(harness.board.string(forType: .string) == nil)
+  }
+
   @Test func richMenuPastePerformsExactlyOnceWithoutPIDFallback() throws {
     let harness = PasteHarness()
     defer { harness.board.releaseGlobally() }
@@ -158,7 +216,7 @@ import WebKit
       }
       let item = try #require(harness.board.pasteboardItems?.first)
       #expect(harness.board.pasteboardItems?.count == 1)
-      #expect(Set(item.types) == Set([.rtfd, .init("public.heic"), .png]))
+      #expect(Set(item.types) == Set([.rtfd, .init("public.heic"), .png, .html]))
       #expect(item.availableType(from: [.rtfd, .png]) == .rtfd)
       #expect(item.availableType(from: [.png]) == .png)
       #expect(item.availableType(from: [.string]) == nil)
@@ -184,10 +242,13 @@ import WebKit
       let original = try #require(CGImageSourceCreateImageAtIndex(originalSource, 0, nil))
       #expect(original.width == 160)
       #expect(original.height == 160)
-      #expect(fallback.width == 24)
-      #expect(fallback.height == 24)
+      #expect(fallback.width == 160)
+      #expect(fallback.height == 160)
       let originalPixels = try pixels(of: original)
-      #expect(Set(try pixels(of: fallback)).count > 16)
+      #expect(try pixels(of: fallback) == originalPixels)
+      let nativeImage = try #require(NSImage(data: png))
+      #expect(abs(nativeImage.size.width - 24) < 0.01)
+      #expect(abs(nativeImage.size.height - 24) < 0.01)
       #expect(Set(originalPixels).count > 16)
       #expect(try Data(contentsOf: fixture) == bytes)
       #expect(harness.events.count == 1)
@@ -198,56 +259,6 @@ import WebKit
     #expect(harness.events.count == 1)
     #expect(harness.callbacks.count == 1)
     #expect(try Data(contentsOf: fixture) == bytes)
-  }
-
-  @Test func webImageFallbackHasEmojiSizedIntrinsicDimensions() async throws {
-    _ = NSApplication.shared
-    let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-      .appendingPathComponent("Fixtures/InsertionOriginalAdaptiveGlyph.heic")
-    let bytes = try Data(contentsOf: fixture)
-    let glyph = NSAdaptiveImageGlyph(imageContent: bytes)
-    let selection = EmojiSelection(
-      id: "glyph", value: "description",
-      asset: EmojiAssetReference(
-        kind: .adaptiveGlyph, identifier: glyph.contentIdentifier, typeIdentifier: "public.heic"))
-    let harness = PasteHarness()
-    defer { harness.board.releaseGlobally() }
-    #expect(harness.session.copy(selection, data: bytes))
-    let png = try #require(harness.board.data(forType: .png))
-    let source = try #require(CGImageSourceCreateWithData(bytes as CFData, nil))
-    let original = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
-    let highResolutionPNG = NSMutableData()
-    let destination = try #require(
-      CGImageDestinationCreateWithData(highResolutionPNG, "public.png" as CFString, 1, nil))
-    CGImageDestinationAddImage(
-      destination, original,
-      [kCGImagePropertyDPIWidth: 480, kCGImagePropertyDPIHeight: 480] as CFDictionary)
-    #expect(CGImageDestinationFinalize(destination))
-    let webView = WKWebView(frame: .init(x: 0, y: 0, width: 300, height: 100))
-    defer { webView.stopLoading() }
-    let result = try await webView.callAsyncJavaScript(
-      """
-      document.body.innerHTML = '<div contenteditable style="font:28px system-ui"></div>';
-      const dimensions = [];
-      for (const url of urls) {
-        const image = new Image();
-        image.src = url;
-        await image.decode();
-        document.querySelector('div').append(image);
-        const bounds = image.getBoundingClientRect();
-        dimensions.push([image.naturalWidth, image.naturalHeight, bounds.width, bounds.height]);
-      }
-      return dimensions;
-      """,
-      arguments: [
-        "urls": [png, highResolutionPNG as Data]
-          .map {
-            "data:image/png;base64," + $0.base64EncodedString()
-          }
-      ],
-      in: nil, contentWorld: .page)
-    let dimensions = try #require(result as? [[Int]])
-    #expect(dimensions == [[24, 24, 24, 24], [160, 160, 160, 160]])
   }
 
   @Test func nativeControlsNegotiateAdaptiveGlyphOrImageAttachment() throws {

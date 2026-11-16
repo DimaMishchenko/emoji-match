@@ -284,14 +284,17 @@ Current implementation uses an invisible, nonactivating all-spaces anchor panel 
 `NSPopover` for the picker. AppKit supplies the pointer, material, rounded corners, shadow,
 screen-edge clamping, edge flipping, and outside-click dismissal. The anchor panel can accompany
 fullscreen apps and uses the native picker's observed window level.
-The picker opens directly at 320 × 444 points of content. There is no compact or expansion state.
+The picker opens directly at 320 × 480 points of content, matching native Genmoji creation for
+a seamless transition. The scrolling viewport is 386.5 points; the header, cell and footer sizes
+remain unchanged. There is no compact or expansion state.
 The measured layout uses a 49.5-point header, 28-point search field, six emoji columns with a
 44-point row pitch, 32-point emoji artwork with a measured one-point baseline adjustment,
-and a 44-point category bar. Catalog section gaps are 14 points. Static symbol glyphs use
+and a 44-point category bar. Catalog section gaps are 14 points. Nonempty browse sections, including Recents and saved items,
+have visible, accessible headings; search results have no artificial section heading. Static symbol glyphs use
 the adaptive text color rather than label color. The scroll content continues behind the material footer, with bottom
 content padding so final items can scroll fully clear of the controls.
 Search uses AppKit's NSSearchField at 13 points, retaining the system bezel, focus ring, clear
-button and text-editing behavior. Import and Settings are available from the status menu; the footer
+button and text-editing behavior. Settings is available from the status menu; library import lives in Settings → Stickers; the footer
 chevron pages between emoji and symbols in the same picker. Eight emoji category arrays, their
 order and artwork come from signature-checked static CharacterPicker APIs on the installed OS.
 The canonical Unicode/CLDR dataset remains independent and supplies search, names and variants.
@@ -398,8 +401,9 @@ supports reset and reports registration conflicts. Our registered shortcut is su
 recording; ending recording or losing the Settings window restores registration with the current
 setting. Settings show Accessibility permission status,
 link to its system settings, and clear recents without deleting favorites or saved items. The
-system picker remains available. Creator unavailability is explained when Apple Intelligence is
-unavailable. Launch-at-login and AI preferences are outside this pass.
+system picker remains available after Emoji Match quits and releases its shortcut. When creation
+is unavailable, importing copied Genmoji remains available. Launch-at-login and AI preferences are
+outside this pass.
 
 #### Flow 9: First run
 
@@ -542,12 +546,15 @@ IME marked text does not submit or trigger grid navigation.
 
 The default action attempts insertion into the captured destination using the checked clipboard
 transaction above. Unicode is sent as text; adaptive glyphs offer RTFD, original glyph data and a
-genuine PNG decoded from that data in one pasteboard item. The PNG has a maximum edge of 24 pixels
-with aspect ratio preserved, so web editors do not insert the 160-pixel original at sticker size.
-This changes only the fallback; original glyph bytes and RTFD remain intact. The recipient chooses its supported
-representation in one paste. Copy offers the same representations. Images retain their original
-type. The app does not replace a rich payload with a text description or retry insertion to discover
-whether a first paste succeeded. Explicit Copy and System Emoji & Symbols provide manual escape routes.
+genuine PNG decoded from that data in one pasteboard item. The PNG retains up to 512 pixels on
+its longest edge without upscaling. DPI metadata requests a 24-point maximum display edge for
+native image readers. An additional self-contained HTML image uses the same PNG with a 24-CSS-pixel
+maximum display edge for web editors. Both preserve aspect ratio; recipients that ignore sizing
+metadata or choose raw PNG can display the full pixel dimensions. Original glyph bytes and RTFD
+remain intact. The recipient chooses its supported representation in one paste. Copy offers the
+same representations. Static photo stickers use the conversion described below; GIF and multi-frame
+images retain their original type. The app does not replace a rich payload with a text description or retry insertion to discover
+whether a first paste succeeded. Explicit Copy in the picker and library provides a manual fallback.
 Recipient support is measured per control and payload; universal rich compatibility is not claimed.
 
 ### Destination rich-content capability
@@ -626,7 +633,7 @@ This is a secondary feature and should not complicate the main insertion flow.
 
 ### Library rendering snapshot
 
-Storage owns a validated availability set and bounded 80-pixel static thumbnail previews.
+Storage owns a validated availability set and bounded 256-pixel static thumbnail previews for Retina galleries.
 Animated image previews retain original frame/timing representations in memory so Reduce Motion
 can control playback without flattening them. Original assets remain bounded by library quotas. Rendering,
 filtering favorites/recents and typing queries read this snapshot without reading or hashing asset
@@ -644,3 +651,125 @@ Context menus must not leave the picker open after an outside click. Local/globa
 monitors supplement transient AppKit dismissal and are removed before panel closure. Picker and
 visible auxiliary menu/child-window bounds remain interactive while clicks elsewhere close the
 picker; closing is idempotent across menu, popover-delegate and monitor callbacks.
+
+### Sidebar Settings and sticker management
+
+Settings uses a resizable native macOS sidebar with General, Stickers, Genmoji and Accessibility
+panels. The sidebar is always visible, without a toggle toolbar item. General owns shortcut
+recording, selected-text prefill and a Clear Recent row with a trailing Clear button and confirmation.
+Switching panels or leaving the window ends shortcut recording and resumes registration.
+Accessibility shows permission status and the system-settings link; it has no storage section.
+
+Settings → Stickers is a thumbnail gallery for saved images and photo stickers. Settings → Genmoji
+is a separate gallery for items saved through Create Genmoji or explicitly imported there as adaptive
+glyphs. Both use compact, frameless item galleries with 72-point artwork, centered titles, no type subtitles,
+and selection-only highlighting. A compact header contains flexible search, Add Images or Create Genmoji,
+and an icon-only clipboard import control. Add Images has no ellipsis. The galleries have no footer.
+Copy, Rename, Favorite and confirmed Delete are available from item context menus. Delete on a selected
+tile uses the multiselection; on an unselected tile it targets only that item.
+Arrow, Shift-arrow and logical Command-C remain available with Caps Lock enabled.
+The gallery has one keyboard focus owner. Native move commands advance the active item and
+selection; if it disappears, a surviving selected item takes priority. Search editing, header
+controls and sheets retain their own keyboard handling. Column counts and keyboard navigation adapt together to the available width. Stickers supports
+image-file and clipboard import; Genmoji accepts adaptive glyphs from the clipboard and offers
+Create Genmoji when available. The button has no ellipsis and supplies its current AppKit screen
+rectangle at click time. The input caret anchor uses its horizontal midpoint and bottom edge, so
+the native creator arrow is centered under the button while Settings remains visible.
+Creating from Settings saves to the library without insertion into an external recipient.
+Picker-origin creation orders out the owned Settings window before receiver activation, so a
+previously open background Settings window cannot come forward. It retains its instance/page
+and can be reopened explicitly; only Settings-origin creation keeps it visible. Repeated
+creation requests cancel the prior capture session. Closing Settings prevents it from being reopened
+by a later creator completion. There is no mixed-type filter or native-picker action.
+
+Collection membership is persisted separately from payload type in optional library metadata.
+Existing assets without this metadata remain in Stickers; adaptive format alone does not prove
+Genmoji origin. Reimporting an existing glyph through Genmoji moves it into that collection without
+changing its identity, bytes, favorites or history. Deletion also removes its collection membership.
+The status menu contains only Open, Settings and Quit. Imports
+retain originals and do not count as use or paste into the last recipient. Import reports partial
+success, duplicate counts and actionable failures only when there are failures; successful imports
+do not show a status footer. Original image content determines file type, not the extension. New file imports use the filename
+without its final extension as the default title; existing user titles are not rewritten.
+Missing/corrupt assets stay listed for deletion or reimport. Deletion removes local originals,
+favorites and recent usage; clearing recent history retains saved assets. These changes do not
+synchronize with or delete Apple's system sticker library.
+
+File import uses the native chooser and scoped file access. Settings reuses the library's in-memory
+preview/availability snapshot and existing integrity-checked copy transport. The status-menu import
+command is removed; picker context actions remain shortcuts to the same saved library operations.
+
+### Inline photo stickers
+
+Static image selections now use a real adaptive-image-glyph representation for Copy and Paste,
+matching the inline behavior of native photo stickers. The conversion decodes the original,
+preserves orientation/aspect ratio on a transparent square canvas (maximum 512 px), and writes
+HEIC with stable content identity and description metadata. The original asset remains unchanged
+in local storage. Rich paste receives RTFD/glyph data; image-only recipients can negotiate the
+high-resolution PNG/HTML fallback from the same clipboard item. Conversion occurs before clipboard mutation.
+GIF and multi-frame images retain their original image transport and animation; unavailable HEIC
+conversion also falls back to the validated original image instead of discarding the selection.
+
+An adaptive glyph is not proof of AI generation: native photo stickers also use this format.
+Stored adaptive glyphs are labeled Emoji Stickers, including captured Genmoji and native stickers.
+Settings separates Stickers and explicitly classified Genmoji rather than treating all glyphs as Genmoji.
+The Create Genmoji action remains explicitly named for the system creation feature. Existing asset
+IDs, original bytes, favorites and history remain intact; no library migration is required.
+
+### Draggable picker
+
+The native popover permits AppKit detachment. Dragging eligible native chrome/background detaches
+the picker from its text-field anchor and allows it to move freely, including presentations without
+a resolved text field. The same content, search state and captured insertion destination are retained.
+A native window-drag gesture is confined to the empty 11-point strip above search so subsequent
+moves remain available with SwiftUI content. Search editing and emoji/variant interactions remain
+controls rather than drag handles. Outside-click
+dismissal and idempotent teardown apply to the content’s current window, including detached windows.
+
+### Saved-item names
+
+Renaming a saved item updates its library title, favorite/preference references and recent-usage
+titles while retaining the item ID, original asset reference and bytes, collection membership,
+counts and usage timestamps. Names are trimmed and must be nonempty, single-line, and at most 256
+UTF-16 code units; attachment replacement characters are rejected. Failed library metadata writes
+leave the prior name and usage references intact. A rename does not modify an existing adaptive
+glyph's embedded original description.
+
+### Detached picker header
+
+The detached header reserves a close-button slot and animates search into the remaining width,
+keeping the close control and search vertically centered together. The header drag completes
+native detachment through a runtime-signature-checked popover entry before applying detached chrome. Reduce Motion disables the
+transition. The same native circled Close button is moved synchronously into an always-mounted
+header host when it can be identified through the native window accessor or a unique accessibility
+close-button control in that window. Its artwork, native fitting size, target and action are preserved; there
+is no custom-icon replacement. The control is hidden while it is reparented and initially laid out
+against the actual search field’s vertical center. Once search has made space, the control fades in
+over the quick motion interval,
+with no fade under Reduce Motion. Any existing native button is hidden before detachment to avoid
+showing its default position. Native detachment and reparenting suppress implicit layer animations. Search state and responder identity persist across detachment; attached picker geometry
+remains unchanged.
+
+### Verification scope
+
+Automated tests cover models, persistence, search/navigation data, accessibility resolution and
+clipboard/content transport. View/presentation and browser-rendering UI test suites are excluded.
+Functional changes are verified in the real built app using the affected IDs in the maintained
+[feature map](../../apps/EmojiMatch/Documentation/FeatureMap.md) and its
+[verification guide](../../apps/EmojiMatch/Documentation/Verification.md). Native interaction tools
+can drive those checks; build and unit-test results do not replace observing the user-visible outcome.
+
+Favorite and per-family variant-preference writes return success to their callers. Settings reports
+actionable save failures; picker actions beep without taking focus away from insertion. A failed
+preference save does not prevent inserting the explicitly selected variant. Damaged metadata is
+not overwritten.
+
+### Default skin tone
+
+General Settings offers six hand choices, yellow and the five Unicode skin tones, persisted by
+AppSettings. Browse and search apply this default only to supplied, Apple-renderable variants
+whose structure matches the base emoji after removing skin modifiers and variation selectors.
+All present tone modifiers must match the selected default; unsupported or structurally different
+variants leave the original item unchanged. Explicit per-family preferences, including yellow
+and mixed tones, take precedence. Changing the default never rewrites favorites, recent usage,
+original sequences or explicit family preferences, and yellow resets only the global default.

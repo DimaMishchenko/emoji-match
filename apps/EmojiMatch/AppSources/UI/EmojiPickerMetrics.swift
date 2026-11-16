@@ -3,12 +3,15 @@ import SwiftUI
 enum EmojiPickerMetrics {
   static let contentWidth: CGFloat = 320
   static let topBarHeight: CGFloat = 49.5
-  static let scrollHeight: CGFloat = 350.5
+  static let scrollHeight: CGFloat = 386.5
   static let categoryBarHeight: CGFloat = 44
   static let searchHeight: CGFloat = 28
   static let actionSize: CGFloat = 27
   static let searchTopInset: CGFloat = 11
   static let searchHorizontalInset: CGFloat = 10
+  static let headerControlSpacing: CGFloat = 8
+  static let headerCloseSize: CGFloat = 28
+  static let headerCloseInset = headerCloseSize + headerControlSpacing
   static let columnCount = 6
   static let emojiCellSize: CGFloat = 40
   static let emojiFontSize: CGFloat = 32

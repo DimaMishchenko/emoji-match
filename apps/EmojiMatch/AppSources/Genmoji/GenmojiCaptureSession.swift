@@ -26,7 +26,6 @@ final class GenmojiCaptureSession: NSObject, NSTextViewDelegate {
   var onError: ((Failure) -> Void)?
   var onDiagnostic: ((Diagnostic) -> Void)?
   private(set) var phase: Phase = .idle
-  private(set) var lastDiagnostic = Diagnostic(phase: .idle, message: "Not started")
 
   private var generation = UUID()
   private var window: ReceiverWindow?
@@ -268,8 +267,7 @@ final class GenmojiCaptureSession: NSObject, NSTextViewDelegate {
 
   private func report(_ phase: Phase, _ message: String) {
     self.phase = phase
-    lastDiagnostic = Diagnostic(phase: phase, message: message)
-    onDiagnostic?(lastDiagnostic)
+    onDiagnostic?(Diagnostic(phase: phase, message: message))
   }
 
   private func ownershipDescription() -> String {

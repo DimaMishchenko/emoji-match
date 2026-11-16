@@ -97,7 +97,7 @@ import Testing
       historyLimit: 8
     )
 
-    #expect(reloadedStore.topSelection() == selection)
+    #expect(reloadedStore.suggestions(limit: 1).first?.selection == selection)
     #expect(reloadedStore.suggestions().first?.count == 1)
   }
 
@@ -171,7 +171,7 @@ import Testing
       now: { Date(timeIntervalSince1970: 100) }
     )
 
-    #expect(store.topSelection()?.value == "newest")
+    #expect(store.suggestions(limit: 1).first?.selection.value == "newest")
     #expect(store.suggestions().first?.count == 2)
   }
 
@@ -185,8 +185,8 @@ import Testing
       historyLimit: 8
     )
 
-    #expect(store.isEmpty)
-    #expect(store.topSelection() == nil)
+    #expect(store.suggestions(limit: 1).isEmpty)
+    #expect(store.suggestions(limit: 1).first?.selection == nil)
     #expect(store.suggestions().isEmpty)
   }
 }

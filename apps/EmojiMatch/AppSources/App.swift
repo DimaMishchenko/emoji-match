@@ -8,8 +8,6 @@ struct App: SwiftUI.App {
   @State private var panel: NSPanel?
   @State private var settingsWindow: NSWindow?
   @State private var sessionID = UUID()
-  @State private var lastSelection: EmojiSelection?
-  @State private var message: String?
   @State private var genmojiCapture: GenmojiCaptureSession?
   private let searchStore = EmojiSearchStore()
   private let usageStore: EmojiUsageStore
@@ -46,17 +44,6 @@ struct App: SwiftUI.App {
   var body: some Scene {
     MenuBarExtra {
       Button(String(localized: .menuOpen)) { openEmojiMatch() }
-      Button("System Emoji & Symbols…") {
-        openSystemPicker(destination: InsertionDestination.capture())
-      }
-      Button("Import from Clipboard…") {
-        importClipboard(destination: InsertionDestination.capture())
-      }
-      if let lastSelection {
-        Button("Copy Last Selection") { copy(lastSelection) }
-      }
-      if let message { Text(message).font(.caption) }
-      Divider()
       Button("Settings…") { openSettings() }.keyboardShortcut(",")
       Button(String(localized: .menuQuit)) { NSApp.terminate(nil) }.keyboardShortcut("q")
     } label: {
@@ -72,11 +59,11 @@ struct App: SwiftUI.App {
     .menuBarExtraStyle(.menu)
   }
 
-  private func openEmojiMatch(destination override: InsertionDestination? = nil) {
+  private func openEmojiMatch() {
     usageStore.refreshLibrary()
     let anchor = TextAnchorResolver.anchorRect()
     let captured =
-      override ?? InsertionDestination.capture(includeSelectedText: settings.prefillSelectedText)
+      InsertionDestination.capture(includeSelectedText: settings.prefillSelectedText)
     sessionID = UUID()
     genmojiCapture?.cancel()
     genmojiCapture = nil
@@ -96,12 +83,20 @@ struct App: SwiftUI.App {
         },
         onCreateGenmoji: NativeGenmoji.isAvailable && captured?.allowsRichContent != false
           ? { prompt in
+            settingsWindow?.orderOut(nil)
             close()
-            createGenmoji(prompt: prompt, destination: captured, anchor: anchor)
+            createGenmoji(
+              prompt: prompt, destination: captured,
+              appKitAnchor: anchor.map {
+                EmojiMatchPanelGeometry.appKitRect(
+                  fromTopLeftRect: $0,
+                  primaryScreenHeight: NSScreen.screens.first?.frame.maxY ?? 0)
+              })
           } : nil,
         onClose: close,
         initialQuery: captured?.selectedText ?? "",
         allowsRichContent: captured?.allowsRichContent ?? true,
+        defaultSkinTone: settings.defaultSkinTone,
         onCopySelection: copy
       )
     }
@@ -110,8 +105,10 @@ struct App: SwiftUI.App {
   }
 
   private func createGenmoji(
-    prompt: String, destination: InsertionDestination?, anchor: CGRect?
+    prompt: String, destination: InsertionDestination?, appKitAnchor: CGRect?,
+    onFinish: (() -> Void)? = nil
   ) {
+    genmojiCapture?.cancel()
     let request = sessionID
     let capture = GenmojiCaptureSession()
     genmojiCapture = capture
@@ -119,22 +116,27 @@ struct App: SwiftUI.App {
       guard sessionID == request else { return }
       genmojiCapture = nil
       do {
-        let selection = try usageStore.importAdaptiveGlyph(glyph)
-        deliver(selection, to: destination)
+        let selection = try usageStore.importAdaptiveGlyph(glyph, asGenmoji: true)
+        if let onFinish { onFinish() } else { deliver(selection, to: destination) }
       } catch {
         showError("Couldn’t Save Genmoji", detail: error.localizedDescription)
+        onFinish?()
       }
     }
     capture.onCancel = {
       guard sessionID == request else { return }
       genmojiCapture = nil
       _ = destination?.restoreFocus()
+      onFinish?()
     }
     capture.onError = { _ in
       guard sessionID == request else { return }
       genmojiCapture = nil
-      message = "Genmoji creation could not open. You can import a copied Genmoji instead."
+      showError(
+        "Couldn’t Open Genmoji",
+        detail: "You can import a copied Genmoji in Settings → Genmoji.")
       _ = destination?.restoreFocus()
+      onFinish?()
     }
     #if DEBUG
       capture.onDiagnostic = { diagnostic in
@@ -142,32 +144,26 @@ struct App: SwiftUI.App {
           Data("Genmoji capture: \(diagnostic.phase.rawValue) \(diagnostic.message)\n".utf8))
       }
     #endif
-    let appKitAnchor = anchor.map {
-      CGRect(
-        x: $0.minX, y: (NSScreen.screens.first?.frame.maxY ?? 0) - $0.maxY,
-        width: $0.width, height: $0.height)
-    }
     capture.start(prompt: prompt, anchorRect: appKitAnchor)
   }
 
   private func deliver(_ selection: EmojiSelection, to destination: InsertionDestination?) {
-    lastSelection = selection
     let request = sessionID
     Task {
       try? await Task.sleep(for: .milliseconds(75))
       guard sessionID == request else { return }
       guard let destination else {
-        message = "Insertion unavailable. Use Copy Last Selection or the system picker."
+        NSSound.beep()
         return
       }
       guard selection.asset == nil || destination.allowsRichContent else {
-        message = "This input accepts text only. Your item remains available to copy."
+        NSSound.beep()
         return
       }
       for _ in 0..<25 {
         guard sessionID == request else { return }
         guard destination.restoreFocus() else {
-          message = "The original input changed. Your selection is available to copy."
+          NSSound.beep()
           return
         }
         try? await Task.sleep(for: .milliseconds(20))
@@ -177,76 +173,23 @@ struct App: SwiftUI.App {
             selection, data: usageStore.data(for: selection), to: destination)
           {
             usageStore.record(selection)
-            message = nil
           } else {
-            message = "Could not insert. Use Copy Last Selection to paste manually."
+            showError(
+              "Couldn’t Insert Item",
+              detail: "Choose Copy from the item’s context menu, then paste it manually.")
           }
           return
         }
         try? await Task.sleep(for: .milliseconds(20))
       }
       guard sessionID == request else { return }
-      message = "Could not restore the original input. Your selection is available to copy."
+      NSSound.beep()
     }
   }
 
   private func copy(_ selection: EmojiSelection) {
-    lastSelection = selection
-    message =
-      TextPasteController.copy(selection, data: usageStore.data(for: selection))
-      ? "Copied." : "This item could not be copied."
-  }
-
-  private func importClipboard(destination: InsertionDestination?) {
-    do {
-      let selections = try retain(RichContentImport.read())
-      message = "Imported \(selections.count) item(s)."
-      openEmojiMatch(destination: destination)
-    } catch {
-      showError(
-        "Couldn’t Import",
-        detail:
-          "Copy a Genmoji or supported image, then choose Import again. \(error.localizedDescription)"
-      )
-    }
-  }
-
-  private func retain(_ contents: [ImportedContent]) throws -> [EmojiSelection] {
-    try contents.map { content in
-      switch content {
-      case .adaptiveGlyph(let glyph): try usageStore.importAdaptiveGlyph(glyph)
-      case .image(let data, let type, let description):
-        try usageStore.importImage(data: data, typeIdentifier: type, description: description)
-      }
-    }
-  }
-
-  private func openSystemPicker(
-    destination: InsertionDestination?,
-    nativeDestination: NativeGenmoji.Destination? = NativeGenmoji.Destination.capture()
-  ) {
-    sessionID = UUID()
-    genmojiCapture?.cancel()
-    genmojiCapture = nil
-    let request = sessionID
-    panel?.close()
-    Task {
-      try? await Task.sleep(for: .milliseconds(100))
-      guard sessionID == request else { return }
-      if let destination {
-        guard destination.restoreFocus() else { return }
-        try? await Task.sleep(for: .milliseconds(100))
-        guard sessionID == request, destination.isValidForDelivery() else { return }
-        systemShortcutMonitor.openNativeEmojiPicker()
-      } else if let nativeDestination,
-        nativeDestination.application.processIdentifier
-          != ProcessInfo.processInfo.processIdentifier,
-        nativeDestination.application.isActive
-      {
-        systemShortcutMonitor.openNativeEmojiPicker()
-      } else {
-        NSApp.orderFrontCharacterPalette(nil)
-      }
+    if !TextPasteController.copy(selection, data: usageStore.data(for: selection)) {
+      showError("Couldn’t Copy Item", detail: "Try importing the original image again in Settings.")
     }
   }
 
@@ -255,20 +198,41 @@ struct App: SwiftUI.App {
     genmojiCapture?.cancel()
     genmojiCapture = nil
     panel?.close()
+    usageStore.refreshLibrary()
     if settingsWindow == nil {
       let window = NSWindow(
-        contentRect: .init(x: 0, y: 0, width: 460, height: 390), styleMask: [.titled, .closable],
+        contentRect: .init(x: 0, y: 0, width: 800, height: 580),
+        styleMask: [.titled, .closable, .miniaturizable, .resizable],
         backing: .buffered, defer: false)
       window.title = "Emoji Match Settings"
+      window.minSize = NSSize(width: 740, height: 560)
       window.isReleasedWhenClosed = false
       window.contentViewController = NSHostingController(
         rootView: EmojiMatchSettingsView(
           settings: settings, clearHistory: { usageStore.clearHistory() },
-          openSystemPicker: { openSystemPicker(destination: nil) },
           setShortcutRecording: { recording in
             if !recording { systemShortcutMonitor.shortcut = settings.openShortcut }
             systemShortcutMonitor.isSuspended = recording
-          }))
+          },
+          library: StickerLibraryModel(
+            store: usageStore,
+            copy: { selection in
+              TextPasteController.copy(selection, data: usageStore.data(for: selection))
+            }),
+          genmojiLibrary: StickerLibraryModel(
+            store: usageStore, collection: .genmoji,
+            copy: { selection in
+              TextPasteController.copy(selection, data: usageStore.data(for: selection))
+            }),
+          onCreateGenmoji: NativeGenmoji.isAvailable
+            ? { anchor in
+              sessionID = UUID()
+              createGenmoji(
+                prompt: "", destination: nil,
+                appKitAnchor: CGRect(
+                  x: anchor.midX, y: anchor.minY, width: 1, height: anchor.height),
+                onFinish: restoreSettingsAfterGenmoji)
+            } : nil))
       window.center()
       settingsWindow = window
     }
@@ -276,8 +240,19 @@ struct App: SwiftUI.App {
     settingsWindow?.makeKeyAndOrderFront(nil)
   }
 
+  private func restoreSettingsAfterGenmoji() {
+    guard settingsWindow?.isVisible == true else { return }
+    let foreground = NSWorkspace.shared.frontmostApplication
+    if foreground?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+      || foreground?.bundleIdentifier == "com.apple.CharacterPaletteIM"
+    {
+      openSettings()
+    } else {
+      settingsWindow?.orderBack(nil)
+    }
+  }
+
   private func showError(_ title: String, detail: String) {
-    message = detail
     let alert = NSAlert()
     alert.messageText = title
     alert.informativeText = detail

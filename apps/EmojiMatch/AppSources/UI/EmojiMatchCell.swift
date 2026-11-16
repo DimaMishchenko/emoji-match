@@ -36,7 +36,7 @@ struct EmojiMatchCell: View {
           isPresented: $showsVariants
         ) { variant in
           guard let base = catalog.base(for: item.selection) else { return }
-          usageStore.setPreferredSelection(variant, for: base)
+          if !usageStore.setPreferredSelection(variant, for: base) { NSSound.beep() }
           onSelect(variant)
         }
         .frame(width: EmojiPickerMetrics.emojiCellSize, height: EmojiPickerMetrics.emojiCellSize)
@@ -58,7 +58,7 @@ struct EmojiMatchCell: View {
           usageStore.isFavorite(item.selection)
             ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites")
         ) {
-          usageStore.toggleFavorite(item.selection)
+          if !usageStore.toggleFavorite(item.selection) { NSSound.beep() }
         }
         if item.id.hasPrefix("recent:") {
           Button(String(localized: "Remove from Recents")) {
@@ -71,7 +71,7 @@ struct EmojiMatchCell: View {
         if item.selection.asset != nil {
           Divider()
           Button(String(localized: "Delete from Custom"), role: .destructive) {
-            usageStore.deleteImported(item.selection)
+            if !usageStore.deleteImported(item.selection) { NSSound.beep() }
           }
         }
       }
@@ -85,7 +85,7 @@ struct EmojiMatchCell: View {
   @ViewBuilder private func preview(_ selection: EmojiSelection) -> some View {
     if selection.asset != nil {
       if let image = usageStore.image(for: selection) {
-        ImportedArtwork(image: image, animates: !reduceMotion && selection.asset?.kind == .image)
+        EmojiAssetArtwork(image: image, animates: !reduceMotion && selection.asset?.kind == .image)
           .frame(width: EmojiPickerMetrics.emojiFontSize, height: EmojiPickerMetrics.emojiFontSize)
           .clipped()
       } else {
@@ -107,9 +107,10 @@ struct EmojiMatchCell: View {
   }
 }
 
-private struct ImportedArtwork: NSViewRepresentable {
+struct EmojiAssetArtwork: NSViewRepresentable {
   let image: NSImage
   let animates: Bool
+  var size: CGFloat = EmojiPickerMetrics.emojiFontSize
 
   func makeNSView(context: Context) -> NSImageView {
     let view = NSImageView()
@@ -121,11 +122,11 @@ private struct ImportedArtwork: NSViewRepresentable {
   func sizeThatFits(
     _ proposal: ProposedViewSize, nsView: NSImageView, context: Context
   ) -> CGSize? {
-    CGSize(width: EmojiPickerMetrics.emojiFontSize, height: EmojiPickerMetrics.emojiFontSize)
+    CGSize(width: size, height: size)
   }
 
   func updateNSView(_ view: NSImageView, context: Context) {
-    view.image = image
+    if view.image !== image { view.image = image }
     view.animates = animates
   }
 }

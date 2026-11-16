@@ -34,7 +34,7 @@ struct BrowserView: View {
     onSelectItemID: @escaping (String) -> Void,
     onSelectEmoji: @escaping (EmojiSelection) -> Void,
     onCopySelection: ((EmojiSelection) -> Void)? = nil,
-    content: EmojiMatchContent? = nil,
+    content: EmojiMatchContent,
     categoryPage: Binding<Int> = .constant(0),
     variantRequestID: Binding<String?> = .constant(nil)
   ) {
@@ -49,11 +49,7 @@ struct BrowserView: View {
     self.onCopySelection = onCopySelection
     self._categoryPage = categoryPage
     self._variantRequestID = variantRequestID
-    self.content =
-      content
-      ?? EmojiMatchContent(
-        query: searchQuery, searchStore: searchStore, usageStore: usageStore,
-        page: categoryPage.wrappedValue)
+    self.content = content
   }
 
   var body: some View {
@@ -133,9 +129,11 @@ struct BrowserView: View {
 
   private func sectionView(_ section: EmojiMatchContent.Section) -> some View {
     VStack(alignment: .leading, spacing: .ds.spacing.xs) {
-      if section.id == "favorites" {
+      if !section.title.isEmpty {
         Text(section.title).font(.ds.caption.weight(.semibold))
           .foregroundStyle(Color.ds.textSecondary)
+          .padding(.horizontal, .ds.spacing.xs)
+          .accessibilityAddTraits(.isHeader)
       }
       LazyVGrid(
         columns: Array(

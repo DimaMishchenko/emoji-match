@@ -1,9 +1,105 @@
 import AppKit
+import DesignSystem
+import ObjectiveC.runtime
+import Observation
+import QuartzCore
 import SwiftUI
+
+extension EnvironmentValues {
+  @Entry var emojiMatchPresentation: EmojiMatchPanelPresentation?
+}
+
+@Observable
+final class EmojiMatchPanelPresentation {
+  private(set) var showsHeaderClose = false
+  @ObservationIgnored var onDetach: (() -> Void)?
+  @ObservationIgnored weak var closeButtonHost: EmojiMatchCloseButtonHost?
+
+  func beginDrag() {
+    onDetach?()
+  }
+
+  func detach(nativeCloseButton: NSButton?) {
+    guard !showsHeaderClose, let nativeCloseButton, let closeButtonHost,
+      closeButtonHost.window === nativeCloseButton.window
+    else { return }
+    closeButtonHost.install(nativeCloseButton)
+    showsHeaderClose = true
+  }
+}
+
+struct EmojiMatchNativeCloseButton: NSViewRepresentable {
+  let presentation: EmojiMatchPanelPresentation?
+
+  func makeNSView(context: Context) -> EmojiMatchCloseButtonHost {
+    let view = EmojiMatchCloseButtonHost()
+    presentation?.closeButtonHost = view
+    return view
+  }
+
+  func updateNSView(_ nsView: EmojiMatchCloseButtonHost, context: Context) {
+    presentation?.closeButtonHost = nsView
+  }
+}
+
+final class EmojiMatchCloseButtonHost: NSView {
+  private var closeButton: NSButton?
+  private var nativeSize = NSSize.zero
+  private weak var searchField: NSTextField?
+
+  func install(_ button: NSButton) {
+    button.alphaValue = 0
+    button.sizeToFit()
+    nativeSize = button.frame.size
+    button.removeFromSuperview()
+    button.translatesAutoresizingMaskIntoConstraints = true
+    button.autoresizingMask = []
+    addSubview(button)
+    closeButton = button
+    searchField = window?.contentView?.emojiMatchSearchField
+    layoutCloseButton()
+    let revealDelay =
+      NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Double.ds.motion.quick
+    DispatchQueue.main.asyncAfter(deadline: .now() + revealDelay) { [weak self, weak button] in
+      guard let self, let button, self.closeButton === button, self.window?.isVisible == true else {
+        return
+      }
+      self.layoutSubtreeIfNeeded()
+      self.layoutCloseButton()
+      NSAnimationContext.runAnimationGroup { context in
+        context.duration =
+          NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : .ds.motion.quick
+        context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        button.animator().alphaValue = 1
+      }
+    }
+  }
+
+  override func layout() {
+    super.layout()
+    layoutCloseButton()
+  }
+
+  private func layoutCloseButton() {
+    let centerY = searchField.map { convert($0.bounds, from: $0).midY } ?? bounds.midY
+    closeButton?.frame = NSRect(
+      x: bounds.midX - nativeSize.width / 2,
+      y: centerY - nativeSize.height / 2,
+      width: nativeSize.width,
+      height: nativeSize.height
+    )
+  }
+
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    let view = super.hitTest(point)
+    return view === self ? nil : view
+  }
+}
 
 @MainActor
 final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   private let picker = NSPopover()
+  private let presentation = EmojiMatchPanelPresentation()
   private let onClose: () -> Void
   private var isClosing = false
   private var outsideClickMonitor: Any?
@@ -36,10 +132,10 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
     picker.behavior = .transient
     picker.animates = false
     picker.delegate = self
+    presentation.onDetach = { [weak self] in self?.detachPicker() }
     picker.contentViewController = NSHostingController(
-      rootView: content(
-        { [weak self] in self?.close() }
-      )
+      rootView: content({ [weak self] in self?.close() })
+        .environment(\.emojiMatchPresentation, presentation)
     )
     picker.contentSize = contentSize
   }
@@ -99,14 +195,70 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   }
 
   private func focusSearchField() {
-    func firstTextField(in view: NSView) -> NSTextField? {
-      if let field = view as? NSTextField { return field }
-      return view.subviews.lazy.compactMap { firstTextField(in: $0) }.first
-    }
     guard let view = picker.contentViewController?.view,
-      let field = firstTextField(in: view)
+      let field = view.emojiMatchSearchField
     else { return }
     view.window?.makeFirstResponder(field)
+  }
+
+  func popoverShouldDetach(_ popover: NSPopover) -> Bool {
+    true
+  }
+
+  private func detachPicker() {
+    guard !isClosing, picker.isShown else { return }
+    if !picker.isDetached {
+      let selector = NSSelectorFromString("detach")
+      guard let method = class_getInstanceMethod(type(of: picker), selector),
+        method_getNumberOfArguments(method) == 2
+      else { return }
+      let returnType = method_copyReturnType(method)
+      defer { free(returnType) }
+      guard String(cString: returnType) == "v" else { return }
+      typealias Detach = @convention(c) (AnyObject, Selector) -> Void
+      let detach = unsafeBitCast(method_getImplementation(method), to: Detach.self)
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      defer { CATransaction.commit() }
+      if let window = picker.contentViewController?.view.window {
+        nativeCloseButton(in: window)?.alphaValue = 0
+      }
+      detach(picker, selector)
+    }
+    if picker.isDetached { popoverDidDetach(picker) }
+  }
+
+  func popoverDidDetach(_ popover: NSPopover) {
+    guard popover === picker, popover.isDetached, !isClosing, !presentation.showsHeaderClose else {
+      return
+    }
+    guard let window = popover.contentViewController?.view.window else { return }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
+    window.isMovable = true
+    window.isMovableByWindowBackground = true
+    window.contentView?.layoutSubtreeIfNeeded()
+    presentation.detach(nativeCloseButton: nativeCloseButton(in: window))
+  }
+
+  private func nativeCloseButton(in window: NSWindow) -> NSButton? {
+    if let button = window.standardWindowButton(.closeButton) { return button }
+    var candidates: [NSButton] = []
+    var inspected = 0
+    var complete = true
+    func visit(_ view: NSView, depth: Int) {
+      inspected += 1
+      guard depth < 12, inspected <= 256 else { complete = false; return }
+      if let button = view as? NSButton, button.accessibilitySubrole() == .closeButton,
+        !button.isHiddenOrHasHiddenAncestor
+      {
+        candidates.append(button)
+      }
+      for child in view.subviews { visit(child, depth: depth + 1) }
+    }
+    if let root = window.contentView?.superview ?? window.contentView { visit(root, depth: 0) }
+    return complete && candidates.count == 1 ? candidates.first : nil
   }
 
   func popoverDidClose(_ notification: Notification) {
@@ -142,4 +294,11 @@ enum EmojiMatchPanelGeometry {
     CGRect(x: rect.minX, y: primaryScreenHeight - rect.maxY, width: rect.width, height: rect.height)
   }
 
+}
+
+private extension NSView {
+  var emojiMatchSearchField: NSTextField? {
+    if let field = self as? NSTextField { return field }
+    return subviews.lazy.compactMap(\.emojiMatchSearchField).first
+  }
 }
