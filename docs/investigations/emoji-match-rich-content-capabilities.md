@@ -21,7 +21,7 @@ structural web-search heuristic (search subrole, search landmark, or same-dialog
 and an explicit Terminal exception. Spotify/T3 bundle checks were removed. Identical control traits
 receive the same decision across other apps, with unknown/native/multiline editors left available.
 The heuristic does not establish the absence of custom paste handlers and does not resolve native
-plain TextEdit. See the [generic rule review](../verification/emoji-match-generic-rules/README.md).
+plain TextEdit. See the generic rule review (local validation; artifacts not tracked).
 No trustworthy generic probe for the original remote field
 was established. Existing rich UI remains available for unknown destinations. Hiding all unknowns
 would hide Genmoji even from the verified TextEdit rich field; treating all text areas as supported
@@ -75,7 +75,7 @@ Electron/browser/app acceptance and automatic UI visibility are not established 
 The final integrated app suite passed **88 tests, zero failures or skips**. A real rich NSTextView
 read the production item and retained exact glyph bytes; a deliberately PNG-only NSTextView subclass
 with adaptive support false selected the same item's PNG and inserted an ordinary NSTextAttachment.
-An independent source review found no important issues. The [verification bundle](../verification/emoji-match-content-support/README.md)
+An independent source review found no important issues. The verification bundle (local validation; artifacts not tracked)
 contains logs, the native-consumer harness and its output. This verifies AppKit format negotiation
 and does not claim arbitrary app compatibility or acknowledgment of global paste events.
 
@@ -83,4 +83,4 @@ The follow-up caps only the PNG fallback at 24 pixels after proving that WebKit 
 this purpose and displays the original at 160 pixels. Real Safari paste into the existing fixture
 now renders inline. Original HEIC and RTFD glyph data remain intact. Finder still requires a direct
 text-input path: native inserts a real glyph, while Finder rejects even Paste of its own copied RTFD.
-See [recipient validation](../verification/emoji-match-recipient-validation/README.md).
+See recipient validation (local validation; artifacts not tracked).

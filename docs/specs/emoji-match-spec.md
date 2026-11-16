@@ -319,7 +319,7 @@ Field-bound placement and estimated layout are degraded fallbacks, not claims of
 A bounded leading control in the same-bounds parent can inform estimated text insets when the
 field lacks useful AX caret bounds. Sibling placeholders and arbitrary labels are not accessories.
 Visual matching and cross-app verification evidence is maintained in
-`docs/verification/emoji-match-picker-review.md`.
+local, untracked validation notes.
 Current implementation requests Accessibility access from app code when caret-based positioning is
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
 Current implementation requests `AXManualAccessibility` and `AXEnhancedUserInterface` on the
@@ -574,7 +574,7 @@ Search semantics do not prove the absence of a custom image-upload paste handler
 heuristic rather than a confirmed text-only capability. Plain TextEdit remains unknown despite its
 observed failed rich paste; it is not solved by a web-search rule. Finder's native glyph insertion
 continues to require a verified direct-input transport. See
-[generic rule review](../verification/emoji-match-generic-rules/README.md).
+generic rule review (local validation; artifacts not tracked).
 The native picker obtains the explicit
 adaptive-glyph flag from its active IMK client, but this investigation did not establish a passive
 cross-process client channel for Emoji Match, nor an equivalent reliable image-paste flag. Missing

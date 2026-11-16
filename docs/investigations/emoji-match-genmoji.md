@@ -40,7 +40,7 @@ The delegate must also implement the ordinary `didCreateImageAt: URL` callback. 
 same route through `imagePlaygroundSheet(...onAdaptiveImageGlyphCreation:)` and
 `imagePlaygroundGenerationStyle(.emoji, in: [.emoji])`.
 
-[Creation screenshot](emoji-match-genmoji-evidence/creation-sheet.png).
+Creation screenshot (local validation; artifacts not tracked).
 
 ## Verified rich insertion
 
@@ -67,8 +67,8 @@ content byte for byte.
 - Original clipboard restored after the experiment, guarded by its change count
 - The unsaved task-created TextEdit document was discarded; the prototype was stopped
 
-[Original glyph data](emoji-match-genmoji-evidence/generated.heic) and
-[TextEdit copy-back](emoji-match-genmoji-evidence/textedit-copy.rtfd) are retained locally in the repo.
+Original glyph data (local validation; artifacts not tracked) and
+TextEdit copy-back (local validation; artifacts not tracked) were used for local validation and are not tracked in the repository.
 
 Decoder caveat observed during verification: a standalone decoder without initialized AppKit
 returned `NSAttachment` with an `AdaptiveImageGlyph-<identifier>.heic` file wrapper. Initializing
@@ -186,7 +186,7 @@ generation and Add. Copy-back returned an adaptive glyph with identifier
 or email was sent. Test clipboard contents were restored. Both tested supported native recipients
 retained the adaptive-glyph representation; this does not establish universal receiving-app support.
 
-[Compact creator, dark backdrop](../verification/emoji-match-genmoji/generated.png),
-[compact creator, Notes backdrop](../verification/emoji-match-genmoji/notes-generated.png),
-[TextEdit copy-back](../verification/emoji-match-genmoji/textedit-copy.rtfd), and
-[Notes copy-back](../verification/emoji-match-genmoji/notes-copy.rtfd).
+Compact creator, dark backdrop (local validation; artifacts not tracked),
+compact creator, Notes backdrop (local validation; artifacts not tracked),
+TextEdit copy-back (local validation; artifacts not tracked), and
+Notes copy-back (local validation; artifacts not tracked).
