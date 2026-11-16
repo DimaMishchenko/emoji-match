@@ -1,4 +1,6 @@
+import AppKit
 import DesignSystem
+import ObjectiveC
 import SwiftUI
 
 struct BrowserView: View {
@@ -12,17 +14,15 @@ struct BrowserView: View {
   let selectedItemID: String?
   let onSelectItemID: (String) -> Void
   let onSelectEmoji: (EmojiSelection) -> Void
+  let onCopySelection: ((EmojiSelection) -> Void)?
+  let content: EmojiMatchContent
+  @Binding var categoryPage: Int
+  @Binding var variantRequestID: String?
 
   private let catalog = EmojiBrowserCatalog.shared
-
-  private var columns: [GridItem] {
-    Array(
-      repeating: GridItem(.flexible(), spacing: .zero),
-      count: EmojiPickerMetrics.columnCount
-    )
-  }
-
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var visibleSectionIDs: [String] = []
+  @State private var activeCategoryID: String?
 
   init(
     contentWidth: CGFloat = EmojiPickerMetrics.contentWidth,
@@ -32,7 +32,11 @@ struct BrowserView: View {
     searchQuery: String,
     selectedItemID: String? = nil,
     onSelectItemID: @escaping (String) -> Void,
-    onSelectEmoji: @escaping (EmojiSelection) -> Void
+    onSelectEmoji: @escaping (EmojiSelection) -> Void,
+    onCopySelection: ((EmojiSelection) -> Void)? = nil,
+    content: EmojiMatchContent? = nil,
+    categoryPage: Binding<Int> = .constant(0),
+    variantRequestID: Binding<String?> = .constant(nil)
   ) {
     self.contentWidth = contentWidth
     self.horizontalContentInset = horizontalContentInset
@@ -42,120 +46,106 @@ struct BrowserView: View {
     self.selectedItemID = selectedItemID
     self.onSelectItemID = onSelectItemID
     self.onSelectEmoji = onSelectEmoji
+    self.onCopySelection = onCopySelection
+    self._categoryPage = categoryPage
+    self._variantRequestID = variantRequestID
+    self.content =
+      content
+      ?? EmojiMatchContent(
+        query: searchQuery, searchStore: searchStore, usageStore: usageStore,
+        page: categoryPage.wrappedValue)
   }
 
   var body: some View {
     ScrollViewReader { proxy in
-      VStack(spacing: .zero) {
-        Group {
-          if normalizedSearchQuery.isEmpty {
-            browseView()
-          } else {
-            searchResultsView()
-          }
-        }
-        .frame(
-          height: normalizedSearchQuery.isEmpty
-            ? EmojiPickerMetrics.scrollHeight : Self.preferredHeight
-        )
-
-        if normalizedSearchQuery.isEmpty {
-          categoryBar(proxy: proxy)
-            .padding(.horizontal, horizontalContentInset)
-            .frame(height: EmojiPickerMetrics.categoryBarHeight)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .top) {
-              Rectangle()
-                .fill(Color.ds.textPrimary.opacity(0.08))
-                .frame(height: .ds.stroke.hairline)
-            }
-        }
-      }
-      .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
-        self.visibleSectionIDs = ids
-      }
-      .onChange(of: selectedItemID, initial: true) { _, _ in
-        scrollSelectionIntoView(proxy: proxy)
-      }
-    }
-    .frame(width: contentWidth)
-    .frame(height: Self.preferredHeight)
-  }
-
-  private var normalizedSearchQuery: String {
-    searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-  }
-
-  private func browseView() -> some View {
-    ScrollView(.vertical, showsIndicators: false) {
-      LazyVStack(alignment: .leading, spacing: .ds.spacing.md) {
-        let suggestions = usageStore.suggestions()
-
-        if !suggestions.isEmpty {
-          usageSectionView(suggestions)
-        }
-
-        ForEach(catalog.sections) { section in
-          sectionView(section)
-            .id(section.id)
-        }
-      }
-      .scrollTargetLayout()
-      .padding(.horizontal, horizontalContentInset)
-      .padding(.top, .ds.spacing.sm)
-      .padding(.bottom, .ds.spacing.xs)
-    }
-  }
-
-  private func searchResultsView() -> some View {
-    let results = searchItems
-
-    return ScrollView(.vertical, showsIndicators: false) {
-      VStack(alignment: .leading, spacing: .ds.spacing.md) {
-        if results.isEmpty {
-          Text(String(localized: .emNoResults))
-            .font(.ds.caption.weight(.semibold))
-            .foregroundStyle(Color.ds.textSecondary)
-            .frame(maxWidth: .infinity, minHeight: EmojiPickerMetrics.scrollHeight - .ds.spacing.lg)
-        } else {
-          LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
-            ForEach(results) { item in
-              emojiButton(
-                item: item,
-                isSelected: item.id == selectedItemID,
-                action: {
-                  onSelectEmoji(item.selection)
+      ZStack(alignment: .bottom) {
+        ScrollView(.vertical, showsIndicators: false) {
+          LazyVStack(alignment: .leading, spacing: EmojiPickerMetrics.sectionSpacing) {
+            if let error = catalog.loadError ?? (isSearching ? searchStore.loadError : nil) {
+              VStack(spacing: .ds.spacing.xs) {
+                Text(String(localized: "Emoji unavailable"))
+                Text(error).font(.ds.caption).foregroundStyle(Color.ds.textSecondary)
+                Button(String(localized: "Retry")) {
+                  catalog.reload()
+                  searchStore.reload()
                 }
-              )
-              .id(item.id)
+              }
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, .ds.spacing.sm)
+            }
+            ForEach(content.sections) { section in
+              sectionView(section).id(section.id)
+            }
+            if isSearching && content.navigationLayout.items.isEmpty && searchStore.loadError == nil
+              && catalog.loadError == nil
+            {
+              Text(String(localized: .emNoResults))
+                .font(.ds.caption.weight(.semibold))
+                .foregroundStyle(Color.ds.textSecondary)
+                .frame(
+                  maxWidth: .infinity, minHeight: EmojiPickerMetrics.scrollHeight - .ds.spacing.lg)
             }
           }
+          .id("browser-top")
+          .scrollTargetLayout()
+          .padding(.horizontal, horizontalContentInset)
+          .padding(
+            .top,
+            isSearching
+              ? EmojiPickerMetrics.searchResultsTopInset : EmojiPickerMetrics.browseTopInset
+          )
+          .padding(.bottom, EmojiPickerMetrics.categoryBarHeight + .ds.spacing.xs)
+        }
+        .onScrollPhaseChange { _, phase in
+          if phase == .interacting { activeCategoryID = nil }
+        }
+
+        .frame(height: EmojiPickerMetrics.browserHeight)
+        categoryBar(proxy: proxy)
+          .padding(.horizontal, categoryPage == 1 ? 12 : 8)
+          .frame(height: EmojiPickerMetrics.categoryBarHeight)
+          .background(.ultraThinMaterial)
+      }
+      .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) {
+        visibleSectionIDs = $0
+      }
+      .onChange(of: categoryPage) { oldPage, newPage in
+        let section = newPage > oldPage ? content.categories.first : content.categories.last
+        selectCategory(section, proxy: proxy)
+      }
+      .onChange(of: searchQuery) { _, newQuery in
+        guard !newQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        proxy.scrollTo("browser-top", anchor: .top)
+      }
+      .onChange(of: selectedItemID, initial: true) { _, id in
+        guard let id else { return }
+        withAnimation(reduceMotion ? nil : .snappy(duration: .ds.motion.quick)) {
+          proxy.scrollTo(id)
         }
       }
-      .padding(.horizontal, horizontalContentInset)
-      .padding(.top, .ds.spacing.sm)
-      .padding(.bottom, .ds.spacing.md)
     }
+    .frame(width: contentWidth, height: Self.preferredHeight)
   }
 
-  private var searchItems: [EmojiMatchItem] {
-    searchStore.results(for: normalizedSearchQuery).map(EmojiMatchItem.searchResult)
+  private var isSearching: Bool {
+    !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
-  private func sectionView(_ section: EmojiBrowserSection) -> some View {
+  private func sectionView(_ section: EmojiMatchContent.Section) -> some View {
     VStack(alignment: .leading, spacing: .ds.spacing.xs) {
-      Text(section.title)
-        .font(.ds.caption.weight(.semibold))
-        .foregroundStyle(Color.ds.textSecondary)
-
-      LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
+      if section.id == "favorites" {
+        Text(section.title).font(.ds.caption.weight(.semibold))
+          .foregroundStyle(Color.ds.textSecondary)
+      }
+      LazyVGrid(
+        columns: Array(
+          repeating: GridItem(.flexible(), spacing: .zero), count: EmojiPickerMetrics.columnCount),
+        spacing: EmojiPickerMetrics.rowSpacing
+      ) {
         ForEach(section.items) { item in
-          emojiButton(
-            item: item,
-            isSelected: item.id == selectedItemID,
-            action: {
-              onSelectEmoji(item.selection)
-            }
+          EmojiMatchCell(
+            item: item, isSelected: item.id == selectedItemID, usageStore: usageStore,
+            onSelect: onSelectEmoji, onCopy: onCopySelection, variantRequestID: $variantRequestID
           )
           .id(item.id)
         }
@@ -163,110 +153,114 @@ struct BrowserView: View {
     }
   }
 
-  private func usageSectionView(_ suggestions: [EmojiUsageEntry]) -> some View {
-    VStack(alignment: .leading, spacing: .ds.spacing.xs) {
-      Text(String(localized: .emRecentSectionTitle))
-        .font(.ds.caption.weight(.semibold))
-        .foregroundStyle(Color.ds.textSecondary)
-
-      LazyVGrid(columns: columns, alignment: .center, spacing: EmojiPickerMetrics.rowSpacing) {
-        ForEach(suggestions) { suggestion in
-          let item = EmojiMatchItem.recentSuggestion(suggestion)
-
-          emojiButton(
-            item: item,
-            isSelected: item.id == selectedItemID,
-            action: {
-              onSelectEmoji(item.selection)
-            }
-          )
-          .id(item.id)
-        }
-      }
+  @ViewBuilder private func categoryArtwork(_ symbol: String) -> some View {
+    if let image = NativeCategoryArtwork.images[symbol] {
+      Image(nsImage: image).renderingMode(.template)
+    } else {
+      Image(systemName: symbol).font(.system(size: EmojiPickerMetrics.categorySymbolSize))
     }
   }
 
-  private func emojiButton(
-    item: EmojiMatchItem,
-    isSelected: Bool,
-    action: @escaping () -> Void
-  ) -> some View {
-    Button(action: action) {
-      Text(item.selection.value)
-        .font(.system(size: EmojiPickerMetrics.emojiFontSize))
-        .frame(width: EmojiPickerMetrics.emojiCellSize, height: EmojiPickerMetrics.emojiCellSize)
-        .background {
-          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-            .fill(isSelected ? Color.ds.primary.opacity(0.16) : .clear)
-        }
-        .overlay {
-          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-            .stroke(
-              isSelected ? Color.ds.primary.opacity(0.4) : .clear,
-              lineWidth: .ds.stroke.thin
-            )
-        }
-        .contentShape(
-          RoundedRectangle(cornerRadius: .ds.radius.sm, style: .continuous)
-        )
+  private func selectCategory(_ section: EmojiMatchContent.Section?, proxy: ScrollViewProxy) {
+    guard let section else { return }
+    activeCategoryID = section.id
+    onSelectItemID(section.items.first?.id ?? "")
+    Task { @MainActor in
+      await Task.yield()
+      withAnimation(reduceMotion ? nil : .snappy(duration: .ds.motion.quick)) {
+        proxy.scrollTo(section.items.isEmpty ? "browser-top" : section.id, anchor: .top)
+      }
     }
-    .buttonStyle(.plain)
-    .accessibilityLabel(item.accessibilityLabel)
-    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 
   private func categoryBar(proxy: ScrollViewProxy) -> some View {
     HStack(spacing: .zero) {
-      ForEach(catalog.sections) { section in
+      if categoryPage == 1 {
+        pageButton(forward: false)
+      }
+      ForEach(content.categories) { section in
         Button {
-          onSelectItemID(section.items.first?.id ?? section.id)
-          withAnimation(.snappy(duration: .ds.motion.quick)) {
-            proxy.scrollTo(section.id, anchor: .top)
-          }
+          selectCategory(section, proxy: proxy)
         } label: {
-          Image(systemName: section.symbolName)
-            .font(.system(size: EmojiPickerMetrics.categorySymbolSize))
-            .foregroundStyle(Color.ds.textPrimary)
-            .frame(
-              width: EmojiPickerMetrics.categoryButtonSize,
-              height: EmojiPickerMetrics.categoryButtonSize
-            )
-            .background {
-              Circle()
-                .fill(
-                  visibleSectionIDs.first == section.id
-                    ? Color.ds.textPrimary.opacity(0.12) : .clear
-                )
+          Group {
+            if let image = catalog.categoryImages[section.id] {
+              Image(nsImage: image).renderingMode(.template)
+            } else {
+              categoryArtwork(section.symbolName)
             }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+          }
+          .foregroundStyle(Color.ds.textPrimary)
+          .frame(
+            width: EmojiPickerMetrics.categoryButtonSize,
+            height: EmojiPickerMetrics.categoryButtonSize
+          )
+          .background {
+            Circle()
+              .fill(
+                (activeCategoryID ?? visibleSectionIDs.first) == section.id
+                  ? Color.ds.textPrimary.opacity(0.12) : .clear)
+          }
+          .frame(width: categoryPage == 1 ? 26 : nil)
+          .frame(maxWidth: categoryPage == 0 ? .infinity : nil)
+          .frame(height: EmojiPickerMetrics.categoryBarHeight)
+          .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(section.title)
+        .help(section.title)
       }
+      if categoryPage == 0 && !catalog.symbolSections.isEmpty {
+        pageButton(forward: true)
+      }
+      if categoryPage == 1 { Spacer(minLength: 0) }
     }
-    .frame(maxWidth: .infinity)
   }
 
-  private func scrollSelectionIntoView(proxy: ScrollViewProxy) {
-    guard let selectedItemID else {
-      return
+  private func pageButton(forward: Bool) -> some View {
+    Button {
+      categoryPage = forward ? 1 : 0
+    } label: {
+      categoryArtwork(forward ? "chevron.right" : "chevron.left")
+        .foregroundStyle(Color.ds.textPrimary)
+        .frame(
+          width: forward ? EmojiPickerMetrics.categoryChevronWidth : 22.5,
+          height: EmojiPickerMetrics.categoryBarHeight
+        )
+        .contentShape(Rectangle())
     }
-
-    withAnimation(.snappy(duration: .ds.motion.quick)) {
-      proxy.scrollTo(selectedItemID, anchor: .center)
-    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(String(localized: forward ? "Forward" : "Back"))
+    .help(String(localized: forward ? "Symbols" : "Emoji"))
   }
 }
 
-#Preview {
-  BrowserView(
-    searchStore: EmojiSearchStore(),
-    usageStore: EmojiUsageStore(),
-    searchQuery: "",
-    selectedItemID: nil,
-    onSelectItemID: { _ in },
-    onSelectEmoji: { _ in }
-  )
-  .frame(width: EmojiPickerMetrics.contentWidth, height: BrowserView.preferredHeight)
+private enum NativeCategoryArtwork {
+  static let images: [String: NSImage] = {
+    let symbols = [
+      ("clock", "clock", "Recents"),
+      ("face.smiling", "emoji.face.grinning", "People"),
+      ("dog", "emoji.dog.face", "Nature"),
+      ("fork.knife", "emoji.apple", "FoodAndDrink"),
+      ("soccerball", "emoji.soccer.ball", "Activity"),
+      ("car", "emoji.automobile", "TravelAndPlaces"),
+      ("lightbulb", "lightbulb", "Objects"),
+      ("heart", "emoji.heart", "Symbols"),
+      ("flag", "flag", "Flags"),
+      ("face.smiling.inverse", "sticker", "Custom")
+    ]
+    let selector = NSSelectorFromString("imageWithPrivateSystemSymbolName:")
+    let method = class_getClassMethod(NSImage.self, selector)
+    let supported =
+      method.flatMap(method_getTypeEncoding).map { String(cString: $0) }
+      == "@24@0:8@16"
+    return Dictionary(
+      uniqueKeysWithValues: symbols.compactMap { key, symbol, asset in
+        if supported,
+          let image = NSImage.perform(selector, with: symbol)?.takeUnretainedValue() as? NSImage
+        {
+          return (key, image)
+        }
+        return NSImage(named: "NativeCategory" + asset).map { (key, $0) }
+      })
+  }()
 }

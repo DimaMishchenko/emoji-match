@@ -5,19 +5,9 @@ import ImagePlayground
 enum NativeGenmoji {
   struct Destination {
     let application: NSRunningApplication
-    let focusedElement: AXUIElement?
 
     static func capture() -> Destination? {
-      guard let application = NSWorkspace.shared.frontmostApplication else { return nil }
-      var focused: CFTypeRef?
-      AXUIElementCopyAttributeValue(
-        AXUIElementCreateApplication(application.processIdentifier),
-        kAXFocusedUIElementAttribute as CFString, &focused
-      )
-      let element: AXUIElement? = focused.flatMap {
-        CFGetTypeID($0) == AXUIElementGetTypeID() ? unsafeBitCast($0, to: AXUIElement.self) : nil
-      }
-      return Destination(application: application, focusedElement: element)
+      NSWorkspace.shared.frontmostApplication.map { Destination(application: $0) }
     }
   }
 
@@ -25,37 +15,7 @@ enum NativeGenmoji {
     ImagePlaygroundViewController.isAvailable
   }
 
-  private static var pendingRequest: Task<Void, Never>?
-
-  static func open(
-    prompt: String, destination: Destination?, shortcutMonitor: SystemShortcutMonitor
-  ) {
-    pendingRequest?.cancel()
-    guard let destination, !destination.application.isTerminated,
-      destination.application.processIdentifier != ProcessInfo.processInfo.processIdentifier
-    else { return }
-    pendingRequest = Task {
-      try? await Task.sleep(for: .milliseconds(100))
-      guard !Task.isCancelled else { return }
-      guard destination.application.isActive else { return }
-      if let element = destination.focusedElement {
-        AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-      }
-      shortcutMonitor.openNativeEmojiPicker()
-      for _ in 0..<50 {
-        try? await Task.sleep(for: .milliseconds(40))
-        guard !Task.isCancelled, destination.application.isActive else { return }
-        if advanceCreator(prompt: prompt) { return }
-      }
-    }
-  }
-
-  static func cancelPendingRequest() {
-    pendingRequest?.cancel()
-    pendingRequest = nil
-  }
-
-  private static func advanceCreator(prompt: String) -> Bool {
+  static func advanceCreator(prompt: String) -> Bool {
     guard
       let application =
         NSRunningApplication.runningApplications(

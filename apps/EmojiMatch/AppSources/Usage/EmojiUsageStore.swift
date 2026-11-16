@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import Observation
 
 struct EmojiUsageEntry: Identifiable, Equatable, Sendable {
   let selection: EmojiSelection
@@ -10,6 +12,8 @@ struct EmojiUsageEntry: Identifiable, Equatable, Sendable {
   }
 }
 
+@MainActor
+@Observable
 final class EmojiUsageStore {
   fileprivate struct Record: Codable, Equatable, Hashable, Sendable {
     let selection: EmojiSelection
@@ -18,9 +22,9 @@ final class EmojiUsageStore {
   }
 
   private enum Constants {
-    static let historyLimit = 64
-    static let suggestionsLimit = 12
-    static let storageKey = "com.dimasike.EmojiMatch.emojiUsageHistory.v1"
+    nonisolated static let historyLimit = 64
+    nonisolated static let suggestionsLimit = 12
+    nonisolated static let storageKey = "com.dimasike.EmojiMatch.emojiUsageHistory.v1"
   }
 
   private let defaults: UserDefaults
@@ -28,27 +32,113 @@ final class EmojiUsageStore {
   private let historyLimit: Int
   private let now: () -> Date
   private var records: [Record]
+  private let library: EmojiLibraryStorage
+  private let historyWritable: Bool
 
   init(
     defaults: UserDefaults = .standard,
     storageKey: String = Constants.storageKey,
     historyLimit: Int = Constants.historyLimit,
-    now: @escaping () -> Date = Date.init
+    now: @escaping () -> Date = Date.init,
+    libraryDirectory: URL? = nil,
+    assetCountLimit: Int = 256,
+    assetByteLimit: Int = 100 * 1024 * 1024
   ) {
+    self.library = EmojiLibraryStorage(
+      directory: libraryDirectory ?? EmojiLibraryStorage.defaultDirectory(storageKey: storageKey),
+      countLimit: assetCountLimit,
+      byteLimit: assetByteLimit
+    )
     self.defaults = defaults
     self.storageKey = storageKey
     self.historyLimit = max(0, historyLimit)
     self.now = now
-    self.records = Self.loadRecords(from: defaults, storageKey: storageKey)
+    let loaded = Self.loadRecords(from: defaults, storageKey: storageKey)
+    self.records = loaded ?? []
+    self.historyWritable = loaded != nil
     normalizeAndPersist()
   }
 
+  var favorites: [EmojiSelection] {
+    library.favorites.filter(isAvailable)
+  }
+
+  var importedSelections: [EmojiSelection] {
+    library.importedSelections
+  }
+
+  func isFavorite(_ selection: EmojiSelection) -> Bool {
+    favorites.contains(selection)
+  }
+
+  func toggleFavorite(_ selection: EmojiSelection) {
+    guard Self.isValid(selection), isAvailable(selection) else { return }
+    library.toggleFavorite(selection)
+  }
+
+  func removeRecent(_ selection: EmojiSelection) {
+    records.removeAll { $0.selection == selection }
+    normalizeAndPersist()
+  }
+
+  func clearHistory() {
+    records.removeAll()
+    normalizeAndPersist()
+  }
+
+  func preferredSelection(for base: EmojiSelection) -> EmojiSelection {
+    guard let selection = library.preferences[base.id], isAvailable(selection) else { return base }
+    return selection
+  }
+
+  func setPreferredSelection(_ selection: EmojiSelection, for base: EmojiSelection) {
+    guard Self.isValid(base), Self.isValid(selection), isAvailable(selection) else { return }
+    library.setPreferredSelection(selection, for: base)
+  }
+
+  func importAdaptiveGlyph(_ glyph: NSAdaptiveImageGlyph) throws -> EmojiSelection {
+    try library.importData(
+      glyph.imageContent, kind: .adaptiveGlyph, identifier: glyph.contentIdentifier,
+      typeIdentifier: NSAdaptiveImageGlyph.contentType.identifier,
+      description: glyph.contentDescription
+    )
+  }
+
+  func importImage(data: Data, typeIdentifier: String, description: String) throws -> EmojiSelection
+  {
+    try library.importData(
+      data, kind: .image, identifier: nil, typeIdentifier: typeIdentifier, description: description
+    )
+  }
+
+  func data(for selection: EmojiSelection) -> Data? {
+    library.data(for: selection)
+  }
+
+  func refreshLibrary() {
+    library.refresh()
+  }
+
+  func image(for selection: EmojiSelection) -> NSImage? {
+    library.image(for: selection)
+  }
+
+  func deleteImported(_ selection: EmojiSelection) {
+    guard library.deleteImported(selection) else { return }
+    removeRecent(selection)
+  }
+
+  private func isAvailable(_ selection: EmojiSelection) -> Bool {
+    library.isAvailable(selection)
+  }
+
   var isEmpty: Bool {
-    records.isEmpty
+    suggestions(limit: 1).isEmpty
   }
 
   func record(_ selection: EmojiSelection, at date: Date? = nil) {
-    guard Self.isValid(selection) else {
+    guard Self.isValid(selection), selection.asset == nil || library.data(for: selection) != nil
+    else {
       return
     }
 
@@ -74,23 +164,30 @@ final class EmojiUsageStore {
   }
 
   func suggestions(limit: Int = Constants.suggestionsLimit) -> [EmojiUsageEntry] {
-    records.prefix(max(0, limit)).map(EmojiUsageEntry.init(record:))
+    records.filter { isAvailable($0.selection) }.prefix(max(0, limit))
+      .map(EmojiUsageEntry.init(record:))
   }
 
   func topSelection() -> EmojiSelection? {
-    records.first?.selection
+    suggestions(limit: 1).first?.selection
   }
 }
 
 private extension EmojiUsageStore {
-  static func loadRecords(from defaults: UserDefaults, storageKey: String) -> [Record] {
+  static func loadRecords(from defaults: UserDefaults, storageKey: String) -> [Record]? {
     guard let data = defaults.data(forKey: storageKey) else {
       return []
     }
 
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .secondsSince1970
-    return (try? decoder.decode([Record].self, from: data)) ?? []
+    guard let elements = try? JSONSerialization.jsonObject(with: data) as? [Any] else { return nil }
+    return elements.compactMap { element in
+      guard JSONSerialization.isValidJSONObject(element),
+        let bytes = try? JSONSerialization.data(withJSONObject: element)
+      else { return nil }
+      return try? decoder.decode(Record.self, from: bytes)
+    }
   }
 
   func normalizeAndPersist() {
@@ -103,6 +200,7 @@ private extension EmojiUsageStore {
   }
 
   func persist(_ records: [Record]) {
+    guard historyWritable else { return }
     guard !records.isEmpty else {
       defaults.removeObject(forKey: storageKey)
       return

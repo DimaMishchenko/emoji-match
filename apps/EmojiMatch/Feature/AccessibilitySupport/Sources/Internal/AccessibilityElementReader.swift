@@ -6,6 +6,9 @@ protocol AccessibilityElementReading {
   func refreshedFocusedElement(after element: AXUIElement?) -> AXUIElement?
   func ancestorElements(of element: AXUIElement, maxDepth: Int) -> [AXUIElement]
   func childElements(of element: AXUIElement) -> [AXUIElement]
+  func completeChildElements(of element: AXUIElement) -> [AXUIElement]?
+  func isDialog(_ element: AXUIElement) -> Bool
+  func ownedOrLinkedElements(of element: AXUIElement) -> [AXUIElement]?
   func role(of element: AXUIElement) -> String?
   func stringValue(of element: AXUIElement) -> String?
   func isExplicitlyEditable(_ element: AXUIElement) -> Bool
@@ -27,6 +30,29 @@ protocol AccessibilityElementReading {
 }
 
 struct AccessibilityElementReader: AccessibilityElementReading {
+  struct ArrayAccess {
+    var attributeNames: (AXUIElement) -> [String]? = { element in
+      var names: CFArray?
+      guard AXUIElementCopyAttributeNames(element, &names) == .success else { return nil }
+      return names as? [String]
+    }
+    var elements: (AXUIElement, String) -> [AXUIElement]? = { element, attribute in
+      var count: CFIndex = 0
+      guard AXUIElementGetAttributeValueCount(element, attribute as CFString, &count) == .success,
+        count >= 0, count <= 128
+      else { return nil }
+      if count == 0 { return [] }
+      var values: CFArray?
+      guard
+        AXUIElementCopyAttributeValues(element, attribute as CFString, 0, count, &values)
+          == .success, let elements = values as? [AXUIElement], elements.count == count
+      else { return nil }
+      return elements
+    }
+  }
+
+  var arrayAccess = ArrayAccess()
+
   private enum Constants {
     static let editableAttribute = "AXEditable" as CFString
     static let selectedTextMarkerRangeAttribute = "AXSelectedTextMarkerRange" as CFString
@@ -101,6 +127,26 @@ struct AccessibilityElementReader: AccessibilityElementReading {
     }
 
     return []
+  }
+
+  func isDialog(_ element: AXUIElement) -> Bool {
+    role(of: element) == "AXDialog"
+      || stringAttribute(kAXSubroleAttribute as CFString, from: element) == "AXApplicationDialog"
+      || stringAttribute(kAXSubroleAttribute as CFString, from: element) == "AXDialog"
+  }
+
+  func completeChildElements(of element: AXUIElement) -> [AXUIElement]? {
+    guard let names = arrayAccess.attributeNames(element) else { return nil }
+    guard names.contains(kAXChildrenAttribute) else {
+      return names.contains(where: {
+        [kAXVisibleChildrenAttribute, kAXRowsAttribute, kAXContentsAttribute].contains($0)
+      }) ? nil : []
+    }
+    return completeElementArrays([kAXChildrenAttribute], from: element, names: names)
+  }
+
+  func ownedOrLinkedElements(of element: AXUIElement) -> [AXUIElement]? {
+    completeElementArrays(["AXOwns", "AXLinkedUIElements"], from: element)
   }
 
   func role(of element: AXUIElement) -> String? {
@@ -277,6 +323,23 @@ struct AccessibilityElementReader: AccessibilityElementReading {
 }
 
 private extension AccessibilityElementReader {
+  func completeElementArrays(
+    _ attributes: [String], from element: AXUIElement, names suppliedNames: [String]? = nil
+  ) -> [AXUIElement]? {
+    guard let names = suppliedNames ?? arrayAccess.attributeNames(element) else { return nil }
+    var result: [AXUIElement] = []
+    for attribute in attributes where names.contains(attribute) {
+      guard let values = arrayAccess.elements(element, attribute), values.count <= 128 else {
+        return nil
+      }
+      for value in values where !result.contains(where: { CFEqual($0, value) }) {
+        guard result.count < 128 else { return nil }
+        result.append(value)
+      }
+    }
+    return result
+  }
+
   func copyAttribute(_ attribute: CFString, from element: AXUIElement) -> CFTypeRef? {
     var value: CFTypeRef?
     let status = AXUIElementCopyAttributeValue(element, attribute, &value)
@@ -311,7 +374,7 @@ private extension AccessibilityElementReader {
     }
 
     let array = unsafeBitCast(value, to: CFArray.self)
-    let count = CFArrayGetCount(array)
+    let count = min(CFArrayGetCount(array), 129)
     guard count > 0 else {
       return nil
     }

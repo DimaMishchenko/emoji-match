@@ -22,11 +22,10 @@ struct ManualAccessibilityWarmup {
     }
 
     let applicationElement = AXUIElementCreateApplication(processIdentifier)
-    AXUIElementSetAttributeValue(
-      applicationElement,
-      Constants.manualAccessibilityAttribute,
-      kCFBooleanTrue
-    )
+    for attribute in [Constants.manualAccessibilityAttribute, "AXEnhancedUserInterface" as CFString]
+    {
+      AXUIElementSetAttributeValue(applicationElement, attribute, kCFBooleanTrue)
+    }
 
     return true
   }

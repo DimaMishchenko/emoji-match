@@ -4,6 +4,20 @@ import Testing
 @testable import EmojiMatch
 
 @Suite struct EmojiMatchPanelGeometryTests {
+  @Test func outsideClicksDismissButPickerAndAuxiliaryMenuClicksRemainUsable() {
+    let picker = CGRect(x: 100, y: 100, width: 320, height: 444)
+    let menu = CGRect(x: 300, y: 200, width: 180, height: 100)
+    #expect(
+      !EmojiMatchPanelGeometry.shouldDismissClick(
+        at: CGPoint(x: 110, y: 110), picker: picker, auxiliary: []))
+    #expect(
+      !EmojiMatchPanelGeometry.shouldDismissClick(
+        at: CGPoint(x: 450, y: 220), picker: picker, auxiliary: [menu]))
+    #expect(
+      EmojiMatchPanelGeometry.shouldDismissClick(
+        at: CGPoint(x: 20, y: 20), picker: picker, auxiliary: [menu]))
+  }
+
   @Test func zeroWidthCaretPreservesCoordinates() {
     #expect(
       EmojiMatchPanelGeometry.appKitRect(

@@ -5,6 +5,145 @@ import Testing
 @testable import AccessibilitySupport
 
 @Suite struct TextAnchorLocatorTests {
+  @Test func activeResultResolvesExplicitOwnerForAnchorAndInsertion() {
+    for linked in [false, true] {
+      let fixture = ownedInputFixture()
+      fixture.input.links = linked ? [fixture.list.element] : []
+      fixture.input.owns = linked ? [] : [fixture.list.element]
+      let reader = AnchorReader(fixture.nodes)
+      let resolved = TextInputFocusLocator(elements: reader).resolve(fixture.result.element)
+      #expect(resolved.map { CFEqual($0, fixture.input.element) } == true)
+      #expect(
+        TextAnchorLocator(elements: reader).anchorRect(startingFrom: fixture.result.element)
+          == fixture.input.rect)
+    }
+  }
+
+  @Test func unrelatedInputAndFakeSelectionDoNotResolveResultLabel() {
+    let fixture = ownedInputFixture()
+    fixture.input.owns = []
+    let reader = AnchorReader(fixture.nodes)
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+    #expect(
+      TextAnchorLocator(elements: reader).anchorRect(startingFrom: fixture.result.element) == nil)
+  }
+
+  @Test func ambiguousOwnersAreRejectedEvenWhenOneHasInvalidGeometry() {
+    let fixture = ownedInputFixture()
+    let other = AnchorElement(5)
+    other.links = [fixture.list.element]
+    fixture.dialog.children.append(other.element)
+    for rect in [fixture.input.rect, nil] {
+      other.rect = rect
+      let reader = AnchorReader(fixture.nodes + [other])
+      #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+    }
+  }
+
+  @Test func ownerOutsideNearestDialogIsNotSearched() {
+    let fixture = ownedInputFixture()
+    let outer = AnchorElement(5)
+    outer.role = kAXWindowRole
+    outer.children = [fixture.dialog.element, fixture.input.element]
+    fixture.dialog.children = [fixture.list.element]
+    fixture.result.ancestors.append(outer.element)
+    let reader = AnchorReader(fixture.nodes + [outer])
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+  }
+
+  @Test func unreadableOwnerBranchOrRelationshipsRejectOtherwiseUniqueOwner() {
+    let fixture = ownedInputFixture()
+    let branch = AnchorElement(5)
+    branch.role = kAXGroupRole
+    fixture.dialog.children.append(branch.element)
+    let reader = AnchorReader(fixture.nodes + [branch])
+    branch.childrenReadable = false
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+    branch.childrenReadable = true
+    branch.role = kAXTextFieldRole
+    branch.relationshipsReadable = false
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+    branch.relationshipsReadable = true
+    #expect(
+      TextInputFocusLocator(elements: reader).resolve(fixture.result.element)
+        .map { CFEqual($0, fixture.input.element) } == true)
+  }
+
+  @Test func staleOwnerGeometryIsRejectedAndStaleCaretStaysWithinOwner() {
+    let fixture = ownedInputFixture()
+    let reader = AnchorReader(fixture.nodes)
+    for rect in [
+      nil, CGRect.zero, CGRect(x: 900, y: 900, width: 200, height: 34),
+      CGRect(x: CGFloat.infinity, y: 127, width: 200, height: 34)
+    ] {
+      fixture.input.rect = rect
+      #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+      #expect(
+        TextAnchorLocator(elements: reader).anchorRect(startingFrom: fixture.result.element) == nil)
+    }
+    fixture.input.rect = CGRect(x: 478, y: 127, width: 556, height: 34)
+    fixture.input.markerBounds = fixture.result.rect
+    #expect(
+      TextAnchorLocator(elements: reader).anchorRect(startingFrom: fixture.result.element)
+        == fixture.input.rect)
+  }
+
+  @Test func staticTextInsertionSignalIsRejectedButGroupWrapperIsPreserved() {
+    let field = AnchorElement(1)
+    field.role = kAXStaticTextRole
+    field.insertionLine = 0
+    let reader = AnchorReader([field])
+    #expect(TextAnchorLocator(elements: reader).anchorRect(startingFrom: field.element) == nil)
+    field.role = kAXGroupRole
+    #expect(
+      TextAnchorLocator(elements: reader).anchorRect(startingFrom: field.element) == field.rect)
+  }
+
+  @Test func resultWithoutDialogDoesNotUseFakeInsertionLineOnList() {
+    let fixture = ownedInputFixture()
+    fixture.list.insertionLine = 0
+    fixture.dialog.dialog = false
+    let reader = AnchorReader(fixture.nodes)
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+  }
+
+  @Test func nestedDialogInputCannotOwnOuterDialogResult() {
+    let fixture = ownedInputFixture()
+    let nested = AnchorElement(5)
+    nested.role = kAXGroupRole
+    nested.dialog = true
+    nested.children = [fixture.input.element]
+    fixture.dialog.children = [fixture.list.element, nested.element]
+    let reader = AnchorReader(fixture.nodes + [nested])
+    #expect(TextInputFocusLocator(elements: reader).resolve(fixture.result.element) == nil)
+  }
+
+  @Test func ownerSearchFailsClosedAtTraversalBudgetAndHandlesCycles() {
+    let fixture = ownedInputFixture()
+    fixture.dialog.children.append(fixture.dialog.element)
+    let reader = AnchorReader(fixture.nodes)
+    #expect(
+      TextInputFocusLocator(elements: reader).resolve(fixture.result.element)
+        .map { CFEqual($0, fixture.input.element) } == true)
+    let extra = (10..<140).map { AnchorElement(pid_t($0)) }
+    fixture.dialog.children += extra.map(\.element)
+    #expect(
+      TextInputFocusLocator(elements: AnchorReader(fixture.nodes + extra))
+        .resolve(fixture.result.element) == nil)
+  }
+
+  @Test func ownedInputKeepsExactGeometryWithinItsOwnSubtree() {
+    let fixture = ownedInputFixture()
+    let editor = AnchorElement(5)
+    editor.rect = fixture.input.rect
+    editor.markerBounds = CGRect(x: 500, y: 130, width: 1, height: 18)
+    fixture.input.children = [editor.element]
+    let reader = AnchorReader(fixture.nodes + [editor])
+    #expect(
+      TextAnchorLocator(elements: reader).anchorRect(startingFrom: fixture.result.element)
+        == editor.markerBounds)
+  }
+
   @Test func focusedFieldWithoutSelectionUsesItsOwnBounds() {
     let field = AnchorElement(1)
     let reader = AnchorReader([field])
@@ -312,6 +451,9 @@ import Testing
 private final class AnchorElement {
   let element: AXUIElement
   var role: String? = kAXTextFieldRole
+  var dialog = false
+  var owns: [AXUIElement] = []
+  var links: [AXUIElement] = []
   var rect: CGRect? = CGRect(x: 100, y: 100, width: 300, height: 60)
   var text: String?
   var selection: CFRange?
@@ -321,6 +463,8 @@ private final class AnchorElement {
   var bounds: [String: CGRect] = [:]
   var ancestors: [AXUIElement] = []
   var children: [AXUIElement] = []
+  var childrenReadable = true
+  var relationshipsReadable = true
 
   init(_ identifier: pid_t) {
     element = AXUIElementCreateApplication(identifier)
@@ -345,6 +489,13 @@ private final class AnchorReader: AccessibilityElementReading {
     Array(node(element).ancestors.prefix(maxDepth))
   }
   func childElements(of element: AXUIElement) -> [AXUIElement] { node(element).children }
+  func completeChildElements(of element: AXUIElement) -> [AXUIElement]? {
+    node(element).childrenReadable ? node(element).children : nil
+  }
+  func isDialog(_ element: AXUIElement) -> Bool { node(element).dialog }
+  func ownedOrLinkedElements(of element: AXUIElement) -> [AXUIElement]? {
+    node(element).relationshipsReadable ? node(element).owns + node(element).links : nil
+  }
   func role(of element: AXUIElement) -> String? { node(element).role }
   func stringValue(of element: AXUIElement) -> String? { node(element).text }
   func isExplicitlyEditable(_ element: AXUIElement) -> Bool { false }
@@ -379,4 +530,31 @@ private final class AnchorReader: AccessibilityElementReading {
   func textMarkerSelectionBounds(
     for selectedTextMarkerRange: AXTextMarkerRange, in element: AXUIElement
   ) -> CGRect? { node(element).markerBounds }
+}
+
+private func ownedInputFixture() -> (
+  result: AnchorElement, list: AnchorElement, input: AnchorElement, dialog: AnchorElement,
+  nodes: [AnchorElement]
+) {
+  let result = AnchorElement(1)
+  result.role = kAXStaticTextRole
+  result.rect = CGRect(x: 477, y: 204, width: 552, height: 48)
+  result.insertionLine = 0
+  result.selection = CFRange(location: 0, length: 0)
+  result.markerBounds = .zero
+  let list = AnchorElement(2)
+  list.role = kAXListRole
+  list.rect = CGRect(x: 469, y: 168, width: 574, height: 329)
+  list.children = [result.element]
+  let dialog = AnchorElement(3)
+  dialog.role = kAXGroupRole
+  dialog.dialog = true
+  dialog.rect = CGRect(x: 468, y: 119, width: 576, height: 420)
+  let input = AnchorElement(4)
+  input.role = "AXComboBox"
+  input.rect = CGRect(x: 478, y: 127, width: 556, height: 34)
+  input.owns = [list.element]
+  dialog.children = [list.element, input.element]
+  result.ancestors = [list.element, dialog.element]
+  return (result, list, input, dialog, [result, list, input, dialog])
 }

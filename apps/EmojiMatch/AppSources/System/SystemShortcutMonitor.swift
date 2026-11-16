@@ -3,6 +3,13 @@ import Carbon.HIToolbox
 import Foundation
 
 final class SystemShortcutMonitor {
+  var onRegistrationChanged: ((String?) -> Void)?
+  var isSuspended = false {
+    didSet {
+      guard isSuspended != oldValue else { return }
+      if isSuspended { unregisterHotKey() } else { registerHotKey() }
+    }
+  }
   private var eventHandler: EventHandlerRef?
   private var hotKey: EventHotKeyRef?
   private var isStarted = false
@@ -73,12 +80,13 @@ final class SystemShortcutMonitor {
   }
 
   private func registerHotKey() {
+    guard isStarted, !isSuspended, nativePickerRequestID == nil, hotKey == nil else { return }
     let hotKeyID = EventHotKeyID(
       signature: emojiMatchShortcutSignature,
       id: systemShortcutIdentifier
     )
 
-    RegisterEventHotKey(
+    let status = RegisterEventHotKey(
       shortcut.keyCode,
       shortcut.carbonModifiers,
       hotKeyID,
@@ -86,6 +94,9 @@ final class SystemShortcutMonitor {
       0,
       &hotKey
     )
+    onRegistrationChanged?(
+      status == noErr
+        ? nil : "This shortcut could not be registered (\(status)). Choose another shortcut.")
   }
 
   private func unregisterHotKey() {

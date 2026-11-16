@@ -1,6 +1,15 @@
+> November 16 follow-up: the app now uses installed static CharacterPicker emoji ordering and
+> five symbol categories. An app-owned input client successfully captures newly generated Genmoji
+> from the real compact creator, persists original bytes and reuses them through rich paste. Earlier
+> failed-receiver findings below are historical; whole-system-library enumeration remains excluded.
+
 # Emoji Match: native picker parity and owned expressive-image history
 
 Audit date: 2026-11-15. Scope: read-only source, SDK and existing runtime evidence review; current primary Apple documentation. This audit creates only this document. No desktop UI, new runtime generation, source edits, agents, commits or account changes were performed by this research agent. The lead supplied the receiver runtime results during the audit; their source and output artifacts were inspected here.
+
+Current scope decision (2026-11-16): Fn/Globe replacement is excluded. The current
+[implementation contract](../specs/emoji-match-spec.md) separates committed work, product
+exclusions and retained later goals. The feature inventory below remains a record of the audit.
 
 ## Decision
 
@@ -56,7 +65,7 @@ Severity: **P0** blocks the stated rich-image/history objective or an absolute p
 | Customize categories, character sizes, clear frequently used [A] | Fixed category bar/metrics, no corresponding settings; S | P2 | Add app-owned visibility/size controls and explicit clear history. Keep pins separate from clear recents. |
 | Unicode/name/code search and font information | Names available; no scalar inspector/font variants UI; S. Apple documents name/code search [A]; exact current native font/details panel unverified here. | P2 | Own inspector: scalar sequence, Unicode version/name, copy sequence/code, text vs emoji rendering and installed-font previews via CoreText. Validate native details manually before claiming parity. |
 | Keyboard launch, Fn/Globe, Edit menu integration [A] | Registers Ctrl-Cmd-Space; `SystemShortcutMonitor.swift:57–79` temporarily releases hotkey for native handoff; `AppSettings.swift` has in-memory shortcut only; S | System Fn/Globe/Edit routes not replaced; no complete settings UI, P1 | Provide configurable/persisted shortcut, registration failure feedback, native escape route. Treat macOS keyboard settings as user-owned; test physical Fn/Globe and app menu paths separately. |
-| Selected text and inline replacement suggestions [A] | AX selected-text prefill; user-confirmed paste; S/spec | Native preceding-word suggestions and replacement semantics not matched; P1 | Explicit selected/preceding-text action with verified range and recipient identity. Do not silently replace surrounding text based on an estimate. |
+| Selected text and inline replacement suggestions [A] | Selected-text prefill is specified but not implemented: App passes no initial query and EmojiMatchView starts empty; S/spec | Selected-text prefill missing; native preceding-word suggestions/replacement also absent, P1 | Capture bounded selected text before opening with secure-input/recipient checks. Do not silently replace surrounding text based on an estimate. |
 | Keyboard selection/dismissal | Grid arrow state; Return; Escape clears then closes; R/spec; `EmojiMatchNavigationState.swift` | Good bounded evidence, not complete parity; P2 | Include category/variant/favorites/sticker keyboard paths, search caret behavior, Tab chain, IME marked text, RTL, key repeat, empty states and cancellation. |
 | Accessibility | Cell and category labels/selection traits; S, `BrowserView:214–215,245`; recents label is raw value, `EmojiMatchItem:19–24` | No audited VoiceOver end-to-end behavior; P1 | Describe glyphs with content description; label variants/actions, announce selection/results, test VoiceOver, contrast, reduced motion and larger content. Screenshot or trait presence is insufficient. |
 | Caret placement, focus, spaces and fullscreen | Native popover shell/AX anchoring; R, picker verification | Some exact fixtures; Electron estimate differed; P1 | Preserve existing evidence and expand app/display/scale/secure-field matrix. Owned receiver introduces new key-window/focus lifecycle requiring fresh tests. |

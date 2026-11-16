@@ -1,19 +1,14 @@
 import AppKit
 import Darwin
-import DesignSystem
 import ObjectiveC
 import SwiftUI
 
 struct GenmojiButtonArtwork: View {
-  var presentationID = 0
-
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     NativeGenmojiArtwork(
-      reduceMotion: reduceMotion,
-      presentationID: presentationID,
-      tint: NSColor(Color.ds.textPrimary)
+      reduceMotion: reduceMotion
     )
     .allowsHitTesting(false)
     .accessibilityHidden(true)
@@ -22,15 +17,13 @@ struct GenmojiButtonArtwork: View {
 
 private struct NativeGenmojiArtwork: NSViewRepresentable {
   let reduceMotion: Bool
-  let presentationID: Int
-  let tint: NSColor
 
   func makeNSView(context: Context) -> ArtworkView {
     ArtworkView()
   }
 
   func updateNSView(_ view: ArtworkView, context: Context) {
-    view.configure(reduceMotion: reduceMotion, presentationID: presentationID, tint: tint)
+    view.configure(reduceMotion: reduceMotion)
   }
 
   func sizeThatFits(_ proposal: ProposedViewSize, nsView: ArtworkView, context: Context) -> CGSize?
@@ -43,10 +36,10 @@ private struct NativeGenmojiArtwork: NSViewRepresentable {
   }
 
   final class ArtworkView: NSView {
-    private let imageView = NSImageView(image: NativeAnimation.makeImage())
+    private let imageView = NSImageView(image: NSImage(named: "NativeGenmojiResting") ?? NSImage())
     private let animationView: NSView?
     private var reduceMotion = true
-    private var presentationID: Int?
+    private var rollPending = false
 
     override init(frame frameRect: NSRect) {
       animationView = NativeAnimation.makeView()
@@ -79,6 +72,9 @@ private struct NativeGenmojiArtwork: NSViewRepresentable {
       super.layout()
       imageView.frame = bounds
       animationView?.frame = bounds
+      if rollPending, !bounds.isEmpty {
+        roll()
+      }
     }
 
     override func viewDidMoveToWindow() {
@@ -90,13 +86,9 @@ private struct NativeGenmojiArtwork: NSViewRepresentable {
       }
     }
 
-    func configure(reduceMotion: Bool, presentationID: Int, tint: NSColor) {
-      imageView.contentTintColor = tint
-      let shouldRoll =
-        self.reduceMotion && !reduceMotion
-        || self.presentationID.map { $0 != presentationID } == true
+    func configure(reduceMotion: Bool) {
+      let shouldRoll = self.reduceMotion && !reduceMotion
       self.reduceMotion = reduceMotion
-      self.presentationID = presentationID
       if reduceMotion {
         stop()
       } else if shouldRoll {
@@ -105,12 +97,16 @@ private struct NativeGenmojiArtwork: NSViewRepresentable {
     }
 
     func stop() {
+      rollPending = false
       animationView?.perform(NativeAnimation.detach)
       imageView.isHidden = false
     }
 
     private func roll() {
       guard !reduceMotion, window != nil else { return }
+      rollPending = bounds.isEmpty
+      guard !rollPending else { return }
+      animationView?.frame = bounds
       animationView?.perform(NativeAnimation.roll)
     }
   }
@@ -139,20 +135,6 @@ private enum NativeAnimation {
     }
     return viewClass
   }()
-
-  static func makeImage() -> NSImage {
-    let selector = NSSelectorFromString("imageWithPrivateSystemSymbolName:")
-    if let method = class_getClassMethod(NSImage.self, selector),
-      let encoding = method_getTypeEncoding(method),
-      String(cString: encoding) == "@24@0:8@16",
-      let symbol = NSImage.perform(selector, with: "emoji.face.grinning.and.plus.inverse")?
-        .takeUnretainedValue() as? NSImage,
-      let configured = symbol.withSymbolConfiguration(.init(pointSize: 11, weight: .regular))
-    {
-      return configured
-    }
-    return NSImage(named: "Genmoji") ?? NSImage()
-  }
 
   static func makeView() -> NSView? {
     viewClass?.init(frame: .zero)

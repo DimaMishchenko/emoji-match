@@ -4,7 +4,6 @@ import ApplicationServices
 struct TextAnchorLocator {
   private enum Constants {
     static let manualAccessibilityWarmupDelay: CFTimeInterval = 0.15
-    static let maximumAncestorDepth = 8
     static let maximumDescendantDepth = 4
     static let maximumCandidateCount = 64
   }
@@ -60,11 +59,8 @@ extension TextAnchorLocator {
       return nil
     }
 
-    let lineage =
-      [focusedElement]
-      + elements.ancestorElements(
-        of: focusedElement, maxDepth: Constants.maximumAncestorDepth)
-    guard let inputElement = lineage.first(where: isTextInputCandidate) else {
+    guard let inputElement = TextInputFocusLocator(elements: elements).resolve(focusedElement)
+    else {
       return nil
     }
 
@@ -442,19 +438,7 @@ private extension TextAnchorLocator {
 
 private extension TextAnchorLocator {
   func isTextInputCandidate(_ element: AXUIElement) -> Bool {
-    let role = elements.role(of: element)
-    guard role != kAXWindowRole, role != kAXApplicationRole else {
-      return false
-    }
-    return isEditableTextElement(element)
-      || elements.insertionPointLine(of: element)
-        .map(FocusedTextAnchorHeuristics.isPlausibleInsertionPointLine)
-        ?? false
-  }
-
-  func isEditableTextElement(_ element: AXUIElement) -> Bool {
-    elements.isExplicitlyEditable(element)
-      || elements.isEditableTextRole(elements.role(of: element))
+    TextInputFocusLocator(elements: elements).isTextInputCandidate(element)
   }
 
   func isSingleLineTextElement(_ element: AXUIElement) -> Bool {

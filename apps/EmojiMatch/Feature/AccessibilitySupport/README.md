@@ -4,16 +4,17 @@ Small app-local helper module for Accessibility-driven behavior in `EmojiMatch`.
 
 ## Purpose
 
-This target owns two things:
+This target owns:
 
 - checking and requesting macOS Accessibility permission
+- identifying the semantic focused text input for insertion capture
 - resolving the best available text anchor near the current insertion point
 
 It is intentionally app-specific. It is not meant to be shared through `Package.swift`.
 
 ## Public API
 
-Use the module through two static helpers:
+Use the module through static helpers:
 
 ```swift
 import AccessibilitySupport
@@ -64,10 +65,34 @@ Text bounds must be finite with positive height; zero-width carets are supported
 input rectangle are rejected, allowing two points of tolerance for AX edge rounding. This validation
 also applies to nearby-character and line-range fallbacks and to nonempty selections.
 
-Discovery starts at the nearest text input in the focused element ancestry and stays within that
-input subtree, with bounded traversal and AX identity deduplication. It does not search sibling
-inputs through a window or application ancestor. When the app exposes only nontext focus or no
-identifiable focused input, the resolver returns `nil`; it does not guess a field in the window.
+Discovery normally starts at the nearest text input in the focused element ancestry. Static text
+labels never qualify solely from insertion-line or selection attributes; nonstatic text wrappers
+retain the valid insertion-line fallback.
+
+For active-descendant result focus inside a dialog, the semantic input is instead the unique
+editable input whose `AXOwns` or `AXLinkedUIElements` explicitly references the focused list ancestor.
+Only the nearest dialog is searched (including `AXGroup` / `AXApplicationDialog`); nested dialogs
+and the result list subtree are excluded. Search is limited to 12 focus ancestors, 8 descendant
+levels and 128 distinct elements, with AX identity deduplication. Incomplete traversal, ambiguous
+owners, missing/invalid geometry, or owner/list rectangles outside the dialog return `nil`. AX array
+reads for owner discovery require the complete advertised `AXChildren` collection, capped at 128
+elements. Visible children, rows or contents alone are partial and cannot establish completeness.
+Failed advertised child/ownership reads return `nil`; an element advertising no child collections
+is a leaf. Ordinary anchor geometry keeps its separate bounded best-effort descendant reads.
+There is no whole-window field guess and an unrelated field cannot become the destination.
+
+The warmup requests both `AXManualAccessibility` and `AXEnhancedUserInterface` once per recipient
+process. The latter enabled the observed Chromium search accessibility tree even though its setter
+returned an error; actual focus and input structure, not setter status, determine usability.
+
+`TextInputFocusResolver.focusedElement(inApplication: pid_t) -> AXUIElement?` exposes this same
+resolution for app-owned insertion destination capture and classification. Call it before showing
+the picker, while the recipient app still owns focus. The app retains and validates the captured
+destination; this module does not own insertion or app lifecycle. A resolved owner need not expose
+`AXFocused=true` when its active descendant owns AX focus.
+
+Once the input is chosen, geometry discovery stays within that input subtree with its existing
+bounded traversal. It does not borrow caret/selection geometry from result rows or sibling inputs.
 
 Estimated text layout remains approximate. A stale caret still inside the same field cannot always
 be detected from AX alone, and an AX-poor app may provide only field-level placement. Native picker

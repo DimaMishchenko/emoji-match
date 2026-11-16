@@ -1,5 +1,6 @@
 import Emojis
 import Foundation
+import Observation
 
 struct EmojiSearchResult: Identifiable, Equatable {
   let id: String
@@ -15,7 +16,8 @@ struct EmojiSearchResult: Identifiable, Equatable {
   }
 }
 
-struct EmojiSearchStore {
+@Observable
+final class EmojiSearchStore {
   private struct Entry {
     let id: String
     let value: String
@@ -58,12 +60,9 @@ struct EmojiSearchStore {
     }
   }
 
-  private static let fallbackLimit = 24
-  private let entries: [Entry]
-
-  init() {
-    self.entries = Self.loadEntries()
-  }
+  private var entries: [Entry] = []
+  private(set) var loadError: String?
+  private let loader: @MainActor () throws -> [Entry]
 
   init(
     searchIndex: SearchIndex,
@@ -72,6 +71,13 @@ struct EmojiSearchStore {
     keywordExtensions: [String: [String]] = [:],
     supportedEmojiIDs: Set<String>? = nil
   ) {
+    self.loader = {
+      Self.makeEntries(
+        searchIndex: searchIndex, displayNamesByID: displayNamesByID,
+        categoryAliasesByID: categoryAliasesByID, keywordExtensions: keywordExtensions,
+        supportedEmojiIDs: supportedEmojiIDs
+      )
+    }
     self.entries = Self.makeEntries(
       searchIndex: searchIndex,
       displayNamesByID: displayNamesByID,
@@ -81,7 +87,30 @@ struct EmojiSearchStore {
     )
   }
 
-  func results(for query: String, limit: Int = Self.fallbackLimit) -> [EmojiSearchResult] {
+  init(loadSearchIndex: (@MainActor () throws -> SearchIndex)? = nil) {
+    if let loadSearchIndex {
+      loader = {
+        Self.makeEntries(
+          searchIndex: try loadSearchIndex(), displayNamesByID: [:],
+          categoryAliasesByID: [:], keywordExtensions: [:], supportedEmojiIDs: nil)
+      }
+    } else {
+      loader = { try Self.loadEntries() }
+    }
+    reload()
+  }
+
+  func reload() {
+    do {
+      entries = try loader()
+      loadError = nil
+    } catch {
+      entries = []
+      loadError = error.localizedDescription
+    }
+  }
+
+  func results(for query: String, limit: Int = .max) -> [EmojiSearchResult] {
     let normalizedQuery = EmojiSearchNormalization.searchQuery(query)
 
     guard !normalizedQuery.isEmpty else {
@@ -111,7 +140,7 @@ struct EmojiSearchStore {
         lhs.rank < rhs.rank
       }
 
-    return ranked.prefix(limit).map(\.result)
+    return ranked.prefix(max(0, limit)).map(\.result)
   }
 
   func topResult(for query: String) -> EmojiSearchResult? {
@@ -120,8 +149,8 @@ struct EmojiSearchStore {
 }
 
 private extension EmojiSearchStore {
-  private static func loadEntries() -> [Entry] {
-    let keywordExtensions = (try? BundleEmojiKeywordExtensionsLoader().load()) ?? [:]
+  private static func loadEntries() throws -> [Entry] {
+    let keywordExtensions = try BundleEmojiKeywordExtensionsLoader().load()
     let filter: Emojis.Filter
 
     #if canImport(CoreText)
@@ -130,9 +159,7 @@ private extension EmojiSearchStore {
       filter = .none
     #endif
 
-    guard let displayEmojis = try? Emojis.fetch(filter: filter) else {
-      return []
-    }
+    let displayEmojis = try Emojis.fetch(filter: filter)
     let displayNamesByID = Dictionary(
       uniqueKeysWithValues: displayEmojis.map { emoji in
         (emoji.id.rawValue, emoji.localization.name)
@@ -146,9 +173,7 @@ private extension EmojiSearchStore {
       })
     let supportedEmojiIDs = Set(displayEmojis.map(\.id.rawValue))
 
-    guard let searchIndex = try? Emojis.searchIndex(locales: .all) else {
-      return []
-    }
+    let searchIndex = try Emojis.searchIndex(locales: .all)
 
     return Self.makeEntries(
       searchIndex: searchIndex,

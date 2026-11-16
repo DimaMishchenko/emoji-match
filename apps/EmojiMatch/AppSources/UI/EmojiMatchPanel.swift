@@ -6,6 +6,8 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   private let picker = NSPopover()
   private let onClose: () -> Void
   private var isClosing = false
+  private var outsideClickMonitor: Any?
+  private var localClickMonitor: Any?
 
   init(
     contentSize: CGSize,
@@ -63,7 +65,37 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
     orderFrontRegardless()
     picker.show(relativeTo: contentView.bounds, of: contentView, preferredEdge: .minY)
     picker.contentViewController?.view.window?.makeKey()
+    installDismissalMonitors()
     DispatchQueue.main.async { [weak self] in self?.focusSearchField() }
+  }
+
+  private func installDismissalMonitors() {
+    outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
+      .leftMouseDown, .rightMouseDown
+    ]) {
+      [weak self] _ in
+      MainActor.assumeIsolated { self?.close() }
+    }
+    localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]
+    ) {
+      [weak self] event in
+      guard let self, let window = self.picker.contentViewController?.view.window else {
+        return event
+      }
+      let point = NSEvent.mouseLocation
+      let auxiliary = NSApp.windows
+        .filter {
+          $0 !== window && $0.isVisible
+            && ($0.parent === window || $0.level.rawValue >= NSWindow.Level.popUpMenu.rawValue)
+        }
+        .map(\.frame)
+      if EmojiMatchPanelGeometry.shouldDismissClick(
+        at: point, picker: window.frame, auxiliary: auxiliary)
+      {
+        self.close()
+      }
+      return event
+    }
   }
 
   private func focusSearchField() {
@@ -84,6 +116,10 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   override func close() {
     guard !isClosing else { return }
     isClosing = true
+    if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
+    if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
+    outsideClickMonitor = nil
+    localClickMonitor = nil
     picker.close()
     super.close()
     onClose()
@@ -94,6 +130,12 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
 }
 
 enum EmojiMatchPanelGeometry {
+  nonisolated static func shouldDismissClick(
+    at point: CGPoint, picker: CGRect, auxiliary: [CGRect]
+  ) -> Bool {
+    !picker.contains(point) && !auxiliary.contains { $0.contains(point) }
+  }
+
   nonisolated static func appKitRect(
     fromTopLeftRect rect: CGRect, primaryScreenHeight: CGFloat
   ) -> CGRect {

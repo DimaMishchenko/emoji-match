@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import DesignSystem
 import SwiftUI
 
@@ -9,13 +10,45 @@ struct EmojiMatchView: View {
   let onSubmit: (EmojiSelection) -> Void
   let onSelectEmoji: (EmojiSelection) -> Void
   let onCreateGenmoji: ((String) -> Void)?
+  let allowsRichContent: Bool
   let onClose: () -> Void
+  let onCopySelection: ((EmojiSelection) -> Void)?
 
-  @FocusState private var isSearchFocused: Bool
   @State private var query = ""
+  @FocusState private var isGridFocused: Bool
+  @Environment(\.layoutDirection) private var layoutDirection
+  @State private var gridNavigationActive = false
+  @State private var categoryPage = 0
+  @State private var variantRequestID: String?
   @State private var navigation = EmojiMatchNavigationState()
 
+  init(
+    contentWidth: CGFloat,
+    searchStore: EmojiSearchStore,
+    usageStore: EmojiUsageStore,
+    onSubmit: @escaping (EmojiSelection) -> Void,
+    onSelectEmoji: @escaping (EmojiSelection) -> Void,
+    onCreateGenmoji: ((String) -> Void)?,
+    onClose: @escaping () -> Void,
+    initialQuery: String = "",
+    allowsRichContent: Bool = true,
+    onCopySelection: ((EmojiSelection) -> Void)? = nil
+  ) {
+    self.allowsRichContent = allowsRichContent
+    self.contentWidth = contentWidth
+    self.searchStore = searchStore
+    self.usageStore = usageStore
+    self.onSubmit = onSubmit
+    self.onSelectEmoji = onSelectEmoji
+    self.onCreateGenmoji = onCreateGenmoji
+    self.onClose = onClose
+    self.onCopySelection = onCopySelection
+    self._query = State(initialValue: initialQuery)
+  }
+
   var body: some View {
+    let content = currentContent
+
     ZStack(alignment: .top) {
       BrowserView(
         contentWidth: contentWidth,
@@ -23,12 +56,37 @@ struct EmojiMatchView: View {
         searchStore: searchStore,
         usageStore: usageStore,
         searchQuery: query,
-        selectedItemID: navigation.selectedItemID,
+        selectedItemID: gridNavigationActive ? navigation.selectedItemID : nil,
         onSelectItemID: { itemID in
+          if !query.isEmpty { updateQuery("") }
+          gridNavigationActive = !itemID.isEmpty
           navigation.selectItemID(itemID)
         },
-        onSelectEmoji: onSelectEmoji
+        onSelectEmoji: onSelectEmoji,
+        onCopySelection: onCopySelection,
+        content: content,
+        categoryPage: $categoryPage,
+        variantRequestID: $variantRequestID
       )
+      .focusable()
+      .focusEffectDisabled()
+      .focused($isGridFocused)
+      .onKeyPress(keys: [.leftArrow, .rightArrow, .upArrow, .downArrow]) { press in
+        guard isGridFocused else { return .ignored }
+        return handleGridArrow(press)
+      }
+      .onKeyPress(keys: [.space]) { press in
+        guard Self.handlesArrowModifiers(press.modifiers), isGridFocused, !isComposing else {
+          return .ignored
+        }
+        return requestVariants()
+      }
+      .onKeyPress(keys: [.return]) { press in
+        guard Self.handlesArrowModifiers(press.modifiers), isGridFocused else { return .ignored }
+        submit()
+        return .handled
+      }
+      .onKeyPress(.escape) { escape() }
       .padding(.top, EmojiPickerMetrics.topBarHeight)
       .frame(height: EmojiPickerMetrics.expandedHeight)
 
@@ -39,166 +97,153 @@ struct EmojiMatchView: View {
       height: EmojiPickerMetrics.expandedHeight,
       alignment: .top
     )
-    .defaultFocus($isSearchFocused, true)
-    .onChange(of: query, initial: true) { _, value in
-      let normalizedQuery = normalizedQuery(from: value)
-
-      navigation.resetSelection(
-        in: normalizedQuery.isEmpty ? browseLayout : searchLayout(for: normalizedQuery)
-      )
+    .onChange(of: isGridFocused) { _, focused in
+      if focused { gridNavigationActive = true }
+    }
+    .onChange(of: content.navigationLayout, initial: true) { _, layout in
+      navigation.clampSelection(in: layout)
     }
   }
 
   private var topBar: some View {
-    HStack(spacing: .ds.spacing.xs) {
-      searchField
-      if let onCreateGenmoji {
-        genmojiButton(action: onCreateGenmoji)
+    HStack(spacing: 8) {
+      NativeEmojiSearchField(
+        text: Binding(get: { query }, set: updateQuery),
+        onFocusSearch: { gridNavigationActive = false }, onKeyDown: handleSearchKey
+      )
+      .controlSize(.large)
+      .frame(maxWidth: .infinity)
+      .frame(height: EmojiPickerMetrics.searchHeight)
+      .glassEffect(.regular.tint(.black.opacity(0.075)), in: Capsule())
+      if allowsRichContent, let onCreateGenmoji {
+        Button {
+          onCreateGenmoji(query.trimmingCharacters(in: .whitespacesAndNewlines))
+        } label: {
+          GenmojiButtonArtwork().offset(y: -1)
+            .frame(width: EmojiPickerMetrics.actionSize, height: EmojiPickerMetrics.actionSize)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: .emGenmojiButtonLabel))
+        .help(String(localized: .emGenmojiButtonLabel))
+        .background(Color.primary.opacity(0.15), in: Circle())
       }
     }
     .padding(.horizontal, EmojiPickerMetrics.searchHorizontalInset)
     .padding(.top, EmojiPickerMetrics.searchTopInset)
-    .frame(
-      width: contentWidth,
-      height: EmojiPickerMetrics.topBarHeight,
-      alignment: .topLeading
-    )
-    .background(Color.ds.textPrimary.opacity(0.025))
+    .frame(width: contentWidth, height: EmojiPickerMetrics.topBarHeight, alignment: .topLeading)
+    .background(Color.primary.opacity(0.015))
     .overlay(alignment: .bottom) {
-      Rectangle()
-        .fill(Color.ds.textPrimary.opacity(0.08))
-        .frame(height: .ds.stroke.hairline)
+      Rectangle().fill(Color.primary.opacity(0.08)).frame(height: .ds.stroke.hairline)
     }
   }
 
-  private var searchField: some View {
-    HStack(spacing: .ds.spacing.xxs) {
-      Image(systemName: "magnifyingglass")
-        .font(EmojiPickerMetrics.searchFont)
-        .foregroundStyle(Color.ds.textSecondary)
+  private func updateQuery(_ value: String) {
+    guard query != value else { return }
+    query = value
+    gridNavigationActive = false
+    let content = EmojiMatchContent(
+      query: value, searchStore: searchStore, usageStore: usageStore, page: categoryPage,
+      allowsRichContent: allowsRichContent)
+    navigation.resetSelection(in: content.navigationLayout)
+  }
 
-      TextField(String(localized: .emSearchPlaceholder), text: $query)
-        .textFieldStyle(.plain)
-        .focused($isSearchFocused)
-        .font(EmojiPickerMetrics.searchFont)
-        .foregroundStyle(Color.ds.textPrimary)
-        .onSubmit {
-          submit()
-        }
-        .onKeyPress(keys: [.leftArrow]) { press in
-          handleArrowPress(press, direction: .left)
-        }
-        .onKeyPress(keys: [.rightArrow]) { press in
-          handleArrowPress(press, direction: .right)
-        }
-        .onKeyPress(keys: [.upArrow]) { press in
-          handleArrowPress(press, direction: .up)
-        }
-        .onKeyPress(keys: [.downArrow]) { press in
-          handleArrowPress(press, direction: .down)
-        }
-        .onKeyPress(.escape) {
-          if normalizedQuery(from: query).isEmpty {
-            onClose()
-          } else {
-            query = ""
-          }
-          return .handled
-        }
+  private func handleSearchKey(_ event: NSEvent, editor: NSTextView) -> Bool {
+    guard event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty,
+      !editor.hasMarkedText()
+    else {
+      gridNavigationActive = false
+      return false
     }
-    .padding(.horizontal, .ds.spacing.xs)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .frame(height: EmojiPickerMetrics.searchHeight)
-    .background(Color.ds.textPrimary.opacity(0.12), in: Capsule())
-    .overlay {
-      Capsule()
-        .strokeBorder(Color.ds.textPrimary.opacity(0.16), lineWidth: .ds.stroke.thin)
-    }
-    .overlay {
-      if isSearchFocused {
-        Capsule()
-          .strokeBorder(Color.ds.primary.opacity(0.7), lineWidth: .ds.stroke.thick)
-          .padding(-.ds.stroke.regular)
+    switch Int(event.keyCode) {
+    case kVK_DownArrow:
+      if gridNavigationActive { return moveSelection(.down) }
+      guard editor.selectedRange().length == 0,
+        editor.selectedRange().location == editor.string.utf16.count,
+        !currentLayout.items.isEmpty
+      else { return false }
+      gridNavigationActive = true
+      navigation.clampSelection(in: currentLayout)
+      return true
+    case kVK_LeftArrow, kVK_RightArrow, kVK_UpArrow:
+      guard gridNavigationActive else { return false }
+      let direction: EmojiMatchNavigationDirection
+      switch Int(event.keyCode) {
+      case kVK_UpArrow: direction = .up
+      case kVK_LeftArrow: direction = layoutDirection == .rightToLeft ? .right : .left
+      default: direction = layoutDirection == .rightToLeft ? .left : .right
       }
+      return moveSelection(direction)
+    case kVK_Space where gridNavigationActive:
+      _ = requestVariants()
+      return true
+    case kVK_Return, kVK_ANSI_KeypadEnter:
+      submit()
+      return true
+    case kVK_Escape:
+      _ = escape()
+      return true
+    default:
+      return false
     }
-  }
-
-  private func genmojiButton(action: @escaping (String) -> Void) -> some View {
-    Button {
-      action(query.trimmingCharacters(in: .whitespacesAndNewlines))
-    } label: {
-      GenmojiButtonArtwork()
-        .offset(y: -1)
-        .frame(width: EmojiPickerMetrics.actionSize, height: EmojiPickerMetrics.actionSize)
-        .contentShape(Circle())
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(String(localized: .emGenmojiButtonLabel))
-    .help(String(localized: .emGenmojiButtonLabel))
-    .background(Color.ds.textPrimary.opacity(0.12), in: Circle())
   }
 
   private func submit() {
-    let selection =
-      navigation.resolvedSelection(in: currentLayout)
-      ?? defaultSelection
-
-    guard let selection else {
-      return
-    }
+    guard !isComposing else { return }
+    guard let selection = navigation.resolvedSelection(in: currentLayout) else { return }
 
     onSubmit(selection)
   }
 
-  private var browseLayout: EmojiMatchNavigationLayout {
-    let recentRows = EmojiMatchNavigationLayout(
-      items: usageStore.suggestions().map(EmojiMatchItem.recentSuggestion),
-      columnCount: EmojiPickerMetrics.columnCount
-    )
-    .rows
-    return EmojiMatchNavigationLayout(
-      rows: recentRows + catalog.navigationRows(columnCount: EmojiPickerMetrics.columnCount)
-    )
+  private var currentContent: EmojiMatchContent {
+    EmojiMatchContent(
+      query: query, searchStore: searchStore, usageStore: usageStore, page: categoryPage,
+      allowsRichContent: allowsRichContent)
   }
 
   private var currentLayout: EmojiMatchNavigationLayout {
-    let normalizedQuery = normalizedQuery(from: query)
-    return normalizedQuery.isEmpty ? browseLayout : searchLayout(for: normalizedQuery)
+    currentContent.navigationLayout
   }
 
-  private var catalog: EmojiBrowserCatalog {
-    EmojiBrowserCatalog.shared
+  private var isComposing: Bool {
+    (NSApp.keyWindow?.firstResponder as? NSTextView)?.hasMarkedText() == true
   }
 
-  private var defaultSelection: EmojiSelection? {
-    let normalizedQuery = normalizedQuery(from: query)
-
-    guard !normalizedQuery.isEmpty else {
-      return usageStore.topSelection()
+  private func escape() -> KeyPress.Result {
+    guard !isComposing else { return .ignored }
+    if query.isEmpty {
+      onClose()
+    } else {
+      updateQuery("")
+      isGridFocused = false
+      gridNavigationActive = false
+      NativeEmojiSearchField.focus(in: NSApp.keyWindow)
     }
-
-    return searchStore.topResult(for: normalizedQuery)?.selection
+    return .handled
   }
 
-  private func searchLayout(for normalizedQuery: String) -> EmojiMatchNavigationLayout {
-    EmojiMatchNavigationLayout(
-      items: searchStore.results(for: normalizedQuery).map(EmojiMatchItem.searchResult),
-      columnCount: EmojiPickerMetrics.columnCount
-    )
+  private func requestVariants() -> KeyPress.Result {
+    guard let item = currentLayout.items.first(where: { $0.id == navigation.selectedItemID }),
+      EmojiBrowserCatalog.shared.hasVariants(for: item.selection)
+    else { return .handled }
+    variantRequestID = item.id
+    return .handled
   }
 
-  private func handleArrowPress(
-    _ press: KeyPress,
-    direction: EmojiMatchNavigationDirection
-  ) -> KeyPress.Result {
-    guard Self.handlesArrowModifiers(press.modifiers) else {
-      return .ignored
+  private func handleGridArrow(_ press: KeyPress) -> KeyPress.Result {
+    guard Self.handlesArrowModifiers(press.modifiers), !isComposing else { return .ignored }
+    let direction: EmojiMatchNavigationDirection
+    switch press.key {
+    case .leftArrow: direction = layoutDirection == .rightToLeft ? .right : .left
+    case .rightArrow: direction = layoutDirection == .rightToLeft ? .left : .right
+    case .upArrow: direction = .up
+    case .downArrow: direction = .down
+    default: return .ignored
     }
-
     return moveSelection(direction) ? .handled : .ignored
   }
 
-  nonisolated static func handlesArrowModifiers(_ modifiers: EventModifiers) -> Bool {
+  nonisolated static func handlesArrowModifiers(_ modifiers: SwiftUI.EventModifiers) -> Bool {
     modifiers.isDisjoint(with: [.shift, .control, .option, .command])
   }
 
@@ -237,10 +282,6 @@ struct EmojiMatchView: View {
         .priority: NSAccessibilityPriorityLevel.medium.rawValue
       ]
     )
-  }
-
-  private func normalizedQuery(from value: String) -> String {
-    value.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
 

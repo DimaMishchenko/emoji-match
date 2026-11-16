@@ -5,6 +5,41 @@ import Testing
 @testable import EmojiMatch
 
 @Suite struct EmojiSearchStoreTests {
+  @Test func defaultResultsIncludeEveryMatchBeyondTwentyFour() {
+    let store = makeStore(
+      entries: (0..<61)
+        .map { index in
+          entry(
+            id: "result-\(index)", value: "😀",
+            localizations: [localization("en", name: "face \(index)", tokens: ["face"])])
+        })
+    let results = store.results(for: "face")
+    #expect(results.count == 61)
+    #expect(Set(results.map(\.id)).count == 61)
+    #expect(store.results(for: "face", limit: 24) == Array(results.prefix(24)))
+    #expect(store.results(for: "face", limit: -1).isEmpty)
+  }
+
+  @Test func failedIndexLoadCanRetryWithoutBecomingAnEmptySuccess() {
+    let retry = RetryState()
+    let index = SearchIndex(
+      availableLocaleIdentifiers: ["en"],
+      entries: [
+        entry(
+          id: "1F600", value: "😀", localizations: [localization("en", name: "smile", tokens: [])])
+      ])
+    let store = EmojiSearchStore(loadSearchIndex: {
+      if retry.shouldFail { throw CocoaError(.fileReadCorruptFile) }
+      return index
+    })
+    #expect(store.loadError != nil)
+    #expect(store.results(for: "smile").isEmpty)
+    retry.shouldFail = false
+    store.reload()
+    #expect(store.loadError == nil)
+    #expect(store.results(for: "smile").map(\.id) == ["1F600"])
+  }
+
   @Test func normalizedSearchMatchesAcrossCaseDiacriticsAndWidth() {
     let store = makeStore(
       entries: [
@@ -279,4 +314,9 @@ private func localization(
     name: name,
     searchTokens: tokens
   )
+}
+
+@MainActor
+private final class RetryState {
+  var shouldFail = true
 }

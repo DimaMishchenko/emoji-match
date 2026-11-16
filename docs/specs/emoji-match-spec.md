@@ -261,21 +261,24 @@ These are states within the main search flow, not separate top-level flows.
 #### Flow 6: Keyboard-only operation
 
 1. User opens the launcher without using the mouse.
-2. User types, navigates results, expands secondary result areas if needed, and confirms a choice.
+2. User types, navigates results and supplied variants, and confirms a choice.
 3. The full primary flow can be completed entirely by keyboard.
 
 Exact keyboard shortcuts are:
 
 - `Control-Command-Space`: open Emoji Match in place of the native emoji picker while the app is running
+- `Down` at the end of an unmarked search enters the grid; grid arrows move by row/cell.
+- `Space` on a variant-bearing grid item opens its supplied variants.
 - `Up` and `Down`: move the visible selection by one grid row, clamped at the top and bottom
 - `Left` and `Right`: move the visible selection by one cell, clamped at the row edges
 - `Return`: paste the currently selected emoji
 - `Escape`: clear a non-empty query first, then close the launcher when the query is already empty
 - `Tab`: keeps the platform focus chain and is not used as the primary emoji navigation key
 
-Selection defaults to the first visible result in search mode, the top recent item when history is
-showing, or the first catalog item when browsing without recents. When the query changes, the
-selection resets to the new first visible item and scrolls it into view.
+Opening and typing do not display a grid selection. Return resolves to the first result until
+keyboard navigation or a category choice establishes an explicit selection. The highlight is a
+56 × 42-point gray capsule with no colored outline. A changed nonempty query scrolls to the top;
+clicking a category clears search and scrolls to that category.
 
 Current implementation uses an invisible, nonactivating all-spaces anchor panel and an AppKit
 `NSPopover` for the picker. AppKit supplies the pointer, material, rounded corners, shadow,
@@ -283,7 +286,21 @@ screen-edge clamping, edge flipping, and outside-click dismissal. The anchor pan
 fullscreen apps and uses the native picker's observed window level.
 The picker opens directly at 320 × 444 points of content. There is no compact or expansion state.
 The measured layout uses a 49.5-point header, 28-point search field, six emoji columns with a
-44-point row pitch, and a 44-point category bar. Search, localized data, usage history, keyboard
+44-point row pitch, 32-point emoji artwork with a measured one-point baseline adjustment,
+and a 44-point category bar. Catalog section gaps are 14 points. Static symbol glyphs use
+the adaptive text color rather than label color. The scroll content continues behind the material footer, with bottom
+content padding so final items can scroll fully clear of the controls.
+Search uses AppKit's NSSearchField at 13 points, retaining the system bezel, focus ring, clear
+button and text-editing behavior. Import and Settings are available from the status menu; the footer
+chevron pages between emoji and symbols in the same picker. Eight emoji category arrays, their
+order and artwork come from signature-checked static CharacterPicker APIs on the installed OS.
+The canonical Unicode/CLDR dataset remains independent and supplies search, names and variants.
+If native emoji data is unavailable, canonical grouping is the fallback. The second page contains
+the five installed static symbol categories, including their stored ASCII entries, with native
+glyph filtering and names. No guessed emoticon catalog is synthesized. Stickers and Genmoji
+footer entries browse the app-owned library; this does not enumerate the system sticker library. Grid intent is tracked
+independently of AppKit's search responder: unmodified arrows and Space navigate/open variants;
+modified editing keys, search focus and marked-text composition return control to native editing. Search, localized data, usage history, keyboard
 navigation remain app-owned features. The adjacent header action opens Genmoji when system
 generation is available. Escape clears search and returns to the catalog.
 The default shortcut is registered only while Emoji Match is running, without changing macOS
@@ -305,11 +322,35 @@ Visual matching and cross-app verification evidence is maintained in
 `docs/verification/emoji-match-picker-review.md`.
 Current implementation requests Accessibility access from app code when caret-based positioning is
 first needed, while keeping the accessibility module itself limited to status and anchor utilities.
-Current implementation enables `AXManualAccessibility` on the frontmost app before reading the
-accessibility tree, to better support Electron and WebView wrappers.
+Current implementation requests `AXManualAccessibility` and `AXEnhancedUserInterface` on the
+frontmost app before reading the accessibility tree, once per process, to support Electron and
+Chromium/WebView accessibility exposure. Setter return status is not treated as proof of a usable
+tree; focus resolution still validates the actual returned structure.
 Current implementation pastes the current keyboard selection on Return, falling back to the top
 search match or top recent/frequent selection when no explicit keyboard movement has occurred yet.
-It restores the previous clipboard contents shortly after the paste event.
+Insertion captures the original application, focused editable control and available selection range.
+Anchoring and insertion use the same semantic input resolver. When focus is an active result inside
+a list, it accepts exactly one editable input in the nearest dialog explicitly owning/linking that
+list through AXOwns or AXLinkedUIElements. Ambiguous, incomplete or out-of-dialog matches fail closed;
+result labels are not treated as input controls. Searches are bounded by depth and element count.
+Unreadable child/ownership arrays cancel discovery; visible-only or other partial child collections
+cannot establish a complete subtree. Unsupported child attributes on a true leaf are distinct from
+failed reads of advertised attributes.
+The application and control/range are checked again after dismissal and before delivery. Unicode uses
+PID-targeted Cmd-V. Rich selections prefer the recipient's unique, enabled primary Cmd-V menu command
+through AXPress. Discovery is shallow, bounded and independent of localized menu titles. Focus,
+control/range and clipboard ownership are revalidated after discovery immediately before the action.
+Unavailable discovery falls back to PID-targeted Cmd-V after another validation; a failed action or
+validation cancels without a second paste.
+A changed or destroyed destination cancels automatic delivery. Focus restoration explicitly activates
+the validated recipient even when it appears frontmost, because a nonactivating native menu can
+retain keyboard focus. Delivery waits one 20 ms suspension and revalidates. Application and focused
+control identity are reread after AX range queries before posting. The last selection remains available
+through explicit Copy; posting an event or completing AXPress does not acknowledge that the recipient
+consumed the payload.
+Clipboard writes must succeed. Restoration runs after one second only while our transaction still
+owns the pasteboard change count; overlapping operations retain the original snapshot and stale
+callbacks cannot overwrite a newer copy. This delay is not a universal slow-reader guarantee.
 
 #### Flow 7: Dismiss without side effects
 
@@ -352,13 +393,13 @@ Exact fallback behavior remains open.
 2. User updates app preferences.
 3. Changes take effect immediately or with clearly defined behavior.
 
-The exact settings list remains open, but likely includes:
-
-- global shortcut customization
-- launch behavior such as launch on login
-- permissions guidance and status
-- optional search or AI preferences
-- optional insertion behavior preferences
+Settings persist the opening shortcut and selected-text prefill preference. The shortcut recorder
+supports reset and reports registration conflicts. Our registered shortcut is suspended while
+recording; ending recording or losing the Settings window restores registration with the current
+setting. Settings show Accessibility permission status,
+link to its system settings, and clear recents without deleting favorites or saved items. The
+system picker remains available. Creator unavailability is explained when Apple Intelligence is
+unavailable. Launch-at-login and AI preferences are outside this pass.
 
 #### Flow 9: First run
 
@@ -376,48 +417,12 @@ Exact onboarding depth remains open.
 
 Exact toggle behavior remains open.
 
-## Open Questions
+## Deferred decisions
 
-The following items are intentionally left undecided for now and should be filled in later as the
-product and UI mature.
-
-### Interaction Decisions
-
-- result navigation shortcuts
-- shortcut for opening the full catalog
-- shortcut for expanding secondary result sections
-- dismissal behavior when the launcher is already open
-
-### Layout And Presentation Decisions
-
-- exact launcher size and placement
-- exact organization of direct results vs AI results
-- how many results are visible before expansion
-- exact empty-state presentation
-- exact recents and most-used layout
-- exact catalog layout and grouping
-- exact settings layout
-
-### Settings Decisions
-
-- final settings list for v1
-- whether to expose launch-on-login in v1
-- whether to expose AI-specific settings in v1
-- whether to expose insertion-mode preferences in v1
-
-### Failure-Handling Decisions
-
-- exact paste fallback behavior
-- exact no-results fallback actions
-- exact messaging when Accessibility permission is missing
-- exact messaging when AI is unavailable
-- exact behavior when selected text is very long or multiline
-
-### Scope Decisions
-
-- whether `Emojify` ships in v1 or later
-- whether copy actions ship in v1 or later
-- whether clipboard preservation is part of v1
+Semantic search, Emojify, synchronization and launch-on-login remain future product decisions.
+Current navigation, fixed picker dimensions, native catalog grouping, settings, copy actions and
+clipboard ownership are specified by the implemented contracts below rather than undecided.
+Finder direct input and generic plain/rich recipient capability detection remain open platform work.
 
 ## Search Model
 
@@ -438,6 +443,38 @@ ordering is:
 This keeps recency dominant while still letting frequency break ties in a deterministic way. The
 empty-query browser can surface the top history entries above the full catalog sections, but it
 does not replace catalog browsing.
+
+### Local rich library, favorites and variants
+
+The original v1 Unicode history remains readable with its IDs, counts and timestamps. Imported
+content uses a typed adaptive-glyph/image asset reference. A version-1 Application Support manifest
+owns favorites, exact family preferences and imported metadata; separate files retain original bytes
+and SHA-256 hashes. Publication is atomic. Defaults are 256 assets and 100 MiB; quota rejects new
+imports instead of evicting pinned content. Unreadable manifests are not overwritten.
+
+Paste / Import is explicit and reads only the current clipboard. RTFD/RTF imports extract adaptive
+glyphs and supported image attachments without surrounding text; direct PNG, JPEG, GIF, TIFF, HEIC,
+WebP and BMP are validated with ImageIO. Richer animated representations take priority over TIFF.
+Duplicate bytes are reused. Valid reimport repairs a missing or damaged asset. Unavailable custom
+items remain visible for explicit deletion, and invalid bytes cannot be delivered. Deleting an
+imported item removes its local references and unreferenced bytes, never Apple's system original.
+Clearing recent usage preserves assets and favorites. GIF previews use AppKit animation unless
+Reduce Motion is enabled; original-format retention does not imply every host preserves animation.
+
+Favorites retain the selected concrete sequence. Catalog items may apply a separately remembered
+family preference. Variant IDs are supplied by the dataset, never constructed from tone tuples;
+base/reset, single and multiple-person variants use their exact supplied Unicode sequences after
+Apple-font rendering validation. Context actions, press-and-hold and keyboard Space expose variants.
+For base plus five tones, a signature-checked CPKHorizontalPopupMenu supplies the actual native
+335 × 60-point window, default-tone divider and press-drag-release tracking. Its returned string
+must match an offered exact selection. A single source dispatcher and session ownership prevent
+multiple menus and stale callbacks. Larger multi-person sets and unavailable/mismatching private
+runtime contracts use the accessible app-owned grid fallback.
+
+Search displays every ranked keyword match by default and searches imported descriptions. Visible
+items and keyboard navigation share one content model with separate occurrence IDs. Catalog/index
+failures show unavailable/retry states. This is deterministic multilingual keyword matching, not
+semantic search. Custom, Favorites and Recent sections augment the existing native-size grid.
 
 ### Baseline search
 
@@ -496,25 +533,55 @@ The app should still remain useful if:
 
 ### Selected text
 
-Selected-text prefill likely requires accessibility-based retrieval from the currently focused app.
-
-Important constraints:
-
-- may require permissions
-- may not work uniformly across all apps
-- must fail gracefully
+Selected-text prefill captures at most 1,024 UTF-16 code units through AX before opening the panel,
+when enabled. Secure, unavailable or unsupported controls produce an empty query. Surrounding
+document text is neither collected nor persisted. Replacement uses the unchanged captured selection;
+IME marked text does not submit or trigger grid navigation.
 
 ### Paste behavior
 
-Default behavior is to paste into the current app, not just copy to clipboard.
+The default action attempts insertion into the captured destination using the checked clipboard
+transaction above. Unicode is sent as text; adaptive glyphs offer RTFD, original glyph data and a
+genuine PNG decoded from that data in one pasteboard item. The PNG has a maximum edge of 24 pixels
+with aspect ratio preserved, so web editors do not insert the 160-pixel original at sticker size.
+This changes only the fallback; original glyph bytes and RTFD remain intact. The recipient chooses its supported
+representation in one paste. Copy offers the same representations. Images retain their original
+type. The app does not replace a rich payload with a text description or retry insertion to discover
+whether a first paste succeeded. Explicit Copy and System Emoji & Symbols provide manual escape routes.
+Recipient support is measured per control and payload; universal rich compatibility is not claimed.
 
-This is an important technical area because it affects:
+### Destination rich-content capability
 
-- perceived speed
-- reliability
-- clipboard side effects
+The intended policy is adaptive glyphs when supported, ordinary image fallback when only images are
+supported, and no creation/rich-history UI when both are known unsupported. Detection must refer to
+the captured original control, not Emoji Match's own creator receiver or a whole-app allowlist.
+The same decision must cover creation, recents, favorites, imported sections and search.
 
-Clipboard preservation may be desirable, but is not required to define v1.
+The generic automatic capability query is not implemented. Visibility uses a structural web-search
+heuristic: a web-backed single-line input is hidden when it exposes a search subrole, belongs to a
+search landmark, or explicitly owns/links a result list inside the same nearest dialog. DOM class
+values, placeholder strings and application names are not matched. Multiline inputs and inputs
+inside multiline editable ancestors remain unknown/allowed. Parent traversal is bounded to 12
+ancestors; missing, ambiguous or insufficient metadata does not become unsupported.
+
+Terminal AXTextArea remains an explicit application exception. Spotify and T3 have no bundle-name
+branches. Identical input traits have identical decisions across all other apps. Create and every
+rich occurrence use this same captured visibility decision; delivery rejects hidden rich content
+before clipboard mutation and preserves stored assets. Native Finder fields, Notes, rich TextEdit,
+Safari contenteditable and T3 multiline composers remain unknown/allowed.
+
+Search semantics do not prove the absence of a custom image-upload paste handler. This is a visibility
+heuristic rather than a confirmed text-only capability. Plain TextEdit remains unknown despite its
+observed failed rich paste; it is not solved by a web-search rule. Finder's native glyph insertion
+continues to require a verified direct-input transport. See
+[generic rule review](../verification/emoji-match-generic-rules/README.md).
+The native picker obtains the explicit
+adaptive-glyph flag from its active IMK client, but this investigation did not establish a passive
+cross-process client channel for Emoji Match, nor an equivalent reliable image-paste flag. Missing
+AX attributes, text-area roles, rich formatting and enabled Paste commands are not sufficient.
+Unavailable evidence remains unknown, so existing rich UI stays available rather than being hidden
+under an unsupported classification. Format negotiation provides a fallback; it does not establish
+capability or acknowledge insertion. See the [capability investigation](../investigations/emoji-match-rich-content-capabilities.md).
 
 ### Copy as image
 
@@ -525,26 +592,55 @@ This is a secondary feature and should not complicate the main insertion flow.
 
 ### Genmoji
 
-- The header loads Apple's original grinning-face-plus system symbol with a 16-point glyph
-  viewport and retains the exported vector artwork as a compatibility fallback. It hosts native
-  `CPKGenmojiAnimationView` when its expected runtime contract is available. Each fresh picker
-  presentation invokes Apple's own `roll`: its implementation can choose a short animation, long
-  animation or static icon. Query edits and hover do not restart it. Reduce Motion and unavailable
-  private runtime support retain the static artwork; teardown detaches the animation. The artwork
-  follows native glyph bounds and the measured one-point upward label offset.
-- The Genmoji action closes Emoji Match and hands off to the system's own Character Palette
-  creation UI and original recipient text-input connection. The creator is not redrawn in SwiftUI.
-- A bounded accessibility pass presses the system picker’s adjacent Genmoji control using role
-  and header geometry, independent of the translated button label.
-- The original app must retain focus before handoff; its captured input is refocused. Emoji Match releases its Carbon shortcut while
-  posting the native Control-Command-Space event, then restores registration after 200 ms. This
-  does not change the user's macOS keyboard settings.
-- A nonempty query prefills an empty native prompt. Existing user input is preserved. Handoff work
-  is cancelled when Emoji Match opens again or the original app loses focus; retries are bounded.
-- Apple owns generation, photo/person/emoji choices, animations, Add, cancellation, saved Genmoji
-  and insertion capability. Genmoji does not enter Emoji Match's string-only usage history.
-- This path does not read the private sticker database, use private creation calls, or request
-  restricted signing entitlements.
-  Recipient compatibility is the system picker's compatibility; plain-text fields cannot become
-  adaptive-glyph editors. The native flow is verified on macOS 27.2.1; other OS builds need runtime
-  verification because the creation entry and accessibility hierarchy are private system contracts.
+- The header hosts `CPKGenmojiAnimationView` when its runtime contract is available. Each fresh
+  presentation invokes Apple's `roll`, retaining its short, long and static choices. Query edits
+  and hover do not restart it. The static asset is the actual held final animation frame, exported
+  separately for light and dark appearances at 1x, 2x and 3x. Reduce Motion and unavailable private
+  animation support use that same resting artwork. The viewport is 16 × 16 points.
+- Creating closes the picker and starts one app-owned capture session. An invisible 2 × 2-point
+  ordinary key window hosts a real rich NSTextView. The session waits for app activation and two
+  stable checks of key window, first responder and current input-context ownership. It calls the
+  guarded no-argument private `CPKShowGenmojiCreationFirstOnNextSession` entry, then opens Apple's
+  actual compact creator through `orderFrontCharacterPalette`. The creation UI is not redrawn.
+- A bounded accessibility pass fills only a successfully read empty native prompt. Existing input
+  remains untouched. Apple owns generation and photo/person/emoji choices. Add delivers an
+  NSAdaptiveImageGlyph to the owned input client. Original bytes, identifier and description are
+  saved locally before optional delivery through the existing destination-validated rich transaction.
+  Capture alone does not increment usage. The saved item remains available if delivery cannot proceed.
+- Session tokens reject stale/duplicate callbacks. Reopening Emoji Match or Settings, switching to
+  another app, native disappearance or Escape delivered to the owned input client cancels.
+  The native creator may consume Escape while editing its prompt. Activation/input acquisition and first native
+  presentation have deadlines. Cancellation does not reactivate an unrelated app. The invisible
+  receiver and monitoring are removed at completion.
+- If the native creator has never appeared after 500 ms, the session makes one startup retry only
+  while it still owns app activation, the key window, first responder and current input context.
+  Ownership and session identity are rechecked after diagnostics. A five-second deadline remains;
+  disappearance after a visible presentation cancels rather than retries.
+- Explicit clipboard import remains available for existing Genmoji and supported image attachments.
+  App-owned Genmoji and ordinary image/sticker originals have separate footer sections. Clearing
+  recents does not delete those originals. This implementation does not synchronize or enumerate the
+  system sticker database, claim restricted entitlements, or support native collection management.
+- Live macOS 27.2.1 evidence covers compact creation, Add, persistence, TextEdit delivery and reuse
+  with exact adaptive-glyph bytes preserved. Other OS builds and recipient types require their own
+  runtime verification. Plain-text recipients cannot preserve adaptive glyphs.
+
+### Library rendering snapshot
+
+Storage owns a validated availability set and bounded 80-pixel static thumbnail previews.
+Animated image previews retain original frame/timing representations in memory so Reduce Motion
+can control playback without flattening them. Original assets remain bounded by library quotas. Rendering,
+filtering favorites/recents and typing queries read this snapshot without reading or hashing asset
+files. The snapshot is refreshed at library initialization and picker presentation and updated on
+import, repair and deletion. External file changes appear at the next explicit refresh. Delivery
+and Copy always reread original bytes and verify their digest; previews never authorize insertion.
+The initial/explicit refresh remains synchronous and may affect opening latency for large libraries.
+
+Fallback variant menus support arrow navigation by six-column rows, Return/Space submission of the
+exact selected sequence, and Escape dismissal through the owning session. Modified keys retain
+native handling. Obsolete native-animation presentation IDs and unused fallback assets are removed;
+window attachment and Reduce Motion transitions own replay.
+
+Context menus must not leave the picker open after an outside click. Local/global mouse-down
+monitors supplement transient AppKit dismissal and are removed before panel closure. Picker and
+visible auxiliary menu/child-window bounds remain interactive while clicks elsewhere close the
+picker; closing is idempotent across menu, popover-delegate and monitor callbacks.
