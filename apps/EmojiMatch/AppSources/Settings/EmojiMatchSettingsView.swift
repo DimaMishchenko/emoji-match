@@ -25,7 +25,7 @@ struct EmojiMatchSettingsView: View {
       switch self {
       case .general: "gearshape"
       case .stickers: "square.grid.2x2"
-      case .genmoji: "face.smiling"
+      case .genmoji: "apple.intelligence"
       case .accessibility: "accessibility"
       }
     }

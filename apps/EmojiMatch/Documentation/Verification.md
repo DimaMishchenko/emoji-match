@@ -91,10 +91,13 @@ Native Genmoji availability and system permissions can also block a path; descri
 Report selected feature IDs, build identity, actual recipient/OS scope, observed outcomes and any
 failures or blocked checks. Separate build/logic results from real GUI evidence. These documents
 remain acceptance guidance; do not commit screenshots, logs or session evidence to the repository.
+Retain useful verification captures under the ignored `tmp/verification/emoji-match/` directory
+or outside the repository. Captures are deliverables: do not delete them after inspection. Include
+their locations in the handoff; cleanup applies to disposable helpers and isolated app data.
 
 Stop only the exact task-owned PID after rechecking its identity; never kill by app name or globally
-terminate CharacterPalette. Remove only the task-owned verification directory, temporary helpers
-and fixtures. Clean the exact isolated defaults suite after app exit; do not reset production
+terminate CharacterPalette. Remove only the task-owned isolated app-data directory, temporary helpers
+and fixtures; keep the retained verification captures. Clean the exact isolated defaults suite after app exit; do not reset production
 preferences or revoke system permissions. Temporary tools must clean up their files automatically,
 including on failure; retain ownership information until cleanup completes.
 
@@ -110,3 +113,10 @@ For GEN-01/02, compare the picker and creator content bounds (320×480) and fram
 and check both activation origins: leave Settings open in the background, trigger creation from
 the picker and confirm Settings does not come forward; trigger directly from Settings and confirm
 it stays visible. For FIND-01, verify headings for catalog and populated saved/recent sections.
+
+For OPEN-03, record the first held drag from both the 11-point top strip and the empty header
+background below search. AppKit's native path continues tracking before its release callback;
+inspect those frames as well as the final detached state. Repeat a second drag, query editing,
+Close and rapid dismissal/reopening. Preserve the before/after captures in the ignored directory.
+For SET-04, open the actual status menu with another app active, choose Settings, and observe
+the frontmost app and key window. Repeat with minimized Settings and with a quick app switch.

@@ -194,7 +194,9 @@ struct App: SwiftUI.App {
   }
 
   private func openSettings() {
+    let initiatingApplication = NSWorkspace.shared.frontmostApplication
     sessionID = UUID()
+    let request = sessionID
     genmojiCapture?.cancel()
     genmojiCapture = nil
     panel?.close()
@@ -236,8 +238,41 @@ struct App: SwiftUI.App {
       window.center()
       settingsWindow = window
     }
-    NSApp.activate()
-    settingsWindow?.makeKeyAndOrderFront(nil)
+    guard let window = settingsWindow else { return }
+    RunLoop.main.perform(inModes: [.default]) {
+      MainActor.assumeIsolated {
+        _ = Task { @MainActor in
+          guard sessionID == request, settingsWindow === window,
+            canFinishSettingsRequest(from: initiatingApplication)
+          else { return }
+          if window.isMiniaturized { window.deminiaturize(nil) }
+          window.makeKeyAndOrderFront(nil)
+          guard sessionID == request, settingsWindow === window, window.isVisible,
+            canFinishSettingsRequest(from: initiatingApplication)
+          else { return }
+          NSApp.activate(ignoringOtherApps: true)
+          for _ in 0..<25 {
+            guard sessionID == request, settingsWindow === window, window.isVisible,
+              canFinishSettingsRequest(from: initiatingApplication)
+            else { return }
+            if NSApp.isActive,
+              NSWorkspace.shared.frontmostApplication?.processIdentifier
+                == ProcessInfo.processInfo.processIdentifier
+            {
+              window.makeKeyAndOrderFront(nil)
+              return
+            }
+            do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
+          }
+        }
+      }
+    }
+  }
+
+  private func canFinishSettingsRequest(from initiatingApplication: NSRunningApplication?) -> Bool {
+    guard let foreground = NSWorkspace.shared.frontmostApplication else { return false }
+    return foreground.processIdentifier == ProcessInfo.processInfo.processIdentifier
+      || foreground.processIdentifier == initiatingApplication?.processIdentifier
   }
 
   private func restoreSettingsAfterGenmoji() {
@@ -246,7 +281,8 @@ struct App: SwiftUI.App {
     if foreground?.processIdentifier == ProcessInfo.processInfo.processIdentifier
       || foreground?.bundleIdentifier == "com.apple.CharacterPaletteIM"
     {
-      openSettings()
+      NSApp.activate()
+      settingsWindow?.makeKeyAndOrderFront(nil)
     } else {
       settingsWindow?.orderBack(nil)
     }

@@ -188,6 +188,17 @@
         }
       }
     },
+    "Genmoji" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genmoji"
+          }
+        }
+      }
+    },
     "Genmoji creation requires Apple Intelligence and supported system settings." : {
       "extractionState" : "manual",
       "localizations" : {

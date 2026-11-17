@@ -103,7 +103,7 @@ struct EmojiMatchContent {
       usageStore.importedSelections.filter { $0.asset?.kind == .image }
     )
     append(
-      "genmoji", String(localized: "Emoji Stickers"), "apple.intelligence",
+      "genmoji", String(localized: "Genmoji"), "apple.intelligence",
       usageStore.importedSelections.filter { $0.asset?.kind == .adaptiveGlyph })
     sections += catalogSections
     self.sections = sections
@@ -113,7 +113,7 @@ struct EmojiMatchContent {
           id: "imported", title: String(localized: "Stickers"), symbolName: "face.smiling.inverse",
           items: sections.first { $0.id == "imported" }?.items ?? []),
         Section(
-          id: "genmoji", title: String(localized: "Emoji Stickers"),
+          id: "genmoji", title: String(localized: "Genmoji"),
           symbolName: "apple.intelligence",
           items: sections.first { $0.id == "genmoji" }?.items ?? []),
         Section(

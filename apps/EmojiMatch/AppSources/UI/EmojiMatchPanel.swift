@@ -13,18 +13,37 @@ extension EnvironmentValues {
 final class EmojiMatchPanelPresentation {
   private(set) var showsHeaderClose = false
   @ObservationIgnored var onDetach: (() -> Void)?
+  @ObservationIgnored var resolveCloseButton: ((NSWindow) -> NSButton?)?
   @ObservationIgnored weak var closeButtonHost: EmojiMatchCloseButtonHost?
+  @ObservationIgnored private var isReconciling = false
 
-  func beginDrag() {
-    onDetach?()
+  func beginDrag() { onDetach?() }
+
+  func attach(_ host: EmojiMatchCloseButtonHost) {
+    closeButtonHost = host
+    host.presentation = self
+    reconcile()
   }
 
-  func detach(nativeCloseButton: NSButton?) {
-    guard !showsHeaderClose, let nativeCloseButton, let closeButtonHost,
-      closeButtonHost.window === nativeCloseButton.window
-    else { return }
-    closeButtonHost.install(nativeCloseButton)
+  func didDetach() {
     showsHeaderClose = true
+    reconcile()
+  }
+
+  func suppressUnplaced(_ button: NSButton?) {
+    guard let button, closeButtonHost?.contains(button) != true else { return }
+    button.alphaValue = 0
+  }
+
+  func reconcile() {
+    guard !isReconciling, let host = closeButtonHost, let window = host.window else { return }
+    isReconciling = true
+    defer { isReconciling = false }
+    guard let button = resolveCloseButton?(window), button.window === window else { return }
+    if host.contains(button) { return }
+    button.alphaValue = 0
+    showsHeaderClose = true
+    host.install(button)
   }
 }
 
@@ -33,61 +52,105 @@ struct EmojiMatchNativeCloseButton: NSViewRepresentable {
 
   func makeNSView(context: Context) -> EmojiMatchCloseButtonHost {
     let view = EmojiMatchCloseButtonHost()
-    presentation?.closeButtonHost = view
+    presentation?.attach(view)
     return view
   }
 
   func updateNSView(_ nsView: EmojiMatchCloseButtonHost, context: Context) {
-    presentation?.closeButtonHost = nsView
+    presentation?.attach(nsView)
+  }
+
+  static func dismantleNSView(_ nsView: EmojiMatchCloseButtonHost, coordinator: ()) {
+    nsView.stopReveal()
   }
 }
 
 final class EmojiMatchCloseButtonHost: NSView {
+  weak var presentation: EmojiMatchPanelPresentation?
   private var closeButton: NSButton?
   private var nativeSize = NSSize.zero
   private weak var searchField: NSTextField?
+  private var revealTimer: Timer?
+
+  func contains(_ button: NSButton) -> Bool {
+    closeButton === button && button.superview === self
+  }
 
   func install(_ button: NSButton) {
+    guard !contains(button) else { return }
+    stopReveal()
+    closeButton?.removeFromSuperview()
     button.alphaValue = 0
     button.sizeToFit()
     nativeSize = button.frame.size
     button.removeFromSuperview()
     button.translatesAutoresizingMaskIntoConstraints = true
     button.autoresizingMask = []
-    addSubview(button)
     closeButton = button
+    addSubview(button)
     searchField = window?.contentView?.emojiMatchSearchField
     layoutCloseButton()
-    let revealDelay =
-      NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Double.ds.motion.quick
-    DispatchQueue.main.asyncAfter(deadline: .now() + revealDelay) { [weak self, weak button] in
-      guard let self, let button, self.closeButton === button, self.window?.isVisible == true else {
-        return
-      }
-      self.layoutSubtreeIfNeeded()
-      self.layoutCloseButton()
-      NSAnimationContext.runAnimationGroup { context in
-        context.duration =
-          NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : .ds.motion.quick
-        context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        button.animator().alphaValue = 1
-      }
+    scheduleReveal()
+  }
+
+  override func viewWillMove(toWindow newWindow: NSWindow?) {
+    if newWindow !== window {
+      stopReveal()
+      closeButton?.alphaValue = 0
     }
+    super.viewWillMove(toWindow: newWindow)
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    searchField = window?.contentView?.emojiMatchSearchField
+    presentation?.reconcile()
+    if let closeButton, contains(closeButton), closeButton.alphaValue < 1 { scheduleReveal() }
   }
 
   override func layout() {
     super.layout()
+    presentation?.reconcile()
     layoutCloseButton()
+  }
+
+  private func scheduleReveal() {
+    stopReveal()
+    guard let button = closeButton, let window else { return }
+    let delay =
+      NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : Double.ds.motion.quick
+    let timer = Timer(timeInterval: delay, repeats: false) {
+      [weak self, weak button, weak window] _ in
+      MainActor.assumeIsolated {
+        guard let self, let button, let window, self.window === window,
+          button.window === window, self.contains(button),
+          self.presentation?.closeButtonHost === self, window.isVisible
+        else { return }
+        self.revealTimer = nil
+        self.layoutSubtreeIfNeeded()
+        self.layoutCloseButton()
+        NSAnimationContext.runAnimationGroup { context in
+          context.duration =
+            NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : .ds.motion.quick
+          context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+          button.animator().alphaValue = 1
+        }
+      }
+    }
+    revealTimer = timer
+    RunLoop.main.add(timer, forMode: .common)
+  }
+
+  func stopReveal() {
+    revealTimer?.invalidate()
+    revealTimer = nil
   }
 
   private func layoutCloseButton() {
     let centerY = searchField.map { convert($0.bounds, from: $0).midY } ?? bounds.midY
     closeButton?.frame = NSRect(
-      x: bounds.midX - nativeSize.width / 2,
-      y: centerY - nativeSize.height / 2,
-      width: nativeSize.width,
-      height: nativeSize.height
-    )
+      x: bounds.midX - nativeSize.width / 2, y: centerY - nativeSize.height / 2,
+      width: nativeSize.width, height: nativeSize.height)
   }
 
   override func hitTest(_ point: NSPoint) -> NSView? {
@@ -102,6 +165,7 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   private let presentation = EmojiMatchPanelPresentation()
   private let onClose: () -> Void
   private var isClosing = false
+  private var nativeDetachmentRequested = false
   private var outsideClickMonitor: Any?
   private var localClickMonitor: Any?
 
@@ -133,6 +197,15 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
     picker.animates = false
     picker.delegate = self
     presentation.onDetach = { [weak self] in self?.detachPicker() }
+    presentation.resolveCloseButton = { [weak self] window in
+      guard let self, !self.isClosing,
+        self.picker.contentViewController?.view.window === window,
+        let button = self.nativeCloseButton(in: window),
+        self.picker.isDetached
+          || (self.nativeDetachmentRequested && !button.isHiddenOrHasHiddenAncestor)
+      else { return nil }
+      return button
+    }
     picker.contentViewController = NSHostingController(
       rootView: content({ [weak self] in self?.close() })
         .environment(\.emojiMatchPresentation, presentation)
@@ -161,6 +234,9 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
     orderFrontRegardless()
     picker.show(relativeTo: contentView.bounds, of: contentView, preferredEdge: .minY)
     picker.contentViewController?.view.window?.makeKey()
+    if let window = picker.contentViewController?.view.window {
+      presentation.suppressUnplaced(nativeCloseButton(in: window, includingHidden: true))
+    }
     installDismissalMonitors()
     DispatchQueue.main.async { [weak self] in self?.focusSearchField() }
   }
@@ -172,10 +248,16 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
       [weak self] _ in
       MainActor.assumeIsolated { self?.close() }
     }
-    localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]
+    localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [
+      .leftMouseDown, .rightMouseDown, .leftMouseDragged
+    ]
     ) {
       [weak self] event in
       guard let self, let window = self.picker.contentViewController?.view.window else {
+        return event
+      }
+      if event.type == .leftMouseDragged {
+        self.presentation.reconcile()
         return event
       }
       let point = NSEvent.mouseLocation
@@ -202,7 +284,12 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   }
 
   func popoverShouldDetach(_ popover: NSPopover) -> Bool {
-    true
+    nativeDetachmentRequested = true
+    if let window = popover.contentViewController?.view.window {
+      presentation.suppressUnplaced(nativeCloseButton(in: window, includingHidden: true))
+    }
+    presentation.reconcile()
+    return true
   }
 
   private func detachPicker() {
@@ -229,20 +316,16 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   }
 
   func popoverDidDetach(_ popover: NSPopover) {
-    guard popover === picker, popover.isDetached, !isClosing, !presentation.showsHeaderClose else {
-      return
+    guard popover === picker, popover.isDetached, !isClosing else { return }
+    if let window = popover.contentViewController?.view.window {
+      window.isMovable = true
+      window.isMovableByWindowBackground = true
+      presentation.suppressUnplaced(nativeCloseButton(in: window))
     }
-    guard let window = popover.contentViewController?.view.window else { return }
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    defer { CATransaction.commit() }
-    window.isMovable = true
-    window.isMovableByWindowBackground = true
-    window.contentView?.layoutSubtreeIfNeeded()
-    presentation.detach(nativeCloseButton: nativeCloseButton(in: window))
+    presentation.didDetach()
   }
 
-  private func nativeCloseButton(in window: NSWindow) -> NSButton? {
+  private func nativeCloseButton(in window: NSWindow, includingHidden: Bool = false) -> NSButton? {
     if let button = window.standardWindowButton(.closeButton) { return button }
     var candidates: [NSButton] = []
     var inspected = 0
@@ -251,7 +334,7 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
       inspected += 1
       guard depth < 12, inspected <= 256 else { complete = false; return }
       if let button = view as? NSButton, button.accessibilitySubrole() == .closeButton,
-        !button.isHiddenOrHasHiddenAncestor
+        includingHidden || !button.isHiddenOrHasHiddenAncestor
       {
         candidates.append(button)
       }
@@ -268,6 +351,8 @@ final class EmojiMatchPanel<Content: View>: NSPanel, NSPopoverDelegate {
   override func close() {
     guard !isClosing else { return }
     isClosing = true
+    presentation.resolveCloseButton = nil
+    presentation.closeButtonHost?.stopReveal()
     if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
     if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
     outsideClickMonitor = nil

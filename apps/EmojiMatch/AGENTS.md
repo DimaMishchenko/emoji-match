@@ -25,5 +25,7 @@ App-specific guidance for `apps/EmojiMatch`:
 - Verify affected flows during iteration and before handoff; a full feature tour is not required.
   Keep the existing model/data/transport tests; do not replace real-app checks with automated UI,
   presentation or browser-rendering tests.
+- Retain useful screenshots and recordings under ignored `tmp/verification/emoji-match/` or outside
+  the repository. Do not delete captures after inspection or commit them.
 - Use isolated debug storage and task-owned recipient fixtures. Preserve clipboard ownership and
   unrelated user data; clean only task-owned processes/files as described in the guide.

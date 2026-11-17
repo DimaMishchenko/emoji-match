@@ -711,7 +711,8 @@ GIF and multi-frame images retain their original image transport and animation; 
 conversion also falls back to the validated original image instead of discarding the selection.
 
 An adaptive glyph is not proof of AI generation: native photo stickers also use this format.
-Stored adaptive glyphs are labeled Emoji Stickers, including captured Genmoji and native stickers.
+The picker labels its adaptive-glyph section and category Genmoji. This is a display label; captured
+Genmoji and imported native stickers retain their original adaptive representation.
 Settings separates Stickers and explicitly classified Genmoji rather than treating all glyphs as Genmoji.
 The Create Genmoji action remains explicitly named for the system creation feature. Existing asset
 IDs, original bytes, favorites and history remain intact; no library migration is required.
@@ -740,13 +741,17 @@ glyph's embedded original description.
 The detached header reserves a close-button slot and animates search into the remaining width,
 keeping the close control and search vertically centered together. The header drag completes
 native detachment through a runtime-signature-checked popover entry before applying detached chrome. Reduce Motion disables the
-transition. The same native circled Close button is moved synchronously into an always-mounted
-header host when it can be identified through the native window accessor or a unique accessibility
-close-button control in that window. Its artwork, native fitting size, target and action are preserved; there
+transition. The same native circled Close button is moved into an always-mounted header host when it can
+be identified through the native window accessor or a unique accessibility close-button control.
+Native-background dragging is handled while tracking, before AppKit's release-only detach callback.
+Native-button suppression starts on initial presentation and detach preparation. Confirmed inset
+state is independent of control readiness; host attachment, window migration, layout and drag events
+reconcile a pending installation against the current, nonnil content window. Its artwork, native fitting size, target and action are preserved; there
 is no custom-icon replacement. The control is hidden while it is reparented and initially laid out
 against the actual search field’s vertical center. Once search has made space, the control fades in
 over the quick motion interval,
-with no fade under Reduce Motion. Any existing native button is hidden before detachment to avoid
+with no fade under Reduce Motion. The reveal timer uses common run-loop modes so it can fire
+during native mouse tracking; old host/window/button callbacks cannot reveal a superseded control. Any existing native button is hidden before detachment to avoid
 showing its default position. Native detachment and reparenting suppress implicit layer animations. Search state and responder identity persist across detachment; attached picker geometry
 remains unchanged.
 
@@ -773,3 +778,14 @@ All present tone modifiers must match the selected default; unsupported or struc
 variants leave the original item unchanged. Explicit per-family preferences, including yellow
 and mixed tones, take precedence. Changing the default never rewrites favorites, recent usage,
 original sequences or explicit family preferences, and yellow resets only the global default.
+
+### Explicit Settings presentation
+
+The status-menu Settings action is deferred to the default run-loop mode, after menu tracking ends.
+It deminiaturizes and presents the existing Settings window, explicitly activates the app for this
+user action, and makes Settings key/front after activation is confirmed. The initiating foreground
+app is retained only to reject intervening app switches, not to assume cooperative activation.
+Genmoji restoration remains a separate best-effort path guarded by foreground ownership. A bounded activation
+wait revalidates the session, window visibility and foreground app; reopening the picker, closing
+Settings or switching to another app prevents an old request from bringing Settings forward.
+The Genmoji sidebar uses the Apple Intelligence symbol.

@@ -20,7 +20,7 @@ Owners: [app composition](../AppSources/App.swift),
 | --- | --- | --- |
 | OPEN-01 | Menu bar → Open; configured global shortcut | Opens one picker with search ready for typing; repeated opening replaces the prior session and captures the intended recipient. Verify shortcut takeover and restoration through the actual system path. |
 | OPEN-02 | Open with selected text; General → selected-text prefill toggle | Enabled prefill uses accessible selected text only for this lookup; disabled/unavailable selection starts empty. Opening alone does not edit the recipient. |
-| OPEN-03 | Open at a text anchor or without an available anchor | Anchored presentation follows the resolved text location; missing anchors use the fallback panel. Dragging the top strip detaches/moves the picker with `WindowDragGesture`; the detached header moves the same native circled Close button into a vertically centered slot while search animates aside, without swapping icons. The same circled control is laid out against the actual search field before a short fade-in; Reduce Motion skips the fade. Both paths remain searchable and dismissible. |
+| OPEN-03 | Open at a text anchor or without an available anchor | Anchored presentation follows the resolved text location; missing anchors use the fallback panel. Dragging the top strip or the native header background detaches/moves the picker; the detached header moves the same native circled Close button into a vertically centered slot while search animates aside, without swapping icons. The same circled control is laid out against the actual search field before a short fade-in; Reduce Motion skips the fade. Control placement recovers after host/window migration, and native held-drag tracking shows no default-position X. Both paths remain searchable and dismissible. |
 
 Presentation owners: [panel](../AppSources/UI/EmojiMatchPanel.swift),
 [picker/header](../AppSources/UI/EmojiMatchView.swift),
@@ -36,7 +36,7 @@ Owners: [browser](../AppSources/UI/BrowserView.swift),
 
 | ID | Capability / entry point | Observable outcome |
 | --- | --- | --- |
-| FIND-01 | Empty-query browser → category buttons and page controls | Catalog, Recents, Favorites and available custom content have visible, accessible section headings and remain browsable; changing category/page shows the corresponding items and keeps selection valid. |
+| FIND-01 | Empty-query browser → category buttons and page controls | Catalog, Recents, Favorites and available custom content have visible, accessible section headings (including Genmoji) and remain browsable; changing category/page shows the corresponding items and keeps selection valid. |
 | FIND-02 | Type/edit/clear a search query | Bundled multilingual keywords and extensions produce locally ranked results; changing the query resets selection appropriately. Empty/no-match states remain usable; clearing returns to browsing. |
 | FIND-03 | Search/grid → arrows, Return, Escape | Down at the end of search enters result navigation; arrows move selection, Return submits the selected result. Escape clears a nonempty query before closing an empty-query picker. Normal text editing and marked-text composition retain their keyboard behavior. |
 | FIND-04 | Supported item → variants by hold/context menu or Space during grid navigation | Available skin-tone/combined variants can be selected or cancelled. Choosing inserts the chosen variant and saves its preference for subsequent browsing. |
@@ -90,6 +90,7 @@ Owners: [native Genmoji](../AppSources/Genmoji/NativeGenmoji.swift),
 
 | ID | Capability / entry point | Observable outcome |
 | --- | --- | --- |
+| SET-04 | Menu bar → Settings, including an inactive or minimized Settings window | After menu tracking ends, Settings becomes the active key/front window. Superseded requests, closure or an intervening app switch prevent delayed focus stealing. The Genmoji sidebar uses Apple Intelligence artwork. |
 | GEN-01 | Eligible picker → Genmoji button | Available native creation opens with the current query/anchor and the same 320×480 content size as the picker. Picker-origin creation hides owned Settings before activation so a background Settings window does not come forward. Captured original is saved and delivered to the captured recipient; cancellation/error restores the appropriate focus without inserting stale content. Unavailable or Unicode-only destinations do not expose creation. |
 | GEN-02 | Settings → Genmoji → Create Genmoji | Label has no ellipsis. Each click supplies the current AppKit button rectangle, including after moving/resizing Settings. The popover arrow aligns with the button’s horizontal center; Settings stays visible, capture updates its library without pasting into another app, and cancellation/failure leaves Settings usable. |
 | SET-01 | Settings → General → record/reset shortcut and prefill | Valid modified shortcuts and prefill preference persist. Recording suspends the global trigger, stops on cancellation/focus loss/navigation, and reports invalid or failed registration; Reset restores the default shortcut. |
