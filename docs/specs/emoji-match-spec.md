@@ -557,12 +557,26 @@ images retain their original type. The app does not replace a rich payload with 
 whether a first paste succeeded. Explicit Copy in the picker and library provides a manual fallback.
 Recipient support is measured per control and payload; universal rich compatibility is not claimed.
 
+If a native field resigns its field editor while the picker is open and AX focus falls back to the
+captured window, restoration may reassert focus on the original field. Recovery requires the
+original application/window, a live writable eligible field and a concrete, unchanged captured selection;
+missing raw focus or another semantic field is insufficient. Foreground/window ownership is
+rechecked across AX reads and activation. Delivery still requires the original field and selection
+to regain full validity before the clipboard is changed. Recovery never retargets another window
+or treats uncertain native focus as permission to paste.
+
 ### Destination rich-content capability
 
 The intended policy is adaptive glyphs when supported, ordinary image fallback when only images are
 supported, and no creation/rich-history UI when both are known unsupported. Detection must refer to
 the captured original control, not Emoji Match's own creator receiver or a whole-app allowlist.
 The same decision must cover creation, recents, favorites, imported sections and search.
+
+An input explicitly exposing `AXTextualContextSourceCode` receives a conservative Unicode-only
+policy regardless of application identity. Read this context from the resolved input itself,
+without inheriting it from arbitrary ancestors. This describes the field's purpose; it is not an
+authoritative glyph/image-support query. Missing or unrelated contexts fall through to the existing
+Terminal and web-search heuristics. The policy is captured when the picker opens.
 
 The generic automatic capability query is not implemented. Visibility uses a structural web-search
 heuristic: a web-backed single-line input is hidden when it exposes a search subrole, belongs to a

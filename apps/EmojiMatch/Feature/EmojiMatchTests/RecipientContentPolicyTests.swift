@@ -5,6 +5,33 @@ import Testing
 @testable import EmojiMatch
 
 @Suite struct RecipientContentPolicyTests {
+  @Test func explicitSourceCodeContextIsUnicodeOnlyAcrossApplications() {
+    let field = PolicyElement(1, role: kAXTextAreaRole)
+    field.attributes["AXTextualContext"] = "AXTextualContextSourceCode" as CFString
+    let input = RecipientContentPolicy.inputTraits(for: field.element, attribute: reader([field]))
+    for bundle in [nil, "com.apple.dt.Xcode", "test.other.editor"] {
+      let assessment = RecipientContentPolicy.assess(bundleIdentifier: bundle, input: input)
+      #expect(assessment == .sourceCode)
+      #expect(!assessment.allowsRichContent)
+    }
+  }
+
+  @Test func missingOrDifferentTextualContextDoesNotClaimRichSupportOrRejection() {
+    let field = PolicyElement(1, role: kAXTextAreaRole)
+    let parent = PolicyElement(2, role: kAXGroupRole)
+    field.attributes[kAXParentAttribute] = parent.element
+    parent.attributes["AXTextualContext"] = "AXTextualContextSourceCode" as CFString
+    for context in [nil, "AXTextualContextWordProcessing", "future-context"] as [String?] {
+      field.attributes["AXTextualContext"] = context.map { $0 as CFString }
+      let input = RecipientContentPolicy.inputTraits(
+        for: field.element, attribute: reader([field, parent]))
+      let assessment = RecipientContentPolicy.assess(
+        bundleIdentifier: "com.apple.dt.Xcode", input: input)
+      #expect(assessment == .unknown)
+      #expect(assessment.allowsRichContent)
+    }
+  }
+
   @Test func semanticSearchDecisionsSurviveAppAndDOMClassRenaming() {
     let searches: [RecipientContentPolicy.InputTraits] = [
       .init(role: kAXComboBoxRole, isWebContent: true, isInSearchLandmark: true),

@@ -56,10 +56,14 @@ Owners: [delivery coordination](../AppSources/App.swift),
 | ID | Capability / entry point | Observable outcome |
 | --- | --- | --- |
 | SEND-01 | Choose Unicode emoji by click or Return | Picker closes and the captured, still-valid recipient receives the exact emoji at its intended selection/caret. Invalid or changed destinations do not receive a stale insertion. Observe recipient content; posted events alone do not prove consumption. |
-| SEND-02 | Choose imported sticker or adaptive glyph for a rich recipient | A compatible recipient receives the intended inline image/glyph rather than its title or a file path. Identified Terminal and web-search fields offer Unicode-only content; unknown recipients remain eligible, without a compatibility guarantee. Failed delivery remains distinguishable from successful insertion. |
+| SEND-02 | Choose imported sticker or adaptive glyph for a rich recipient | A compatible recipient receives the intended inline image/glyph rather than its title or a file path. Identified Terminal, web-search fields and inputs explicitly exposing source-code textual context offer Unicode-only content; unknown recipients remain eligible, without a compatibility guarantee. Failed delivery remains distinguishable from successful insertion. |
 | SEND-03 | Item context menu/Settings → Copy; automatic paste restoration | Explicit Copy leaves the selected payload on the clipboard. Automatic paste restores the prior snapshot only while it owns the clipboard; an intervening copy survives. Failed writes/delivery do not silently replace unrelated clipboard contents. |
 
 Image transport owner: [inline sticker conversion](../AppSources/System/InlineStickerImage.swift).
+Native fields can temporarily report their window as focused while the picker is open. Restoration
+may reassert the captured writable field only in the same window with a concrete, unchanged selection;
+another field, window or application prevents recovery. Full destination validation still precedes
+clipboard mutation. Verify both an empty native search field and ordinary document editors.
 Finder fields, plain TextEdit and unknown rich editors need recipient-specific checks; a successful
 rich TextEdit fixture or model test does not establish those outcomes. Record unverified or blocked
 recipients explicitly rather than treating unknown policy assessment as confirmed rich support.

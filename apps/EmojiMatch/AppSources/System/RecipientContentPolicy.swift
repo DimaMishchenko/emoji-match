@@ -4,6 +4,7 @@ struct RecipientContentPolicy {
   struct InputTraits {
     var role: String?
     var subrole: String?
+    var textualContext: String?
     var isWebContent = false
     var isInSearchLandmark = false
     var ownsDialogResultList = false
@@ -14,11 +15,13 @@ struct RecipientContentPolicy {
     case unknown
     case webSearch
     case terminal
+    case sourceCode
 
     var allowsRichContent: Bool { self == .unknown }
   }
 
   static func assess(bundleIdentifier: String?, input: InputTraits) -> Assessment {
+    if input.textualContext == "AXTextualContextSourceCode" { return .sourceCode }
     if bundleIdentifier == "com.apple.Terminal", input.role == kAXTextAreaRole {
       return .terminal
     }
@@ -58,6 +61,7 @@ struct RecipientContentPolicy {
     return InputTraits(
       role: attribute(element, kAXRoleAttribute) as? String,
       subrole: attribute(element, kAXSubroleAttribute) as? String,
+      textualContext: attribute(element, "AXTextualContext") as? String,
       isWebContent: attribute(element, "AXDOMClassList") as? [String] != nil
         || attribute(element, "AXDOMIdentifier") as? String != nil
         || lineage.contains { attribute($0, kAXRoleAttribute) as? String == "AXWebArea" },

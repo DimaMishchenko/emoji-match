@@ -12,6 +12,11 @@ struct InsertionDestination {
     var isAlive: (NSRunningApplication) -> Bool
     var activate: (NSRunningApplication) -> Bool
     var ownProcessIdentifier: pid_t
+    var rawFocusedElement: (pid_t) -> AXUIElement? = { _ in nil }
+    var focusedWindow: (pid_t) -> AXUIElement? = { _ in nil }
+    var elementWindow: (AXUIElement) -> AXUIElement? = { _ in nil }
+    var hasWritableValue: (AXUIElement) -> Bool = { _ in false }
+    var focus: (AXUIElement) -> Bool = { _ in false }
 
     static var live: Self {
       Self(
@@ -49,7 +54,23 @@ struct InsertionDestination {
         },
         isAlive: { !$0.isTerminated },
         activate: { $0.activate() },
-        ownProcessIdentifier: ProcessInfo.processInfo.processIdentifier
+        ownProcessIdentifier: ProcessInfo.processInfo.processIdentifier,
+        rawFocusedElement: { pid in
+          elementAttribute(kAXFocusedUIElementAttribute, of: AXUIElementCreateApplication(pid))
+        },
+        focusedWindow: { pid in
+          elementAttribute(kAXFocusedWindowAttribute, of: AXUIElementCreateApplication(pid))
+        },
+        elementWindow: { elementAttribute(kAXWindowAttribute, of: $0) },
+        hasWritableValue: { element in
+          var writable: DarwinBoolean = false
+          return AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &writable)
+            == .success && writable.boolValue
+        },
+        focus: { element in
+          AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+            == .success
+        }
       )
     }
   }
@@ -59,6 +80,7 @@ struct InsertionDestination {
   let initialSelectedRange: CFRange?
   let selectedText: String?
   let allowsRichContent: Bool
+  private let capturedWindow: AXUIElement?
   private let dependencies: Dependencies
 
   static func capture(includeSelectedText: Bool = true) -> Self? {
@@ -72,6 +94,7 @@ struct InsertionDestination {
       let element = dependencies.focusedElement(application.processIdentifier),
       dependencies.isEditable(element)
     else { return nil }
+    let window = dependencies.elementWindow(element)
     let range = dependencies.selectedRange(element)
     var text: String?
     if includeSelectedText, let range, range.location >= 0, range.length > 0, range.length <= 1024 {
@@ -90,29 +113,68 @@ struct InsertionDestination {
           input: RecipientContentPolicy.inputTraits(for: element)
         )
         .allowsRichContent,
+      capturedWindow: window,
       dependencies: dependencies
     )
     return destination.isValidForDelivery() ? destination : nil
   }
 
   func restoreFocus() -> Bool {
-    guard let frontmost = dependencies.frontmostApplication(),
-      frontmost.processIdentifier == application.processIdentifier
-        || frontmost.processIdentifier == dependencies.ownProcessIdentifier,
-      hasUnchangedControl()
+    guard canActivateRecipient() else { return false }
+    if hasUnchangedControl() {
+      return canActivateRecipient() && dependencies.activate(application)
+    }
+    guard let window = capturedWindow, canReassertFocus(in: window),
+      dependencies.activate(application), canActivateRecipient()
     else { return false }
-    guard let current = dependencies.frontmostApplication(),
-      current.processIdentifier == application.processIdentifier
-        || current.processIdentifier == dependencies.ownProcessIdentifier
-    else { return false }
-    return dependencies.activate(application)
+    if hasUnchangedControl() {
+      return isInFocusedWindow(window) && canActivateRecipient()
+    }
+    return canReassertFocus(in: window) && dependencies.focus(focusedElement)
   }
 
   func isValidForDelivery() -> Bool {
     guard dependencies.frontmostApplication()?.processIdentifier == application.processIdentifier,
       hasUnchangedControl()
     else { return false }
+    if let capturedWindow, !isInFocusedWindow(capturedWindow) { return false }
+    guard let focused = dependencies.focusedElement(application.processIdentifier),
+      CFEqual(focused, focusedElement)
+    else { return false }
     return dependencies.frontmostApplication()?.processIdentifier == application.processIdentifier
+  }
+
+  private func canActivateRecipient() -> Bool {
+    guard let pid = dependencies.frontmostApplication()?.processIdentifier else { return false }
+    return pid == application.processIdentifier || pid == dependencies.ownProcessIdentifier
+  }
+
+  private func isInFocusedWindow(_ window: AXUIElement) -> Bool {
+    guard let elementWindow = dependencies.elementWindow(focusedElement),
+      CFEqual(elementWindow, window),
+      let focusedWindow = dependencies.focusedWindow(application.processIdentifier)
+    else { return false }
+    return CFEqual(focusedWindow, window)
+  }
+
+  private func hasWindowFocus(_ window: AXUIElement) -> Bool {
+    let pid = application.processIdentifier
+    guard isInFocusedWindow(window), dependencies.focusedElement(pid) == nil,
+      let rawFocus = dependencies.rawFocusedElement(pid), CFEqual(rawFocus, window),
+      isInFocusedWindow(window), dependencies.focusedElement(pid) == nil,
+      let latestRawFocus = dependencies.rawFocusedElement(pid)
+    else { return false }
+    return CFEqual(latestRawFocus, window)
+  }
+
+  private func canReassertFocus(in window: AXUIElement) -> Bool {
+    guard initialSelectedRange != nil, canActivateRecipient(), dependencies.isAlive(application),
+      hasWindowFocus(window),
+      dependencies.isEditable(focusedElement), hasUnchangedRange(of: focusedElement),
+      dependencies.hasWritableValue(focusedElement), hasWindowFocus(window),
+      dependencies.isAlive(application)
+    else { return false }
+    return canActivateRecipient()
   }
 
   private func hasUnchangedControl() -> Bool {
@@ -120,19 +182,26 @@ struct InsertionDestination {
       let focused = dependencies.focusedElement(application.processIdentifier),
       CFEqual(focused, focusedElement)
     else { return false }
-    let current = dependencies.selectedRange(focused)
-    let unchangedRange: Bool
-    switch (initialSelectedRange, current) {
-    case (.none, .none): unchangedRange = true
-    case (.some(let initial), .some(let current)):
-      unchangedRange = initial.location == current.location && initial.length == current.length
-    default: unchangedRange = false
-    }
-    guard unchangedRange,
+    guard hasUnchangedRange(of: focused),
       let latestFocused = dependencies.focusedElement(application.processIdentifier)
     else { return false }
     return CFEqual(latestFocused, focusedElement)
   }
+
+  private func hasUnchangedRange(of element: AXUIElement) -> Bool {
+    switch (initialSelectedRange, dependencies.selectedRange(element)) {
+    case (.none, .none): return true
+    case (.some(let initial), .some(let current)):
+      return initial.location == current.location && initial.length == current.length
+    default: return false
+    }
+  }
+}
+
+private func elementAttribute(_ name: String, of element: AXUIElement) -> AXUIElement? {
+  guard let value = attribute(name, of: element), CFGetTypeID(value) == AXUIElementGetTypeID()
+  else { return nil }
+  return unsafeBitCast(value, to: AXUIElement.self)
 }
 
 private func attribute(_ name: String, of element: AXUIElement) -> CFTypeRef? {

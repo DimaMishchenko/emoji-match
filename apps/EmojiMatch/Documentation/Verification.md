@@ -75,6 +75,22 @@ Choose flows from the changed IDs and their dependencies, for example:
 - Insertion/clipboard changes: SEND-01–03 with an owned recipient, a known selection, actual
   resulting content and an intervening copy. Cover Unicode-only and rich paths relevant to the fix.
 
+For everyday-input changes, sample native fields/editors, Electron editors/search, a browser,
+a messaging draft and an owned terminal receiver. Use the apps actually installed; record login,
+setup and unavailable-window blockers without treating them as passes. Never send a message,
+execute pasted terminal text, overwrite a nonempty draft, or alter another app's setup to obtain a
+test result. A terminal receiver should record literal input rather than run it as a shell command.
+Allow recipient processing to finish before reading the result or switching apps. Empty web
+editors may expose a synthetic newline; verify one exact inserted emoji and restore the logical
+empty state without treating that newline as authored content.
+
+For same-window recovery, focus an empty Notes search, open the picker and choose an emoji. Read
+the actual search value after its results update, rather than assuming current AX focus still names
+the field. A different selected field, window, application or selection must never receive a stale
+paste. For rich filtering, compare an input exposing `AXTextualContextSourceCode` with an ordinary
+editor and search; missing or unrelated context falls through to the existing heuristics. Verify Unicode still inserts while
+all rich categories, recents, favorites, search results and creation respect the restriction.
+
 A screenshot proves appearance, not insertion. Read the recipient's resulting text or inspect its
 actual rich attachment/glyph; posting a paste event or recording usage does not prove consumption.
 For rich content, distinguish inline insertion from a large attachment, filename or plain title.
