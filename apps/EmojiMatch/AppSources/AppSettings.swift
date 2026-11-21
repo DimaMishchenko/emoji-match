@@ -65,10 +65,48 @@ final class AppSettings {
   var prefillSelectedText: Bool {
     didSet { defaults.set(prefillSelectedText, forKey: prefix + ".prefill") }
   }
+  var lexicalSearchEnabled: Bool {
+    didSet { defaults.set(lexicalSearchEnabled, forKey: prefix + ".lexicalSearchEnabled") }
+  }
+  var miniLMSearchEnabled: Bool {
+    didSet { defaults.set(miniLMSearchEnabled, forKey: prefix + ".miniLMSearchEnabled") }
+  }
+  var multilingualSearchEnabled: Bool {
+    didSet {
+      defaults.set(multilingualSearchEnabled, forKey: prefix + ".multilingualSearchEnabled")
+    }
+  }
+  var lunaSearchEnabled: Bool {
+    didSet { defaults.set(lunaSearchEnabled, forKey: prefix + ".lunaSearchEnabled") }
+  }
+  var duckDuckGoSearchEnabled: Bool {
+    didSet { defaults.set(duckDuckGoSearchEnabled, forKey: prefix + ".duckDuckGoSearchEnabled") }
+  }
+  var groupSearchResultsByProvider: Bool {
+    didSet {
+      defaults.set(groupSearchResultsByProvider, forKey: prefix + ".groupSearchResultsByProvider")
+    }
+  }
 
-  init(defaults: UserDefaults = .standard, prefix: String = "com.dimasike.EmojiMatch.settings") {
+  var enabledSearchProviders: Set<EmojiSearchProvider> {
+    var providers: Set<EmojiSearchProvider> = []
+    if lexicalSearchEnabled { providers.insert(.lexical) }
+    if miniLMSearchEnabled { providers.insert(.miniLM) }
+    if multilingualSearchEnabled { providers.insert(.multilingual) }
+    if lunaSearchEnabled { providers.insert(.luna) }
+    if duckDuckGoSearchEnabled { providers.insert(.duckDuckGo) }
+    return providers
+  }
+
+  let searchCredentialService: String
+
+  init(
+    defaults: UserDefaults = .standard, prefix: String = "com.dimasike.EmojiMatch.settings",
+    credentialService: String? = nil
+  ) {
     self.defaults = defaults
     self.prefix = prefix
+    self.searchCredentialService = credentialService ?? prefix + ".search"
     openShortcut =
       defaults.data(forKey: prefix + ".shortcut")
       .flatMap {
@@ -78,5 +116,17 @@ final class AppSettings {
       defaults.string(forKey: prefix + ".defaultSkinTone")
       .flatMap(DefaultSkinTone.init(rawValue:)) ?? .yellow
     prefillSelectedText = defaults.object(forKey: prefix + ".prefill") as? Bool ?? true
+    lexicalSearchEnabled =
+      defaults.object(forKey: prefix + ".lexicalSearchEnabled") as? Bool ?? true
+    miniLMSearchEnabled =
+      defaults.object(forKey: prefix + ".miniLMSearchEnabled") as? Bool ?? true
+    multilingualSearchEnabled =
+      defaults.object(forKey: prefix + ".multilingualSearchEnabled") as? Bool ?? true
+    lunaSearchEnabled =
+      defaults.object(forKey: prefix + ".lunaSearchEnabled") as? Bool ?? false
+    duckDuckGoSearchEnabled =
+      defaults.object(forKey: prefix + ".duckDuckGoSearchEnabled") as? Bool ?? false
+    groupSearchResultsByProvider =
+      defaults.object(forKey: prefix + ".groupSearchResultsByProvider") as? Bool ?? false
   }
 }

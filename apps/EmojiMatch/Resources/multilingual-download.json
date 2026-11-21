@@ -1,0 +1,53 @@
+{
+  "bytes": 234763369,
+  "files": {
+    "Multilingual.mlpackage/Data/com.apple.CoreML/model.mlmodel": {
+      "bytes": 124709,
+      "sha256": "96e05edcfb0f546ad3c94c2388b1d219bd30ad7836220410056ac512bcbfba35"
+    },
+    "Multilingual.mlpackage/Data/com.apple.CoreML/weights/weight.bin": {
+      "bytes": 278791296,
+      "sha256": "7298ab739d11e2807bdd45fd27f95320e8712291070c794d5aaaff6186fa7b8b"
+    },
+    "Multilingual.mlpackage/Manifest.json": {
+      "bytes": 617,
+      "sha256": "89b3eaaf05f9a9751f756cd4b9552ef24c0c680ceda0fd0d086d6649a5ec3347"
+    },
+    "multilingual-Apache-LICENSE.txt": {
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    "multilingual-MIT-LICENSE.txt": {
+      "bytes": 1104,
+      "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe"
+    },
+    "multilingual-NOTICE.txt": {
+      "bytes": 1092,
+      "sha256": "ca7e6e5415ffb90d802c24b2f2c163505f7878620c169220d6fa1cf47c1fc1e0"
+    },
+    "multilingual-catalog.json": {
+      "bytes": 103501,
+      "sha256": "6995f756d9f09b76f62468e7310a5f5d189012153339a2b14683cd9c04a63ef0"
+    },
+    "multilingual-index.f32": {
+      "bytes": 2967552,
+      "sha256": "39c807c67764e3797c9964755be47302d272482db8d2c8af71ef05f1e3c780d5"
+    },
+    "multilingual-manifest.json": {
+      "bytes": 6291,
+      "sha256": "7a1d71dc1bcb0adbb2aa9214546ac0e5699cfca3427b7fd0619d5ab673f5373c"
+    },
+    "multilingual-parity.json": {
+      "bytes": 171168,
+      "sha256": "b17c9e24a64013fc8a9909c3774923a4f0c0f659e90cc542fb8f6fb314e3604f"
+    },
+    "multilingual-vocab.json": {
+      "bytes": 12829908,
+      "sha256": "7833e334eac4e3aae437f034ef926de359600cfaef608dd4f7d3ce40fd71b932"
+    }
+  },
+  "modelRevision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "schema": 1,
+  "sha256": "fd29a285005f2b281eebf947bffb84ac599c68cce999d27be7a2ee189b11f839",
+  "url": "https://github.com/DimaMishchenko/emoji-match/releases/download/models-e5-small-614241f-v1/multilingual-e5-small.zip"
+}

@@ -14,8 +14,9 @@ struct EmojiMatchSettingsView: View {
   @State private var recordingWindowNumber: Int?
   @State private var hasAccessibility = AccessibilityPermission.isGranted
 
-  private enum Page: String, CaseIterable, Identifiable {
+  enum Page: String, CaseIterable, Identifiable {
     case general = "General"
+    case search = "Search"
     case stickers = "Stickers"
     case genmoji = "Genmoji"
     case accessibility = "Accessibility"
@@ -24,6 +25,7 @@ struct EmojiMatchSettingsView: View {
     var symbol: String {
       switch self {
       case .general: "gearshape"
+      case .search: "magnifyingglass"
       case .stickers: "square.grid.2x2"
       case .genmoji: "apple.intelligence"
       case .accessibility: "accessibility"
@@ -31,11 +33,14 @@ struct EmojiMatchSettingsView: View {
     }
   }
 
-  @State private var page: Page? = .general
+  @Binding var page: Page?
   @State private var confirmsClearHistory = false
   let library: StickerLibraryModel
   let genmojiLibrary: StickerLibraryModel
   let onCreateGenmoji: ((CGRect) -> Void)?
+  var onSearchCredentialsChanged: () -> Void = {}
+  var multilingualModel: EmojiMultilingualModelStore? = nil
+  let onRemoveMultilingualModel: () async throws -> Void
 
   var body: some View {
     NavigationSplitView(columnVisibility: .constant(.all)) {
@@ -54,6 +59,11 @@ struct EmojiMatchSettingsView: View {
       Group {
         switch page ?? .general {
         case .general: generalSettings
+        case .search:
+          EmojiSearchSettingsView(
+            settings: settings, onCredentialsChanged: onSearchCredentialsChanged,
+            multilingualModel: multilingualModel,
+            onRemoveMultilingualModel: onRemoveMultilingualModel)
         case .stickers: StickerLibrarySettingsView(model: library)
         case .genmoji:
           StickerLibrarySettingsView(model: genmojiLibrary, onCreateGenmoji: onCreateGenmoji)

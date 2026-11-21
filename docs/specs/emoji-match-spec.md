@@ -377,9 +377,9 @@ These are support cases around the main flows.
   - current app does not expose selected text, or access fails
   - launcher opens with an empty query instead of failing
 
-- `AI unavailable`
-  - Foundation Models are unsupported, disabled, unavailable, or time out
-  - launcher continues to operate using deterministic local search only
+- `Search source unavailable`
+  - a model is not installed or a provider fails, times out, or enters cooldown
+  - other enabled sources remain usable; typed recovery offers Settings, Retry, wait, or query editing
 
 - `Insertion or paste failure`
   - user confirms an emoji
@@ -423,14 +423,147 @@ Exact toggle behavior remains open.
 
 ## Deferred decisions
 
-Semantic search, Emojify, synchronization and launch-on-login remain future product decisions.
+Emojify, synchronization and launch-on-login remain future product decisions.
 Current navigation, fixed picker dimensions, native catalog grouping, settings, copy actions and
 clipboard ownership are specified by the implemented contracts below rather than undecided.
 Finder direct input and generic plain/rich recipient capability detection remain open platform work.
 
 ## Search Model
 
-The search stack is deterministic and local for this pass.
+Settings → Search has independent switches for Names & Keywords, MiniLM (English), E5
+(Multilingual), Luna (OpenAI) and Web Search (DuckDuckGo). Names & Keywords and both local models default on;
+both online sources default off. The compact native form uses one switch per source and short
+section footers; Luna entry/save controls appear while Luna is enabled. A saved key remains removable when Luna is off. For each nonempty query, on-device language detection selects MiniLM for English and E5
+for other or uncertain languages. Both switches are eligibility controls: a disabled model never
+runs, and the other model is not substituted for it. Disabled sources do not
+create search models, dispatch requests or contribute results. Disabling Names & Keywords also
+removes imported-title and symbol query matches; empty-query browsing remains unchanged.
+
+Names, keywords, shortcodes and typo corrections appear synchronously when enabled. The selected enabled encoder
+starts after a 50 ms typing pause. The pinned `all-MiniLM-L6-v2` Core ML encoder and
+`multilingual-e5-small` with native SentencePiece/Unigram tokenization, `query: `/`passage: ` prefixes
+and normalized vectors each score all 1,932 canonical families. MiniLM and its licenses ship with
+the app for offline English search. E5 is optional: Settings explicitly downloads a roughly 235 MB
+ZIP from a GitHub release. The retained source and compiled installation use roughly 575 MB and
+work offline afterward. Downloading sends no query. Progress, Cancel, Remove and retry after failure
+are available. Missing E5 offers an explicit download action while other enabled sources remain usable. Active downloads expose cancellation in the picker and Settings.
+`Resources/multilingual-download.json` pins the revision, archive bytes/SHA256 and exact extracted
+file inventory with per-file sizes/digests. Installation validates those identities, rejects unsafe
+or unexpected entries, compiles Core ML and validates before promotion; cancellation/failure does
+not promote partial resources. Maintenance sources live in `ModelResources/Multilingual`, excluded
+from the bundle; model `.mlpackage` directories are ignored by Git. The E5 NOTICE links the model
+card; licenses and NOTICE accompany the download. No Python or model server is needed at runtime. Each encoder loads lazily on its own actor and
+stays available across picker presentations. Tokenization checks cancellation during normalization
+and segmentation; synchronous Core ML prediction checks cancellation before and after inference.
+Similarities are not calibrated probabilities and do not impose a universal relevance threshold.
+
+Language routing trims surrounding whitespace/newlines identically to provider dispatch, then
+samples at most 512 Unicode scalars, sends no text online, and ignores interface
+locale. Non-Latin alphabetic samples use E5. Latin samples use MiniLM only when English leads
+Apple's language hypotheses with at least 0.3 weight and a 0.15 margin; uncertain, numeric or
+glyph-only queries use E5. These are routing heuristics, not language guarantees or relevance
+probabilities. Short ambiguous terms may choose E5. Changing query language cancels the previous
+model operation and immediately hides its results/status. Only the applicable enabled model gets a
+section in grouped view; browsing and other providers remain unchanged.
+
+Each enabled online source independently makes one lookup per uncached settled query after a
+300 ms debounce, without automatic retry, with a ten-second timeout. Enabling both sends searches to both.
+Only Luna uses a Keychain generic-password item; preferences store flags, never credentials.
+Search text and locale-based preferences are the only user input sent online. This includes selected
+recipient text used as the initial query when selected-text prefill is enabled; opening that picker
+can dispatch without typing. Settings discloses this alongside online opt-in. Clipboard contents,
+other recipient context, history and the emoji catalog are not sent. Changes apply on reopening.
+
+Luna uses `gpt-6-luna` through OpenAI Responses with `store:false` and strict structured output: one
+to six open-ended Unicode emoji, without candidate lists. Complete known graphemes are mapped locally
+to catalog families; tone variants collapse to their base, while ZWJ/gender/flag structure is
+preserved. Unknown/composite strings are filtered, duplicate families collapse, and all-invalid,
+refused, incomplete or failed responses preserve other enabled results. An app-owned dispatch gate
+survives picker presentations, spaces requests at least one second apart and blocks a rejected
+credential until credentials change. Rate limits preserve explicit Retry-After seconds or HTTP-date
+deadlines, including durations beyond five minutes. Missing/unreadable/rejected credentials lead to
+Settings; offline/timeout/malformed/unavailable failures offer Retry; rate limits offer wait; refusal
+and oversized input require query changes. Retry is explicit and cooldowns do not trigger automatic requests.
+
+Web Search is labeled independently from its DuckDuckGo attribution and uses one keyless navigation to its non-JavaScript HTML search endpoint through a lazy,
+offscreen WKWebView owned by the application search services. The same browser and dedicated persistent
+website-data profile are reused across picker presentations; Safari's profile is not used. Browser
+cookies and caches remain on this Mac and ordinary browser headers/cookies may accompany requests.
+Page JavaScript is disabled; an isolated app script observes DOM readiness and serializes only the
+first ten organic result rows. Their titles/snippets and validated URLs feed catalog-family mapping
+and domain-capped ranking. Remaining page loading stops when extraction completes;
+non-media subresources may already have loaded. Content rules block images, media and fonts. No destination pages, alternate providers or query fan-out are used.
+English keeps `emoji for {query} copy and paste`; recognized other languages use a native emoji suffix
+and matching regional preference. Short ambiguous Latin queries use the locale rather than a weak
+language guess. Query text, including qualifiers and Unicode, is preserved without translation.
+Raw provider input is limited to 2,000 Unicode scalars/8,000 UTF-8 bytes before trimming,
+cache lookup or resource loading; cancellation takes precedence. The serialized result DOM is limited to 1 MiB; the latter
+is not a total network-traffic limit. Cancellation, nonce/navigation identity and timeout guards
+reject superseded callbacks. Challenges/HTTP 202, 403 and 429 pause dispatch for 60 seconds, extended
+by an explicit Retry-After deadline without a five-minute cap, without automatic retries or challenge bypass. Local results remain available.
+Public HTML lookup is not an unlimited API guarantee. Luna alone requires a saved Keychain key.
+
+With MiniLM enabled and the same language router selecting English, ordinary web queries reuse the same MiniLM actor and index as
+local search. Only the original query is embedded; only families actually retrieved from the ten
+result rows are reranked. Complete web and semantic candidate ranks combine with equal
+`1/(60+rank)` contributions and stable web-order ties, then return up to six suggestions with their
+source URLs. The actor retains one reusable query embedding. Disabling MiniLM, a model
+failure or incomplete candidate ranking preserves web order; cancellation still cancels the lookup.
+Explicit English negation/status markers and first-person requests keep web order to avoid observed
+semantic-reordering regressions. This is a conservative web-ranking guard, not general negation or
+idiom understanding. Other languages retain web order; E5 continues to supply local multilingual
+results independently. No new model or provider is introduced.
+
+Exact names, shortcodes and emoji values remain first. Only complete authoritative exact, prefix, full-token and bounded-typo lexical matches participate in fusion. Partial, substring-only, category and legacy-extension matches remain selectable after fused candidates. Remaining candidates use source-aware
+rank agreement across lexical, MiniLM, E5, Luna and web lists. Support from two lists or two canonical
+web hosts precedes singleton evidence; within each group, reciprocal-rank fusion sums `1/(60+rank)`.
+Stable ties use lexical, MiniLM, E5, Luna, web positions then ID. Duplicate rows never add votes. This
+is an ordering policy, not calibrated confidence: weak sources can agree incorrectly and two hosts
+do not imply independent authorship or semantic truth. All retained source candidates remain
+selectable; filtering does not force a no-match. Supported tone preferences apply after merging.
+
+“Group results by provider” defaults off. Mixed view deduplicates candidates across sources using
+the fusion policy above. Grouped view bypasses fusion and displays enabled sources in fixed order:
+Names & Keywords, MiniLM, E5, Luna, Web Search (with DuckDuckGo attribution). Only the applicable enabled local model appears. Each section preserves source order and deduplicates
+families internally; the same emoji may appear under multiple sources. Section and item identities
+are provider-prefixed after tone preference, while submitted selections and variant families keep
+their original identities. Each section exposes its own loading, failure or no-results state.
+Grouping changes presentation only, not dispatch or transmitted input. Empty input remains the
+ordinary browser, with no provider sections or searches.
+
+DDG's own ranking receives the original query, independently of MiniLM and mixed-provider fusion.
+It distinguishes direct query-associated title segments or snippet sentences, contextual emoji lists,
+and loose title samples separated by a pipe. Direct evidence precedes contextual lists, which precede
+title samples; domain-capped reciprocal-position votes break ties within a tier. A candidate keeps
+only its strongest evidence tier and that tier's supporting URLs, so weaker sightings do not invent
+corroboration. Unrelated prose snippets cannot borrow relevance from a topic-related page title.
+Glyph-only snippets under a related title and list-shaped multi-emoji examples immediately following a related
+sentence remain eligible, except unanchored English promotional calls to action. Matching folds case, accents and width and ignores common English function
+words when meaningful query terms remain. These are lexical context heuristics, not semantic
+understanding; useful paraphrases can be missed and unrelated emoji can still share query terms.
+No query-specific emoji blacklist, extra request, destination fetch or local model is required.
+
+Web extraction removes explicit nav/header/footer HTML regions, recognizable navigation breadcrumb
+prefixes and dangling joiner/gender fragments. Whole genuine symbols outside furniture remain
+eligible. Common www/mobile/amp hostname aliases share a vote; arbitrary subdomains remain separate
+without a public-suffix registry. The filtering rules are structural, not a maintained slang pack.
+
+Local and online work run independently, with separate 64-key/five-minute per-picker memory caches.
+Query-and-locale identity, cancellation and generation checks reject stale results, including providers
+that ignore cancellation. Empty input returns to browsing without dispatch. Clear/dismiss cancels
+all provider operations. Keyboard selection follows the leading item until navigation begins, then retains
+a surviving selected item. Loading and owned failure messages stay accessible without exposing keys
+or raw server errors.
+
+Provider switches, grouping and credentials come only from Settings and its Keychain namespace in
+both Debug and Release. Historical key-file overrides, recorded web playback and search-result
+recording are not supported. Unit tests inject provider transports directly.
+
+A valid task-owned Debug `--verification-directory` isolates settings/history/library and credential
+namespace, and uses nonpersistent web storage separate from the production profile. Isolated startup can open Settings with `--verification-open-settings` or open an authored
+picker query with `--verification-query`. These flags are honored only with a valid isolated
+verification directory. The query override never captures or delivers into an existing recipient,
+so it does not establish recipient insertion.
 
 ## Usage History Model
 
@@ -477,8 +610,9 @@ runtime contracts use the accessible app-owned grid fallback.
 
 Search displays every ranked keyword match by default and searches imported descriptions. Visible
 items and keyboard navigation share one content model with separate occurrence IDs. Catalog/index
-failures show unavailable/retry states. This is deterministic multilingual keyword matching, not
-semantic search. Custom, Favorites and Recent sections augment the existing native-size grid.
+failures show unavailable/retry states. The local baseline is deterministic multilingual keyword
+matching; bundled English MiniLM, optionally installed E5 and independent opt-in Luna/Web Search augment it asynchronously. Custom, Favorites and Recent
+sections augment the existing native-size grid.
 
 ### Baseline search
 
@@ -487,10 +621,27 @@ Use the bundled emoji dataset for:
 - emoji value matching
 - localized name matching
 - localized keyword matching
-- app-bundled keyword extensions
-- exact, prefix, and contains ranking
+- English-name-derived shortcodes, with optional surrounding colons (`:broken_heart:`)
+- maintained product aliases with provenance in `emoji-search-aliases.json`
+- legacy app-bundled keyword extensions as weak evidence
+- exact, prefix, complete-token, substring, bounded typo and partial-token ranking
 
-This path should be deterministic and fast.
+Ranking retains field and locale evidence. Preferred-language names precede English and other-language
+names on equal match quality, followed by CLDR keywords and curated aliases. Group/subgroup and
+legacy extension evidence ranks below complete name/keyword/curated matches, including complete typo
+matches. Multi-token completeness uses the weakest contributing field priority; a partial exact word
+does not suppress complete typo-aware retrieval. Weak exact tokens also do not suppress stronger
+authoritative corrections; ranking considers the best complete evidence from either path. Equal evidence falls back to Unicode order, value and ID.
+All bundled locales and every matching logical emoji remain visible by default; explicit limits apply
+only when requested. Existing Apple support filtering remains at production load time.
+
+Typo retrieval accepts one insertion, deletion, substitution or adjacent transposition per word, only
+for normalized Latin words of 4–32 ASCII letters in preferred-language/English names and CLDR keywords.
+Queries have at most four words for this path, and every word must match. Category/legacy/product aliases
+are not fuzzed. Eligible fuzzy tokens are indexed once with entry postings and length buckets, and
+corrections are resolved once per query. The store memoizes the last normalized query’s complete
+results without observation notifications, applies requested limits afterward, and invalidates the
+cache on every reload, including failed loads. This is lexical retrieval, not semantic inference. See [maintenance](../emoji-data-maintenance.md).
 
 ### Query interpretation
 
@@ -522,18 +673,13 @@ This gives:
 - deterministic local search behavior
 - app-side keyword extensions for extra aliases
 
-### AI integration
+### Semantic and online search
 
-Foundation Models should be treated as an enhancement layer, not the sole search implementation.
-
-V1 should target Foundation Models first, but the intent-search layer should be structured so other
-model providers can be added later if needed.
-
-The app should still remain useful if:
-
-- Foundation Models are unavailable
-- model latency is too high
-- the system does not support the desired features
+The Search Model contract above is authoritative. Names and keywords remain available locally;
+MiniLM handles detected English queries, and the optional E5 model handles other or uncertain
+languages after installation. Luna and Web Search are independent explicit online choices.
+Provider failures preserve other enabled sources and expose owned recovery
+messages instead of raw service responses.
 
 ### Selected text
 
@@ -668,7 +814,7 @@ picker; closing is idempotent across menu, popover-delegate and monitor callback
 
 ### Sidebar Settings and sticker management
 
-Settings uses a resizable native macOS sidebar with General, Stickers, Genmoji and Accessibility
+Settings uses a resizable native macOS sidebar with General, Search, Stickers, Genmoji and Accessibility
 panels. The sidebar is always visible, without a toggle toolbar item. General owns shortcut
 recording, selected-text prefill and a Clear Recent row with a trailing Clear button and confirmation.
 Switching panels or leaving the window ends shortcut recording and resumes registration.

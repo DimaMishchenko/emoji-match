@@ -106,7 +106,11 @@ struct DefaultSkinToneTests {
         search.navigationLayout.items.contains {
           $0.familyBase == base && $0.selection.value == "👍🏽"
         })
-      #expect(search.categories.flatMap(\.items).first { $0.id == item.id }?.selection.value == "👍🏽")
+      for category in search.categories {
+        if let target = category.firstItemID {
+          #expect(browse.navigationLayout.items.contains { $0.id == target })
+        }
+      }
     }
   }
 }

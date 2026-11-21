@@ -31,3 +31,8 @@ fastlane/test_output/
 # Codex
 .codex/config.toml
 tmp/
+
+# Generated model packages fetched from the pinned release asset
+apps/EmojiMatch/ModelResources/Multilingual/Multilingual.mlpackage/
+__pycache__/
+*.py[cod]

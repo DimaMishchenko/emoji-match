@@ -16,6 +16,10 @@ struct BrowserView: View {
   let onSelectEmoji: (EmojiSelection) -> Void
   let onCopySelection: ((EmojiSelection) -> Void)?
   let content: EmojiMatchContent
+  let onOpenSearchSettings: (() -> Void)?
+  let onDownloadMultilingualModel: (() -> Void)?
+  let onCancelMultilingualModel: (() -> Void)?
+  let multilingualDownloadDescription: String?
   @Binding var categoryPage: Int
   @Binding var variantRequestID: String?
 
@@ -35,6 +39,10 @@ struct BrowserView: View {
     onSelectEmoji: @escaping (EmojiSelection) -> Void,
     onCopySelection: ((EmojiSelection) -> Void)? = nil,
     content: EmojiMatchContent,
+    onOpenSearchSettings: (() -> Void)? = nil,
+    onDownloadMultilingualModel: (() -> Void)? = nil,
+    onCancelMultilingualModel: (() -> Void)? = nil,
+    multilingualDownloadDescription: String? = nil,
     categoryPage: Binding<Int> = .constant(0),
     variantRequestID: Binding<String?> = .constant(nil)
   ) {
@@ -50,6 +58,10 @@ struct BrowserView: View {
     self._categoryPage = categoryPage
     self._variantRequestID = variantRequestID
     self.content = content
+    self.onOpenSearchSettings = onOpenSearchSettings
+    self.onDownloadMultilingualModel = onDownloadMultilingualModel
+    self.onCancelMultilingualModel = onCancelMultilingualModel
+    self.multilingualDownloadDescription = multilingualDownloadDescription
   }
 
   var body: some View {
@@ -73,7 +85,7 @@ struct BrowserView: View {
               sectionView(section).id(section.id)
             }
             if isSearching && content.navigationLayout.items.isEmpty && searchStore.loadError == nil
-              && catalog.loadError == nil
+              && catalog.loadError == nil && !content.sections.contains(where: { $0.status != nil })
             {
               Text(String(localized: .emNoResults))
                 .font(.ds.caption.weight(.semibold))
@@ -135,6 +147,30 @@ struct BrowserView: View {
           .padding(.horizontal, .ds.spacing.xs)
           .accessibilityAddTraits(.isHeader)
       }
+      if let status = section.status {
+        VStack(alignment: .leading, spacing: .ds.spacing.sm) {
+          Text(status).font(.ds.caption).foregroundStyle(Color.ds.textPrimary)
+          if section.downloadsModel, let onDownloadMultilingualModel {
+            if let multilingualDownloadDescription {
+              Text(multilingualDownloadDescription)
+                .font(.ds.caption).foregroundStyle(Color.ds.textPrimary)
+            }
+            Button("Download Language Model", action: onDownloadMultilingualModel)
+              .buttonStyle(.bordered).controlSize(.small)
+          }
+          if section.cancelsModel, let onCancelMultilingualModel {
+            Button("Cancel Download", action: onCancelMultilingualModel)
+              .buttonStyle(.bordered).controlSize(.small)
+          }
+          if section.opensSettings, let onOpenSearchSettings {
+            Button("Search Settings…", action: onOpenSearchSettings)
+              .buttonStyle(.bordered).controlSize(.small)
+          }
+        }
+        .padding(.ds.spacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+      }
       LazyVGrid(
         columns: Array(
           repeating: GridItem(.flexible(), spacing: .zero), count: EmojiPickerMetrics.columnCount),
@@ -159,14 +195,14 @@ struct BrowserView: View {
     }
   }
 
-  private func selectCategory(_ section: EmojiMatchContent.Section?, proxy: ScrollViewProxy) {
+  private func selectCategory(_ section: EmojiMatchContent.Category?, proxy: ScrollViewProxy) {
     guard let section else { return }
     activeCategoryID = section.id
-    onSelectItemID(section.items.first?.id ?? "")
+    onSelectItemID(section.firstItemID ?? "")
     Task { @MainActor in
       await Task.yield()
       withAnimation(reduceMotion ? nil : .snappy(duration: .ds.motion.quick)) {
-        proxy.scrollTo(section.items.isEmpty ? "browser-top" : section.id, anchor: .top)
+        proxy.scrollTo(section.firstItemID == nil ? "browser-top" : section.id, anchor: .top)
       }
     }
   }

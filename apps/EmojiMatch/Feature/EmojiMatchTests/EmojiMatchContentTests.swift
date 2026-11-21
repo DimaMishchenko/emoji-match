@@ -76,7 +76,7 @@ import Testing
       let emoji = EmojiMatchContent(query: "", searchStore: search, usageStore: store)
       #expect(emoji.categories.count == 11)
       #expect(emoji.categories.prefix(3).map(\.id) == ["imported", "genmoji", "recent"])
-      #expect(emoji.categories.prefix(3).allSatisfy { $0.items.isEmpty })
+      #expect(emoji.categories.prefix(3).allSatisfy { $0.firstItemID == nil })
       let symbols = EmojiMatchContent(query: "", searchStore: search, usageStore: store, page: 1)
       #expect(symbols.sections.map(\.id) == catalog.symbolSections.map(\.id))
       #expect(symbols.categories.map(\.id) == symbols.sections.map(\.id))

@@ -11,6 +11,11 @@ or introduce a UI-test framework. Retain the existing model/data/transport tests
 
 ## Build the current worktree
 
+The full app test suite includes real E5 parity and composition checks. On a fresh checkout,
+restore its ignored maintenance package with
+`python3 -B scripts/emoji-multilingual/resources.py fetch --descriptor apps/EmojiMatch/Resources/multilingual-download.json --destination apps/EmojiMatch/ModelResources/Multilingual`
+before testing. Normal app builds do not require this package and do not bundle E5.
+
 From the repository root, use the installed `xcodebuildmcp` CLI:
 
 ```sh
@@ -56,6 +61,31 @@ Do not blindly overwrite the general clipboard for setup. Preserve its current o
 controlled fixture copies; restore only while still owning the value, preserving intervening copies.
 
 ## Observe the affected outcomes
+
+For FIND-05/SET-05, Settings → Search independently controls Names & Keywords, MiniLM, E5, Luna and Web Search (DuckDuckGo). With
+both online switches off and E5 already installed, verify each local model and automatic selection with both enabled without network, and direct name/shortcode/glyph matches staying
+ahead of suggestions. Verify cold model loading, repeated searches, typing during inference, clearing,
+dismissal and preserved keyboard selection. Luna requires a saved Keychain key; DuckDuckGo must work without requesting one;
+never paste real keys into logs or fixtures. Verify Save/Remove using a task-owned credential namespace,
+and observe local fallback after an injected/unavailable provider without treating it as live success.
+Verify the online opt-in explains that selected-text prefill also becomes a transmitted query,
+including a picker opened without further typing. Changes apply on reopening the picker.
+
+Use Settings → Search in the isolated app to enable Web Search without a key or configure Luna with its Keychain key. DuckDuckGo should reuse its offscreen WebKit session across picker presentations,
+read up to ten organic rows, and use native-language wording for recognizable non-English queries.
+With MiniLM enabled, ordinary English web candidates combine web and existing MiniLM ranks;
+inspect rizz/birthday ordering, source-family uniqueness, superseding requests and clear/dismiss.
+Explicit status/negation and first-person requests retain web order; do not interpret these guards as
+general semantic correctness. Turning MiniLM off must avoid model-based web reranking.
+Verify challenge/throttling handling preserves local results and suppresses new dispatches during
+the cooldown, honoring an explicit Retry-After even beyond five minutes, without automatic retries or solving challenges. Verify images, media and fonts are blocked. Browser subresources mean one search
+navigation is not necessarily one HTTP request. Isolated debug launches use nonpersistent website
+storage; production keeps an app-specific profile, independently of Safari.
+Request secrets through the secure secret tool. Provider transport unit tests use injected responses;
+they do not establish live-provider behavior. No recorded-web playback, key-file override or
+search-result recording path is maintained. The five-minute caches are scoped to one picker
+presentation. Native tokenizer/vector parity and logic tests support, but do not prove, visible
+result order or live-provider quality.
 
 Prefer native computer-use interaction with the actual app and recipient. Bounded native AX or
 keyboard helpers are allowed when needed for inspection/input; keep them task-owned and temporary.
@@ -136,3 +166,83 @@ inspect those frames as well as the final detached state. Repeat a second drag, 
 Close and rapid dismissal/reopening. Preserve the before/after captures in the ignored directory.
 For SET-04, open the actual status menu with another app active, choose Settings, and observe
 the frontmost app and key window. Repeat with minimized Settings and with a quick app switch.
+
+## Direct isolated verification entry points
+
+With a valid `--verification-directory`, Debug `--verification-open-settings` opens the real Settings
+window at launch so native control can bind this menu-bar app. `--verification-query "authored probe"`
+opens the actual picker with that query and no captured recipient; it can verify visible results,
+typing/cancellation and navigation, but cannot establish insertion. For SEND-01 use the normal
+menu/shortcut entry from a task-owned recipient. Both overrides are absent in Release.
+
+For independent source controls, check Luna key entry/save appears only while enabled and a saved key remains removable when disabled;
+reopen the picker after changing settings. Disable all five and
+verify a nonempty query yields no source results while empty-query browsing still works. Enable
+Names & Keywords alone and verify imported-title, emoji and symbol matching. Enable each model
+alone, then both; ensure disabled sources do not dispatch and only the language-appropriate model
+runs. A disabled selected model must not fall back to the other encoder. Enable both online sources in an isolated
+profile without a Luna key: Luna should report its own missing-key message while other sources
+remain usable. Never use a real key for this check.
+
+Enable Group results by provider. Verify fixed labeled sections, independent loading/error/no-results
+messages, and the same family under two providers with distinct item identities. Check arrows,
+Return and skin-tone variants across section boundaries. Turn grouping off, reopen and confirm
+mixed results deduplicate while keeping exact lexical protection. Clearing restores browsing and
+cancels every operation; editing query/locale hides stale statuses as well as old matches. Grouping
+alone must not alter requests or enabled source membership.
+
+For DDG-only relevance checks, disable MiniLM, E5 and Luna and enable grouped results. Use authored
+queries such as iphone, birthday, rizz and camera off; inspect the Web Search section and DuckDuckGo attribution rather than the
+mixed list. Generic platform snippets with a handshake copy/paste slogan must not be treated as
+phone evidence. A query-associated phone occurrence should outrank a loose timer title sample.
+Also check that birthday lists following an introductory sentence and complete Unicode families
+remain eligible. Live search responses vary; injected document fixtures isolate ranking changes in focused logic tests, without a runtime playback mode.
+
+For semantic language routing, use an isolated profile with E5 installed, both models enabled, grouping on and
+online sources off. Search “good morning” and verify MiniLM alone appears; replace it with
+“Ранкова кава”, “bonjour” or Japanese text and verify E5 alone appears with no stale MiniLM rows
+or status. Repeat English text in a non-English interface and non-English text in an English
+interface. Ambiguous short terms can use E5. Clear/dismiss must cancel the active model. MiniLM
+web-candidate reranking uses the same eligibility rule and never handles a non-English-routed query.
+
+## Optional model installation and owned recovery
+
+For FIND-05/SET-05, start with E5 absent in a task-owned isolated profile. MiniLM English search
+must work offline; another-language query must offer an explicit model-download action, without
+starting a download automatically. In Settings, inspect the approximately 235 MB download and 575 MB installed-size disclosure.
+Explicitly start download, observe progress, cancel, retry and remove. The picker also offers Cancel Download while an explicit download is active. Downloading must send no search
+query. Verify failure/cancellation leaves no promoted partial model; a successful install validates
+the pinned archive, exact extracted inventory and source model, compiles it, and enables offline E5
+search. Remove must release the model and retain usable MiniLM/lexical results. Reopen the picker
+after source/grouping changes. Treat real download/compilation, cancellation and offline-after-install
+as runtime checks; small injected fixtures establish only validation and state-machine behavior.
+Do not alter the pinned descriptor or use the production model directory for destructive probes.
+
+For Web Search, confirm the feature label and DuckDuckGo attribution, a dedicated persisted WebKit
+profile across picker presentations, and separation from Safari. Isolated Debug uses nonpersistent
+storage. Challenges remain a visible wait state; there is no automated challenge bypass. For Luna,
+verify app-owned request spacing and rejected-key/cooldown state across close/reopen; a rejected key
+requires credential recovery, and reopening cannot evade a rate limit. Inspect typed Settings,
+Retry, wait and query-edit recovery without logging credentials or raw responses. Missing/failed
+sources must preserve all other enabled sources, grouping and navigation.
+
+Focused input tests should cover exactly 2,000 scalars/8,000 UTF-8 bytes and rejection beyond either
+bound before trimming/cache/model work, with cancellation taking precedence. These are provider
+logic checks, not evidence of native text-field behavior.
+
+Offline release-helper checks (no model download):
+
+```sh
+python3 -B -m unittest discover -s scripts/emoji-multilingual -p 'test_resources.py' -v
+python3 -B -O -m unittest discover -s scripts/emoji-multilingual -p 'test_resources.py' -v
+```
+
+These synthetic fixtures exercise deterministic pack/fetch/unpack validation and cleanup, including
+corrupt archives, unsafe inventories, untrusted URLs/redirects and preservation of changed local
+resources. They do not verify a hosted asset, real model parity or the installed app. Maintenance
+pack/fetch commands and the release boundary are documented in
+[`scripts/emoji-multilingual/README.md`](../../../scripts/emoji-multilingual/README.md).
+
+For search visual checks, `--verification-appearance light` or `--verification-appearance dark`
+can accompany the isolated Debug launch arguments. This overrides only the task-owned app's
+appearance; it does not change macOS appearance preferences and is absent from Release builds.

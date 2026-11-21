@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "repository": "sentence-transformers/all-MiniLM-L6-v2",
+  "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "dimensions": 384,
+  "count": 1932,
+  "maxTokens": 256,
+  "precision": "float32",
+  "computeUnits": "cpuAndGPU",
+  "pooling": "attention-mask mean, L2 normalization",
+  "index": "little-endian row-major Float32 normalized vectors, canonical catalog order",
+  "score": "dot product, not a probability",
+  "descriptorSHA256": "c27e62acb4473c6de09b681c345d6528a8fc0025ace974024b1949e77950b73b",
+  "packages": {
+    "coremltools": "8.3.0",
+    "torch": "2.5.1",
+    "transformers": "4.46.3",
+    "numpy": "1.26.4"
+  },
+  "files": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "MODEL_CARD.md": "dcd602d2fd35c203a247304a06fec6654a12f7941b739f9221a064fe8dc3b7f0",
+    "MiniLM.mlpackage/Data/com.apple.CoreML/model.mlmodel": "06c05f1a0fe52c6fa8919b74cd13428ae923fdcf262165212866de9b40cfac03",
+    "MiniLM.mlpackage/Data/com.apple.CoreML/weights/weight.bin": "d6a8588acf08ffac418d9996708cba5ec253a6223c6529466332096af47c983b",
+    "MiniLM.mlpackage/Manifest.json": "834f95c0fb9ecb94e4c551e6ef305885d00f2fe0ffc47ea33688170300ea40d1",
+    "catalog.json": "6995f756d9f09b76f62468e7310a5f5d189012153339a2b14683cd9c04a63ef0",
+    "index.f32": "09bb0f251932001a12e4cf1d635b7afd23a67de7fcb944f0a684087903450ff4",
+    "parity.json": "5f3c221ab67901832d52f8a7de451077c925d10ab1a29fdb98b4089051a0e4c8",
+    "vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+  },
+  "sourceFiles": {
+    "1_Pooling/config.json": "4be450dde3b0273bb9787637cfbd28fe04a7ba6ab9d36ac48e92b11e350ffc23",
+    "config.json": "953f9c0d463486b10a6871cc2fd59f223b2c70184f49815e7efbcab5d8908b41",
+    "config_sentence_transformers.json": "061ca9d39661d6c6d6de5ba27f79a1cd5770ea247f8d46412a68a498dc5ac9f3",
+    "data_config.json": "32edcb108fc2516b920734a862ae0692bcae1c5d45d5f8d972cb0d53434a4c54",
+    "model.safetensors": "53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db",
+    "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+    "sentence_bert_config.json": "fc1993fde0a95c24ec6c022539d41cf6e2f7c9721e5415d6fb6897472a9cd4b7",
+    "special_tokens_map.json": "303df45a03609e4ead04bc3dc1536d0ab19b5358db685b6f3da123d05ec200e3",
+    "tokenizer.json": "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037",
+    "tokenizer_config.json": "acb92769e8195aabd29b7b2137a9e6d6e25c476a4f15aa4355c233426c61576b",
+    "vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+  },
+  "licenseURL": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+  "modelCardURL": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md"
+}

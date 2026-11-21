@@ -1,0 +1,6 @@
+*.mlmodel binary
+*.f32 binary
+apps/EmojiMatch/Resources/MiniLM/** -text
+apps/EmojiMatch/ModelResources/Multilingual/** -text
+apps/EmojiMatch/Resources/MiniLM/MODEL_CARD.md -whitespace
+apps/EmojiMatch/ModelResources/Multilingual/multilingual-MIT-LICENSE.txt -whitespace

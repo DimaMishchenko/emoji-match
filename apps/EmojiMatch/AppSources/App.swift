@@ -7,11 +7,24 @@ struct App: SwiftUI.App {
   @State private var settings: AppSettings
   @State private var panel: NSPanel?
   @State private var settingsWindow: NSWindow?
+  @State private var settingsPage: EmojiMatchSettingsView.Page? = .general
   @State private var sessionID = UUID()
   @State private var genmojiCapture: GenmojiCaptureSession?
   private let searchStore = EmojiSearchStore()
   private let usageStore: EmojiUsageStore
   private let systemShortcutMonitor = SystemShortcutMonitor()
+  private let searchServices: EmojiSearchServices
+  private let multilingualModel: EmojiMultilingualModelStore?
+  #if DEBUG
+    @State private var didOpenVerificationWindow = false
+    private var verificationLaunch: VerificationLaunch?
+    private var verificationAppearance: NSAppearance.Name?
+
+    private enum VerificationLaunch {
+      case settings
+      case picker(String)
+    }
+  #endif
 
   init() {
     #if DEBUG
@@ -24,21 +37,69 @@ struct App: SwiftUI.App {
         if directory.path.hasPrefix("/private/tmp/emoji-match-")
           || directory.path.hasPrefix("/tmp/emoji-match-")
         {
+          if let appearanceIndex = arguments.firstIndex(of: "--verification-appearance"),
+            appearanceIndex + 1 < arguments.count
+          {
+            switch arguments[appearanceIndex + 1] {
+            case "light": verificationAppearance = .aqua
+            case "dark": verificationAppearance = .darkAqua
+            case "dark-contrast": verificationAppearance = .accessibilityHighContrastDarkAqua
+            case "light-contrast": verificationAppearance = .accessibilityHighContrastAqua
+            default: break
+            }
+          }
+          if arguments.contains("--verification-open-settings") {
+            verificationLaunch = .settings
+          } else if let queryIndex = arguments.firstIndex(of: "--verification-query"),
+            queryIndex + 1 < arguments.count
+          {
+            verificationLaunch = .picker(arguments[queryIndex + 1])
+          }
           let defaults =
             UserDefaults(
               suiteName: "com.dimasike.EmojiMatch.verification." + directory.lastPathComponent)
             ?? .standard
           _settings = State(
-            initialValue: AppSettings(defaults: defaults, prefix: "verification.settings"))
+            initialValue: AppSettings(
+              defaults: defaults, prefix: "verification.settings",
+              credentialService: "com.dimasike.EmojiMatch.verification."
+                + directory.lastPathComponent + ".search"))
           usageStore = EmojiUsageStore(
             defaults: defaults, storageKey: "verification.history",
             libraryDirectory: directory.appendingPathComponent("library"))
+          let model = try? EmojiMultilingualModelStore.live(
+            applicationSupportRoot: directory.appending(path: "models"))
+          multilingualModel = model
+          searchServices = Self.makeSearchServices(model: model, persistentWebData: false)
           return
         }
       }
     #endif
     _settings = State(initialValue: AppSettings())
     usageStore = EmojiUsageStore()
+    let support =
+      FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+      ?? URL.homeDirectory.appending(path: "Library/Application Support")
+    let model = try? EmojiMultilingualModelStore.live(
+      applicationSupportRoot:
+        support.appending(path: "com.dimasike.EmojiMatch/Models"))
+    multilingualModel = model
+    searchServices = Self.makeSearchServices(model: model, persistentWebData: true)
+  }
+
+  private static func makeSearchServices(
+    model: EmojiMultilingualModelStore?, persistentWebData: Bool
+  ) -> EmojiSearchServices {
+    EmojiSearchServices(
+      persistentWebData: persistentWebData,
+      multilingualResourceDirectory: {
+        guard let model else { throw EmojiSearchIssue(.modelUnavailable) }
+        do {
+          return try await model.availableResourceDirectory()
+        } catch EmojiMultilingualModelStore.Failure.notInstalled {
+          throw EmojiSearchIssue(.modelNotInstalled)
+        }
+      })
   }
 
   var body: some Scene {
@@ -51,6 +112,24 @@ struct App: SwiftUI.App {
         .task {
           systemShortcutMonitor.onRegistrationChanged = { settings.registrationError = $0 }
           systemShortcutMonitor.start { openEmojiMatch() }
+          #if DEBUG
+            if !didOpenVerificationWindow, let verificationLaunch {
+              if let verificationAppearance {
+                NSApp.appearance = NSAppearance(named: verificationAppearance)
+              }
+              didOpenVerificationWindow = true
+              switch verificationLaunch {
+              case .settings: openSettings()
+              case .picker(let query): openEmojiMatch(queryOverride: query)
+              }
+            }
+          #endif
+        }
+        .onChange(of: settings.miniLMSearchEnabled) { _, enabled in
+          if !enabled { Task { await searchServices.releaseEnglishResources() } }
+        }
+        .onChange(of: settings.multilingualSearchEnabled) { _, enabled in
+          if !enabled { Task { await searchServices.releaseMultilingualResources() } }
         }
         .onChange(of: settings.openShortcut, initial: true) { _, shortcut in
           systemShortcutMonitor.shortcut = shortcut
@@ -59,17 +138,19 @@ struct App: SwiftUI.App {
     .menuBarExtraStyle(.menu)
   }
 
-  private func openEmojiMatch() {
+  private func openEmojiMatch(queryOverride: String? = nil) {
     usageStore.refreshLibrary()
     let anchor = TextAnchorResolver.anchorRect()
     let captured =
-      InsertionDestination.capture(includeSelectedText: settings.prefillSelectedText)
+      queryOverride == nil
+      ? InsertionDestination.capture(includeSelectedText: settings.prefillSelectedText) : nil
     sessionID = UUID()
     genmojiCapture?.cancel()
     genmojiCapture = nil
     panel?.close()
     let size = CGSize(
       width: EmojiPickerMetrics.contentWidth, height: EmojiPickerMetrics.expandedHeight)
+    let searchModels = searchServices.models(settings: settings)
     let panel = EmojiMatchPanel(contentSize: size, onClose: { self.panel = nil }) { close in
       EmojiMatchView(
         contentWidth: size.width,
@@ -94,10 +175,14 @@ struct App: SwiftUI.App {
               })
           } : nil,
         onClose: close,
-        initialQuery: captured?.selectedText ?? "",
+        initialQuery: queryOverride ?? captured?.selectedText ?? "",
         allowsRichContent: captured?.allowsRichContent ?? true,
         defaultSkinTone: settings.defaultSkinTone,
-        onCopySelection: copy
+        onCopySelection: copy,
+        enabledSearchProviders: settings.enabledSearchProviders,
+        groupSearchResultsByProvider: settings.groupSearchResultsByProvider,
+        searchModels: searchModels, multilingualModel: multilingualModel,
+        onOpenSearchSettings: { openSettings(search: true) }
       )
     }
     self.panel = panel
@@ -193,7 +278,8 @@ struct App: SwiftUI.App {
     }
   }
 
-  private func openSettings() {
+  private func openSettings(search: Bool = false) {
+    if search { settingsPage = .search }
     let initiatingApplication = NSWorkspace.shared.frontmostApplication
     sessionID = UUID()
     let request = sessionID
@@ -216,6 +302,7 @@ struct App: SwiftUI.App {
             if !recording { systemShortcutMonitor.shortcut = settings.openShortcut }
             systemShortcutMonitor.isSuspended = recording
           },
+          page: $settingsPage,
           library: StickerLibraryModel(
             store: usageStore,
             copy: { selection in
@@ -234,7 +321,14 @@ struct App: SwiftUI.App {
                 appKitAnchor: CGRect(
                   x: anchor.midX, y: anchor.minY, width: 1, height: anchor.height),
                 onFinish: restoreSettingsAfterGenmoji)
-            } : nil))
+            } : nil,
+          onSearchCredentialsChanged: {
+            Task { await searchServices.credentialsDidChange() }
+          }, multilingualModel: multilingualModel,
+          onRemoveMultilingualModel: {
+            await searchServices.releaseMultilingualResources()
+            try await multilingualModel?.remove()
+          }))
       window.center()
       settingsWindow = window
     }

@@ -1,0 +1,11 @@
+{
+  "provenance": "Emoji Match maintainers, authored product synonyms; no external shortcode dataset. See docs/emoji-data-maintenance.md.",
+  "aliases": {
+    "2615": ["coffee", "cafe", "caffeine", "espresso"],
+    "1F44D": ["thumbsup", "+1", "approve"],
+    "1F44E": ["thumbsdown", "-1", "disapprove"],
+    "1F4A9": ["poop"],
+    "1F602": ["lol", "laughing"],
+    "2764-FE0F": ["love"]
+  }
+}

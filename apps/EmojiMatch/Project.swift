@@ -36,7 +36,9 @@ let project = Project(
       deploymentTargets: .macOS("26.0"),
       infoPlist: .extendingDefault(
         with: [
-          "LSUIElement": .boolean(true)
+          "LSUIElement": .boolean(true),
+          "LSApplicationCategoryType": .string("public.app-category.utilities"),
+          "EmojiMultilingualDownloadDescriptor": .string("multilingual-download")
         ]
       ),
       buildableFolders: [
@@ -84,8 +86,7 @@ let project = Project(
       name: "EmojiMatch",
       buildAction: .buildAction(
         targets: [
-          .target("EmojiMatch"),
-          .target("EmojiMatchTests")
+          .target("EmojiMatch")
         ]
       ),
       testAction: .targets(

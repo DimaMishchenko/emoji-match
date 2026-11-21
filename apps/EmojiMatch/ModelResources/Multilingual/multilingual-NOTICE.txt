@@ -1,0 +1,15 @@
+Multilingual E5 Small
+Model: intfloat/multilingual-e5-small
+Revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+Model card: https://huggingface.co/intfloat/multilingual-e5-small/blob/614241f622f53c4eeff9890bdc4f31cfecc418b3/README.md
+Copyright (c) Microsoft Corporation. MIT License (multilingual-MIT-LICENSE.txt).
+Converted to Core ML with float16 embedding gathers and float32 encoder compute, masked mean pooling and L2 normalization.
+The attention-mask sentinel is -10000 to avoid float16 overflow; measured parity is documented in multilingual-parity.json.
+
+Tokenizer algorithms are ported to Swift from Hugging Face Tokenizers Unigram and
+spm_precompiled's SentencePiece normalizer. These implementations are modified:
+Swift value storage, frozen charsmap interpretation, no offsets/decoding/training.
+https://github.com/huggingface/tokenizers/tree/v0.20.3
+https://github.com/huggingface/spm_precompiled
+Copyright Hugging Face and contributors. Apache License 2.0 (multilingual-Apache-LICENSE.txt).
+The vocabulary and frozen normalization table come from the exact model snapshot above.
