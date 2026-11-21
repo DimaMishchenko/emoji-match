@@ -285,3 +285,22 @@ The bundled snapshot uses Unicode Emoji 18.0 and CLDR 49 (`49.0.0`) with the exi
 Generation validates the complete dataset before writing. JSON is sorted and newline-terminated; writes are atomic per file, not a transaction across the complete bundle. If release, locale set and upstream source hashes match existing metadata, its generation timestamp is retained so repeating a fetch produces identical bytes. A parser implementation change can still change payload bytes without changing the upstream-source timestamp.
 
 Primary release sources: https://unicode.org/Public/18.0.0/emoji/emoji-test.txt and https://github.com/unicode-org/cldr-json/releases/tag/49.0.0. CLDR's release index is https://cldr.unicode.org/index/downloads.
+
+## Generator maintenance
+
+`emoji fetch pinned --unicode-version 18.0 --cldr-tag 49.0.0 --locales <comma-separated locales>`
+uses concrete upstream versions without floating release or locale-directory discovery for explicit
+locales. `fetch latest` retains release discovery for upgrades. Both paths use the same generator,
+validate pinned Unicode headers, retain matching source timestamps and write deterministic bytes.
+Version arguments must be numeric Unicode `major.minor` and stable CLDR `major.minor.patch`.
+
+Tone variants accumulate by canonical base in source order and each immutable base is constructed
+once. Explicit legacy sequence-to-base mappings remain maintained parser rules; names never establish
+identity. The pinned integration check compares complete parsed records against the generated snapshot,
+including order, grouping, names and tone slots. Optional upstream property/sequence files are fetched
+and hashed when available; they do not currently add parser validation. Only HTTP 404 is optional;
+other transport/status failures propagate.
+
+Generated Unicode/CLDR resources are never edited manually. Product aliases and derived runtime
+shortcodes belong to the app search layer and do not change this package's public schema. See
+[emoji data maintenance](../emoji-data-maintenance.md) for ownership and reproducible commands.

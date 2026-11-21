@@ -89,6 +89,11 @@ internal struct UnicodeEmojiParser {
         throw ValidationError("Missing Unicode version in emoji-test.txt.")
       }
       let versionToken = rightParts[versionIndex]
+      guard versionToken.range(of: #"^E\d+\.\d+$"#, options: .regularExpression) != nil,
+        versionIndex == 1, versionIndex + 1 < rightParts.count
+      else {
+        throw ValidationError("Invalid Unicode version or missing name in emoji-test.txt.")
+      }
       let fallbackName = rightParts[(versionIndex + 1)...].joined(separator: " ")
 
       sortOrder += 1
@@ -111,24 +116,17 @@ internal struct UnicodeEmojiParser {
   private static func collapseSkinToneVariants(
     in rawRecords: [RawEmojiRecord]
   ) throws -> [GeneratedBaseEmoji] {
-    var logicalByID: [String: GeneratedBaseEmoji] = [:]
+    var logicalByID: [String: RawEmojiRecord] = [:]
     var idsBySequence: [String: String] = [:]
     var orderedLogicalIDs: [String] = []
 
     for record in rawRecords where !isSkinToneVariant(record) {
-      logicalByID[record.id] = GeneratedBaseEmoji(
-        id: record.id,
-        value: record.value,
-        group: record.group,
-        subgroup: record.subgroup,
-        unicodeVersion: record.unicodeVersion,
-        sortOrder: record.sortOrder,
-        fallbackName: record.fallbackName
-      )
+      logicalByID[record.id] = record
       orderedLogicalIDs.append(record.id)
       idsBySequence[presentationIndependentID(record.id)] = record.id
     }
 
+    var variantsByID: [String: [GeneratedSkinToneVariant]] = [:]
     for record in rawRecords where isSkinToneVariant(record) {
       let strippedID = presentationIndependentID(strippedSkinToneID(from: record.id))
       guard
@@ -143,25 +141,24 @@ internal struct UnicodeEmojiParser {
         value: record.value,
         tones: skinTones(in: record.id)
       )
-      guard var logical = logicalByID[logicalID] else {
-        throw ValidationError("Unable to create logical emoji entry for \(record.id)")
-      }
+      variantsByID[logicalID, default: []].append(variant)
+    }
 
-      logical = GeneratedBaseEmoji(
+    return orderedLogicalIDs.compactMap { id in
+      guard let logical = logicalByID[id] else { return nil }
+      let variants = variantsByID[id] ?? []
+      return GeneratedBaseEmoji(
         id: logical.id,
         value: logical.value,
         group: logical.group,
         subgroup: logical.subgroup,
         unicodeVersion: logical.unicodeVersion,
         sortOrder: logical.sortOrder,
-        skinToneSupport: skinToneSupport(for: logical.skinToneVariants + [variant]),
-        skinToneVariants: logical.skinToneVariants + [variant],
+        skinToneSupport: skinToneSupport(for: variants),
+        skinToneVariants: variants,
         fallbackName: logical.fallbackName
       )
-      logicalByID[logicalID] = logical
     }
-
-    return orderedLogicalIDs.compactMap { logicalByID[$0] }.sorted { $0.sortOrder < $1.sortOrder }
   }
 
   private static func isSkinToneVariant(_ record: RawEmojiRecord) -> Bool {

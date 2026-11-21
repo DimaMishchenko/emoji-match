@@ -6,6 +6,26 @@ import Testing
 private let liveTestsEnabled = ProcessInfo.processInfo.environment["EMOJIKIT_LIVE_TESTS"] == "1"
 
 @Suite struct EmojiKitIntegrationTests {
+  @Test func bundledSnapshotPreservesBaseAndToneIdentityCounts() throws {
+    let root = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    let records = try JSONDecoder()
+      .decode(
+        [GeneratedBaseEmoji].self,
+        from: Data(contentsOf: root.appending(path: "Sources/Emojis/Resources/emojis.json")))
+    #expect(records.count == 1932)
+    #expect(records.flatMap(\.skinToneVariants).count == 2040)
+    let sequences = records.flatMap {
+      [($0.id, $0.value)] + $0.skinToneVariants.map { ($0.id.rawValue, $0.value) }
+    }
+    #expect(Set(sequences.map { $0.0 }).count == 3972)
+    #expect(Set(sequences.map { $0.1 }).count == 3972)
+    for (id, value) in sequences {
+      #expect(
+        id == value.unicodeScalars.map { String(format: "%04X", $0.value) }.joined(separator: "-"))
+    }
+  }
+
   @Test(.enabled(if: liveTestsEnabled))
   func bundledSequencesMatchPinnedUnicodeSource() async throws {
     let root = URL(fileURLWithPath: #filePath)
@@ -25,6 +45,10 @@ private let liveTestsEnabled = ProcessInfo.processInfo.environment["EMOJIKIT_LIV
     let records = try #require(
       JSONSerialization.jsonObject(with: Data(contentsOf: resources.appending(path: "emojis.json")))
         as? [[String: Any]])
+    let bundled = try JSONDecoder()
+      .decode(
+        [GeneratedBaseEmoji].self, from: Data(contentsOf: resources.appending(path: "emojis.json")))
+    #expect(bundled == (try UnicodeEmojiParser.parseEmojiTest(source.data)))
     let actual = try records.flatMap { record -> [String] in
       let id = try #require(record["id"] as? String)
       let variants = try #require(record["skinToneVariants"] as? [[String: Any]])

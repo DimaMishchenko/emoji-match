@@ -21,11 +21,23 @@ internal struct EmojiGenerator {
     dryRun: Bool
   ) async throws -> WriteSummary {
     let release = try await dataLoader.fetchLatestRelease()
-    let allLocales = try await dataLoader.fetchAvailableLocales(release: release)
+    return try await fetch(
+      release: release, paths: paths, localeSelection: localeSelection,
+      defaultLocale: defaultLocale, force: force, dryRun: dryRun)
+  }
+
+  internal func fetch(
+    release: EmojiDataRelease,
+    paths: CLIOutputPaths,
+    localeSelection: LocaleSelection,
+    defaultLocale: String,
+    force: Bool,
+    dryRun: Bool
+  ) async throws -> WriteSummary {
     let selectedLocales =
       switch localeSelection {
       case .all:
-        allLocales
+        try await dataLoader.fetchAvailableLocales(release: release)
       case .explicit(let locales):
         Set(locales).sorted()
       }

@@ -4,6 +4,98 @@ import Testing
 @testable import EmojiKit
 
 @Suite struct EmojiKitTests {
+  @Test func parserRejectsDuplicateIDsAndMalformedVersions() throws {
+    let header = "# group: Smileys & Emotion\n# subgroup: face-smiling\n"
+    let line = "1F600 ; fully-qualified # 😀 E1.0 grinning face\n"
+    #expect(throws: (any Error).self) {
+      try UnicodeEmojiParser.parseEmojiTest(Data((header + line + line).utf8))
+    }
+    for invalid in ["Ebad grinning face", "E1.0", "E1 grinning face"] {
+      #expect(throws: (any Error).self) {
+        try UnicodeEmojiParser.parseEmojiTest(
+          Data((header + "1F600 ; fully-qualified # 😀 " + invalid).utf8))
+      }
+    }
+  }
+
+  @Test func parserKeepsVariantOrderAndMultipleToneSlots() throws {
+    let fixture = """
+      # group: People & Body
+      # subgroup: hands
+      1F91D ; fully-qualified # 🤝 E3.0 handshake
+      1FAF1 1F3FF 200D 1FAF2 1F3FB ; fully-qualified # 🫱🏿‍🫲🏻 E14.0 handshake: dark skin tone, light skin tone
+      1FAF1 1F3FB 200D 1FAF2 1F3FF ; fully-qualified # 🫱🏻‍🫲🏿 E14.0 handshake: light skin tone, dark skin tone
+      """
+    let first = try UnicodeEmojiParser.parseEmojiTest(Data(fixture.utf8))
+    #expect(first == (try UnicodeEmojiParser.parseEmojiTest(Data(fixture.utf8))))
+    #expect(first.count == 1)
+    #expect(first[0].skinToneSupport == .multiple)
+    #expect(first[0].skinToneVariants.map(\.tones) == [[.dark, .light], [.light, .dark]])
+  }
+
+  @Test func pinnedCommandRequiresConcreteNumericVersions() throws {
+    let command = try #require(
+      try FetchPinnedCommand.parseAsRoot([
+        "--unicode-version", "18.0", "--cldr-tag", "49.0.0", "--locales", "en,cs", "--dry-run"
+      ]) as? FetchPinnedCommand)
+    #expect(command.unicodeVersion == "18.0")
+    #expect(command.cldrTag == "49.0.0")
+    #expect(command.dryRun)
+    #expect(throws: (any Error).self) {
+      try FetchPinnedCommand.parseAsRoot(["--unicode-version", "latest", "--cldr-tag", "main"])
+    }
+  }
+
+  @Test func pinnedGenerationIsDeterministicWithoutReleaseDiscovery() async throws {
+    let release = EmojiDataRelease(
+      unicodeEmojiVersion: "18.0", cldrVersion: "49", cldrTag: "49.0.0")
+    let annotations =
+      #"{"annotations":{"annotations":{"😀":{"tts":["grinning face"],"default":["grin"]}}}}"#
+    let client = StubHTTPClient(responses: [
+      release.unicodeBaseURL.appending(path: "emoji-test.txt").absoluteString: .success(
+        "# Version: 18.0\n# group: Smileys & Emotion\n# subgroup: face-smiling\n1F600 ; fully-qualified # 😀 E1.0 grinning face"
+      ),
+      release.unicodeBaseURL.appending(path: "emoji-sequences.txt").absoluteString: .failure(404),
+      release.unicodeBaseURL.appending(path: "emoji-zwj-sequences.txt").absoluteString: .failure(
+        404),
+      EmojiDataSource.unicodePropertiesBaseURL(for: "18.0").appending(path: "emoji-data.txt")
+        .absoluteString: .failure(404),
+      EmojiDataSource.unicodePropertiesBaseURL(for: "18.0")
+        .appending(path: "emoji-variation-sequences.txt").absoluteString: .failure(404),
+      release.cldrBaseURL.appending(path: "cldr-annotations-full/annotations/en/annotations.json")
+        .absoluteString: .success(annotations),
+      release.cldrBaseURL
+        .appending(path: "cldr-annotations-derived-full/annotationsDerived/en/annotations.json")
+        .absoluteString: .failure(404)
+    ])
+    let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let paths = try CLIOutputPaths(
+      outputRoot: directory.path, metadataPath: nil, emojisPath: nil, localizationsPath: nil)
+    let generator = EmojiGenerator(dataLoader: EmojiDataLoader(httpClient: client))
+    let first = try await generator.fetch(
+      release: release, paths: paths, localeSelection: .explicit(["en"]), defaultLocale: "en",
+      force: false, dryRun: false)
+    let second = try await generator.fetch(
+      release: release, paths: paths, localeSelection: .explicit(["en"]), defaultLocale: "en",
+      force: false, dryRun: false)
+    #expect(first.changedFiles.count == 4)
+    #expect(second.changedFiles.isEmpty)
+    let metadataData = try Data(contentsOf: URL(fileURLWithPath: paths.metadataPath))
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let metadata = try decoder.decode(GeneratedMetadata.self, from: metadataData)
+    #expect(metadata.sourceFiles.count == 2)
+    #expect(metadata.sourceFiles.allSatisfy { $0.sha256.count == 64 })
+    let dryRoot = directory.appending(path: "dry-run")
+    let dryPaths = try CLIOutputPaths(
+      outputRoot: dryRoot.path, metadataPath: nil, emojisPath: nil, localizationsPath: nil)
+    _ = try await generator.fetch(
+      release: release, paths: dryPaths, localeSelection: .explicit(["en"]), defaultLocale: "en",
+      force: false, dryRun: true)
+    #expect(!FileManager.default.fileExists(atPath: dryRoot.path))
+  }
+
   @Test func localeSelectionParsesAll() throws {
     #expect(try LocaleSelection(argument: nil) == .explicit(["en"]))
     #expect(try LocaleSelection(argument: "all") == .all)

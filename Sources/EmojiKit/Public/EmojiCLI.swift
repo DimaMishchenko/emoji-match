@@ -21,7 +21,7 @@ struct FetchCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "fetch",
     abstract: "Fetches Unicode and CLDR emoji data.",
-    subcommands: [FetchLatestCommand.self]
+    subcommands: [FetchLatestCommand.self, FetchPinnedCommand.self]
   )
 }
 
@@ -82,6 +82,57 @@ struct FetchLatestCommand: AsyncParsableCommand {
       force: force,
       dryRun: dryRun
     )
+    print(summary.rendered)
+  }
+}
+
+struct FetchPinnedCommand: AsyncParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "pinned",
+    abstract: "Regenerates resources from concrete Unicode and CLDR versions."
+  )
+
+  @Option(help: "Concrete Unicode emoji version, for example 18.0.")
+  var unicodeVersion: String
+
+  @Option(help: "Concrete stable CLDR JSON tag, for example 49.0.0.")
+  var cldrTag: String
+
+  @Option(help: "Root output directory for generated resources.")
+  var outputRoot: String?
+
+  @Option(help: "Locales to generate: `all` or a comma-separated list.")
+  var locales: String?
+
+  @Option(help: "Default fallback locale identifier.")
+  var defaultLocale: String = "en"
+
+  @Flag(help: "Rewrite outputs even when content is unchanged.")
+  var force = false
+
+  @Flag(help: "Report changes without writing files.")
+  var dryRun = false
+
+  mutating func validate() throws {
+    guard unicodeVersion.range(of: #"^\d+\.\d+$"#, options: .regularExpression) != nil,
+      cldrTag.range(of: #"^\d+\.\d+\.\d+$"#, options: .regularExpression) != nil
+    else {
+      throw ValidationError(
+        "Pinned releases require numeric Unicode major.minor and CLDR major.minor.patch versions.")
+    }
+  }
+
+  mutating func run() async throws {
+    let release = EmojiDataRelease(
+      unicodeEmojiVersion: unicodeVersion,
+      cldrVersion: CLDRReleaseResolver.version(fromTag: cldrTag),
+      cldrTag: cldrTag)
+    let paths = try CLIOutputPaths(
+      outputRoot: outputRoot, metadataPath: nil, emojisPath: nil, localizationsPath: nil)
+    let summary = try await EmojiGenerator()
+      .fetch(
+        release: release, paths: paths, localeSelection: LocaleSelection(argument: locales),
+        defaultLocale: defaultLocale, force: force, dryRun: dryRun)
     print(summary.rendered)
   }
 }
